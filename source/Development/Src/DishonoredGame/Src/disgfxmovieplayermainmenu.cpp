@@ -1133,6 +1133,24 @@ static void DisGFxMoviePlayerPreClose( UGFxMoviePlayer* Player, UBOOL bUnload )
 	{
 		HUD->PreClose( bUnload );
 	}
+	// DISHONORED(port, agent IT): UDisGFxMoviePlayerMainMenu::PreClose (2013 rva 0x7d2790, 2012 0x7f7030), its delegate half:
+	// UnregisterCommonDelegates when the movie is exactly the main menu and holds the online subsystem, then
+	// UnregisterControllerDelegates for the pad SelectController registered. Without it the subsystem's
+	// DeviceSelectionDelegates keep the closed menu, and the whole Dishonored_MainMenu world, alive across the map change.
+	// The texture-package release and the manager's m_pMainMenu reset are the Closed seam below.
+	else if( UDisGFxMoviePlayerMainMenu* Menu = Cast<UDisGFxMoviePlayerMainMenu>( Player ) )
+	{
+		if( Menu->GetClass() == UDisGFxMoviePlayerMainMenu::StaticClass() && Menu->m_pOnlineSubsystem != NULL )
+		{
+			Menu->eventUnregisterCommonDelegates();
+			Menu->m_pOnlineSubsystem = NULL;
+		}
+		if( Menu->m_DelegatesControllerId != -1 )
+		{
+			Menu->eventUnregisterControllerDelegates( (BYTE)Menu->m_DelegatesControllerId );
+			Menu->m_DelegatesControllerId = -1;
+		}
+	}
 }
 
 static void DisGFxMoviePlayerClosed( UGFxMoviePlayer* Player )

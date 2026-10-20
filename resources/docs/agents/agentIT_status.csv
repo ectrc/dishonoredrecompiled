@@ -1,0 +1,10 @@
+item,state,evidence
+cause of the newgame Criticals,found,IR built Debug (CMakeCache Debug; make_snapshot default); DO_GUARD_SLOW VerifyLevelsGotRemovedByGC (UnWorld.cpp:2043) reports a leak RelWithDebInfo cannot see
+IR's head_rel / b1 controls,wrong exe,--no-build still stages: DishonoredGame-Win64-Shipping.exe and _IRb1.exe md5 = DishonoredGame_IR.exe (28923c2f)
+bisection (newgame stage),done,IR Debug FAIL criticals 3; head_rel 02:46 / IS / IP / IO / IT base 91352d7 RelWithDebInfo all pass (pawns 29)
+the leak on main,found,ITp_base1: obj list after GC on l_tower_p keeps DisGFxMoviePlayerMainMenu_0 + Dishonored_MainMenu World/Level (since HK's SelectController)
+UDisGFxMoviePlayerMainMenu::PreClose delegate half (2013 0x7d2790 / 2012 0x7f7030),done,ITp_fix1: menu 0 / MainMenu world gone; same 7 script warnings
+PreClose texture-package release,not ported,UDisGlobalUIManager::ReleaseTexturePackage has no body in this tree
+UnregisterCommonDelegates branch,ported (dormant),PostStart's m_pOnlineSubsystem / RegisterCommonDelegates half not ported (agent BE)
+environment (Steam / ini / save),ruled out,Steam up since 10-10; gate uses -nosteam; IR config = IO config except the Accessibility block
+gate on the fix,see agentIT.md 5,ITg1-3 newgame; ITg_ d3d9+inputtest

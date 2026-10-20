@@ -28,7 +28,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 BUILD = REPO / "build"
 FILE_ATTRIBUTE_REPARSE_POINT = 0x400
-CMAKE_OPTIONS = ("-G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-x86.cmake "
+CMAKE_OPTIONS = ("-G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-x86.cmake "
                  "-DDISHONORED_REFERENCE_DIR=D:/RecompileDishonored/UnrealEngine3 -DDISHONORED_REAL_LAUNCH=ON "
                  "-DDISHONORED_ENABLE_GFXUI=ON -DDISHONORED_ENABLE_AKAUDIO=ON -DDISHONORED_ENABLE_OSS=ON -DDISHONORED_ENABLE_DISHONOREDGAME=ON")
 
