@@ -1,8 +1,8 @@
-# Project status — 2026-10-15 (wave 25 complete, head `d6c3aa4`: the opening cutscene scored against the user's retail video, `PHASE22.md`; PHASE21's GL..GO plan was never run and is void)
+# Project status — 2026-10-20 (wave 26 complete, head `2127b56`: the hand-played opening, real audio (Wwise reimplemented) and lip-sync (FaceFX reimplemented), `PHASE23.md`; wave 25 = `PHASE22.md`)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), `PHASE21.md` (a wave-25 draft that was never run — void), **`PHASE22.md` (wave 25, done: HA..HL)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), `PHASE21.md` (a wave-25 draft that was never run — void), **`PHASE22.md` (wave 25, done: HA..HL)**, **`PHASE23.md` (wave 26, done: IA..IT, IH1-IH4, FX1-FX3)**. Decisions and fixes: `porting_notes.md`. Per-function status:
 `progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GK>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
@@ -281,6 +281,18 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
     the boat's sockets (`FDisComponentRetargeting`). Wave 25 GM.
 17. One of L_Tower_P's eight streaming sublevels never loads, on the control too (GG; name not logged). Wave 25 GN.
 
+## Wave 26 — the hand-played opening, real audio, lip-sync
+
+Twenty-nine packages, all merged and gated: the final gate on `2127b56` is **47 of 47**; ride SSIM vs `retail.mp4` .696 -> .848
+at the constant offset (`PHASE23.md` "Outcomes" has every row; `agents/agentIA.md` … `agentIT.md`, `agentIH1-4.md`, `agentFX1-3.md`).
+The user's defects: FOV (measured retail's - IA), voice lines + subtitles (ID, IE), NPCs stuck / facing / routes (IB, IK-IK4, IN,
+IO, IO2, IC, IL), player crouch/sprint/jump/swim/mantle + their animations (IF, IG, IM, IS), camera shake (IP), missing water and
+level audio (IQ, IH4), black mouths = no lip-sync (IR, FX1-FX3). Two programs reimplemented from the 2012 decompile: **Wwise 2012.1**
+(IH1-IH4, 2,876 of 3,070 functions, real DirectSound output, music, effects) and **FaceFX 1.7.3.1** (FX1-FX3, 1,478 functions tallied,
+803 by rva; jaws open ~13 deg on lines). Engine divergences found on the way: the reference's RMM_Accel physics skip and double root
+rotation, the skeletal-mesh bounds gating the physics asset, box collision under non-uniform scale, the blend base's assert, the
+`AkBank` media flag, the menu's delegate leak, a `BYTE[12]` placeholder behind a double free.
+
 ## Wave 25 — the opening cutscene against `retail.mp4`
 
 Eleven packages, all merged and gated: the final gate on `d6c3aa4` is **47 of 47** (`PHASE22.md` "Outcomes" has each one; `agents/agentHA.md` … `agentHL.md`). The
@@ -484,9 +496,9 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**No wave is planned.** The user closed wave 25 with "After this phase don't do any more". If work resumes, start from
-PHASE22's "Wave result" residue list: NPC equipment attachments, FaceTo + the locomotion delta, the GFx text overflow,
-the interaction probe, then the bringup stand-ins. `build/head_rel` is at `d6c3aa4`.
+**No wave is planned.** Wave 26 closed 2026-10-20 (PHASE23 "Wave result" lists the residue: the audio A/B gap, NPC landing/water,
+the generator's `m_Points` placeholder, the Steam cloud profile IJ, the compare tool's slope fit). `build/head_rel` is at `2127b56`
+and staged as `DishonoredGame-Win64-Shipping.exe`.
 
 **Deferred and said so**: the rest of the UI list (menu camera, haze, text clarity); the retail dismod
 measurements; faction tables; the probe family; the NPC inventory override (guards' swords); `DropItemsInSlot`,
@@ -495,7 +507,7 @@ the wheel; **wave 15**; audio.
 **Process, from the user, all absolute**: `-windowed` on every launch; input only through `game_input.py`; builds
 only through `build_queued.py` (FIFO, half the cores, two per package); no retail launches while the user is at the
 machine. The override file (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`) lifts the cap and the queue only
-when the user says so (in place 2026-10-14 13:00–21:10 and 2026-10-14 23:00–2026-10-15 15:00, gone since). **Never hand-edit a generated
+when the user says so (2026-10-14 13:00–21:10, 2026-10-14 23:00–2026-10-15 15:00, 2026-10-19 00:00–2026-10-20; gone since). **Never hand-edit a generated
 header**: `Inc/CppText/<Class>.h` and `DishonoredLink<X>()` anchors; the coordinator regenerates on merge.
 
 ## Known pitfalls

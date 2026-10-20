@@ -381,3 +381,34 @@ Target were one cause IH4 found; the water events are the next); NPC mouths are 
 **FX1** + **FX2** (the FaceFX program: core; face graph) and **IT** (the newgame gate failure) launched on `91352d7`. FX3 (runtime + engine integration, lip-sync on) after FX1/FX2 merge.
 **IQ** launched on `60da56f` (water/landing/lock audio; the silent exit death). FX1 running; FX3 after it (reconcile the shim, runtime, engine integration, lip-sync on).
 **FX3** launched on `b9eb647` (FxActor/Instance/MasterBoneList, WITH_FACEFX on, UpdateFaceFX + DisFaceFxStartAudio, the bone application; lip-sync measured on 'SheWaiting' and the captain's ride lines).
+
+## Wave result (2026-10-20, head `2127b56`, 29 packages merged)
+
+Final gate on `2127b56`: **47 ok, 0 failed, 0 skipped** (1878 s, `build/gate_final26.log`, machine quiet). `build/head_rel`
+rebuilt and staged as `DishonoredGame-Win64-Shipping.exe` (the user's playable exe). End-to-end compare on a quiet
+machine (`build/cmp/final26q`, rescored at the constant offset a = 13.57 - soiree-enter = -42.64 in `final26q_const`):
+
+| metric (median over the ride) | wave 25 close (`d6c3aa4`) | wave 26 (`2127b56`) |
+|---|---|---|
+| SSIM | .696 | **.848** |
+| MAD | 11.6 | **7.6** |
+| zoom | 0.99 | 1.00 |
+| zoom NCC | .39 | .83 |
+
+The tool's own two-anchor slope fit reads .668 for the same frames (b = 1.09): every agent since IK read the ride at the
+constant offset; the fit's b must be pinned to 1 (open tool item). A compare run beside a full build quits early (the
+inputcmd `wait` counts frame time) - `final26` is void.
+
+The user's defects from the second hand play, all closed: NPCs face their walking direction and take straight funnel
+paths (IO, IO2, + the root-motion rotation rule); the camera shake was the out-of-breath head layer (IP); the water,
+landing, engine and lock sounds play (IQ: the bank media flag), music and effects play (IH4), subtitles and the voice
+timing follow retail (ID, IE, IH2, IH3); NPC mouths move with lip-sync (FX1-FX3: FaceFX 1,478 functions, 803 by rva);
+sprint no longer asserts (IS); the main-menu world is collected after New Game (IT); the captain reaches the dock floor
+(IK-IK4, IN: the boat's physics asset bounds); the controller list is on (IL: a double free behind a placeholder type).
+
+Open after wave 26: the audio A/B gap (-3.5 dB median: w60's transient, the sub-150 Hz drone, the lock fill's high
+band; the 194 unported Wwise functions by reason); NPC landing/water (the NPC master FSM, the water volume's native
+Touch); the generator's `BYTE[12]` placeholder for `FDisVisCalcTuningParams::m_Points`; the Steam cloud profile (IJ:
+bindings and bob amount from the user's OPTIONS.SAV); the compare tool's slope fit; `FKAggregateGeom::PointCheck`;
+the NPC `DetectPreAvoidanceCollision` (needs `FArkComponentAvoidance`); the walking bob (no retail reference).
+The override file is removed.
