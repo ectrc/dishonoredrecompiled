@@ -1,0 +1,15 @@
+function,binary,address,status,file,note
+UNavigationHandle::PointReachableZeroExtent,2012,0x2a9ba0,ported,Engine/Src/UnNavigationHandle.cpp + Inc/EngineAIClasses.h,
+FNavMeshCheckResult,2012,PDB struct (32 B),declared,Engine/Inc/arknavmeshbuildutils.h,flag bit named m_bHit (ours)
+ArkNavMeshComputeHitPropertiesFromEdge,2012,0x53d5f0,ported,Engine/Src/arknavmeshbuildutils.cpp,
+ArkNavMeshComputeHitPropertiesFromPoly,2012,0x53d840,ported,Engine/Src/arknavmeshbuildutils.cpp,
+SegmentIntersect2D,2012,0xd730,ported,Core/Src/UnMath.cpp,
+DistanceToLine,2012,0xd670,ported,Core/Src/UnMath.cpp,replaces IO's file-static copy
+FArkComponentLocomotion::UpdateMoveYaw (wall test),2012,0x582300,ported,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,
+FArkComponentLocomotion::ComputeTargetMoveYaw (avoidance half),2012,0x588700,ported (single-affector branch named),DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,
+FArkComponentLocomotion::DetectPreAvoidanceCollision,2012,0x584f10,stub (FALSE),DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,FArkComponentAvoidance is a stub: retail's no-component exit
+IsEdgeBorderExtentReachable,2012,0xacd50,ported (deviation closed),DishonoredGame/Src/arkpathbuildutils.cpp,now PointReachableZeroExtent
+FKAggregateGeom::LineCheck (non-uniform box path),2012,0x3dad50,ported (part),Engine/Src/UnPhysCollision.cpp,the hidden platforms under the off-mesh NPCs
+FKAggregateGeom::PointCheck,2012,,not read,,same question under non-uniform scale
+FArkComponentAvoidance,2012,0x574750..0x578ec0,not ported,Engine/Src/arkcomponentavoidance.cpp,
+-io2watch,ours,,diag,DishonoredGame/Src/dishonorednpcpawn_locomotion.cpp,one pawn per value (UE3 Parse stops at a comma)

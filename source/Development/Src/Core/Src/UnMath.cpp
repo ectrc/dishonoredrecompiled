@@ -1289,6 +1289,34 @@ FLOAT PointDistToLine(const FVector &Point, const FVector &Direction, const FVec
 	return (OutClosestPoint-Point).Size();
 }
 
+// DISHONORED(port): agent IO2, 2012 rva 0xd670: |(Start - Point) x (End - Start)| / |End - Start|.
+FLOAT DistanceToLine( const FVector& _rLineStart, const FVector& _rLineEnd, const FVector& _rPoint )
+{
+	return ( ( _rLineStart - _rPoint ) ^ ( _rLineEnd - _rLineStart ) ).Size() / ( _rLineEnd - _rLineStart ).Size();
+}
+
+// DISHONORED(port): agent IO2, 2012 rva 0xd730: parallel (|denominator| < 1e-4) is no intersection; both parameters must lie in
+// (-1e-4, 1.0001); A's parameter is written before the range test, as retail does.
+UBOOL SegmentIntersect2D( const FVector& _rA1, const FVector& _rA2, const FVector& _rB1, const FVector& _rB2, FLOAT& _rOut_uA )
+{
+	const FLOAT fBX = _rB2.X - _rB1.X;
+	const FLOAT fBY = _rB2.Y - _rB1.Y;
+	const FLOAT fDenominator = ( _rA2.X - _rA1.X ) * fBY - ( _rA2.Y - _rA1.Y ) * fBX;
+	if( Abs( fDenominator ) < 0.0001f )
+	{
+		return FALSE;
+	}
+	const FLOAT fInvDenominator = 1.f / fDenominator;
+	const FLOAT fUA = ( fBY * ( _rB1.X - _rA1.X ) - ( _rB1.Y - _rA1.Y ) * fBX ) * fInvDenominator;
+	_rOut_uA = fUA;
+	const FLOAT fUB = ( ( _rB1.X - _rA1.X ) * ( _rA2.Y - _rA1.Y ) - ( _rA2.X - _rA1.X ) * ( _rB1.Y - _rA1.Y ) ) * fInvDenominator;
+	if( fUA <= -0.0001f || fUA >= 1.0001f )
+	{
+		return FALSE;
+	}
+	return fUB > -0.0001f && fUB < 1.0001f;
+}
+
 
 /**
  * Returns closest distance from a point to a segment.

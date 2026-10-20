@@ -392,6 +392,7 @@ private:
 	void UnTouchActors( const FCheckResult* const _pHits, UBOOL _bPreview );		// 2012 0x580a40
 	INT ComputeMoveYaw() const;										// 2013 0x53e1f0
 	INT ComputeTargetMoveYaw() const;								// 2013 0x547950
+	UBOOL DetectPreAvoidanceCollision( const FVector _PathPointWithPawnZ, const FVector& _PawnToPathPoint, FVector& _ImpactLoc ) const;	// 2012 0x584f10
 	INT UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxRotSpeedMultiplier ) const;	// 2013 0x541330
 	FLOAT ComputeTargetMoveSpeed( FLOAT _fTimeStep, FLOAT& _rAdaptedAccel ) const;	// 2013 0x548050
 	FLOAT UpdateMoveSpeed( FLOAT _fTimeStep ) const;				// 2013 0x53e220

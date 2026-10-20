@@ -5475,6 +5475,135 @@ UBOOL UNavigationHandle::PointReachableLineCheck( const UObject* const InOuter,
  * @param OverrideStartPoint (optional) - optional override for starting position of AI (default uses bot location)
  * @return TRUE if the point is reachable
  */
+// DISHONORED(port): agent IO2, Arkane's UNavigationHandle::PointReachableZeroExtent, 2012 rva 0x2a9ba0 (1,781 B,
+// unnavigationhandle.cpp:3574). A zero-extent walk over the navmesh: the start poly (the cached m_pStartPoly while the start is the
+// cached location or inside it, else GetPylonAndPolyFromPos), then from poly to poly through the edge the 2D segment start -> EndPt
+// leaves by (the crossing farthest along the segment that does not lead back), refusing at an edge whose CostFor is blocked
+// (< 1 or >= UCONST_BLOCKEDPATHCOST) or that leads nowhere, and finally EndPt must lie in the last poly in 2D and within its
+// height band (-extent, PolyHeight + extent). A refusal fills _pHit. The cache is refreshed only for the pawn's own start.
+// Retail's test of an override start more than 150 uu from the start compares the override with itself (the start was replaced
+// by it first), so it never fires; it is kept as written.
+UBOOL UNavigationHandle::PointReachableZeroExtent( const FVector& EndPt, const FVector& OverrideStartPoint, TArray<FNavMeshEdgeBase*>* _pOutEdgeArray, FNavMeshCheckResult* _pHit, UBOOL _bUseCachedStartPoly )
+{
+	if( _pHit )
+	{
+		_pHit->m_HitLocation = FVector( 0.f, 0.f, 0.f );
+		_pHit->m_HitNormal = FVector( 0.f, 0.f, 0.f );
+		_pHit->m_bHit = FALSE;
+		_pHit->m_fHitTime = 1.f;
+	}
+	if( !PopulatePathfindingParamCache() )
+	{
+		return FALSE;
+	}
+	FVector StartPt = CachedPathParams.SearchStart;
+	const UBOOL bHasOverrideStartPoint = !OverrideStartPoint.IsNearlyZero( 0.0001f );
+	if( bHasOverrideStartPoint )
+	{
+		StartPt = OverrideStartPoint;
+	}
+
+	FNavMeshPolyBase* pStartPoly = NULL;
+	UBOOL bUseCachedStartPoly = TRUE;
+	if( !_bUseCachedStartPoly && bHasOverrideStartPoint && ( OverrideStartPoint - StartPt ).SizeSquared() >= 22500.f )
+	{
+		bUseCachedStartPoly = FALSE;
+	}
+	else
+	{
+		pStartPoly = (FNavMeshPolyBase*)m_pStartPoly;
+	}
+	if( !pStartPoly || ( StartPt != m_LocationOfStartPoly && !ArkNavMeshPolyContainsPoint3D( pStartPoly, StartPt, CachedPathParams.SearchExtent.Z ) ) )
+	{
+		APylon* pPylon = NULL;
+		FNavMeshPolyBase* pPoly = NULL;
+		pStartPoly = GetPylonAndPolyFromPos( StartPt, 1.f, pPylon, pPoly ) ? pPoly : NULL;
+	}
+	if( !pStartPoly )
+	{
+		if( !bHasOverrideStartPoint )
+		{
+			m_pStartPoly = NULL;
+		}
+		return FALSE;
+	}
+	if( !bHasOverrideStartPoint
+		|| ( bUseCachedStartPoly && m_LocationOfStartPoly != CachedPathParams.SearchStart && ArkNavMeshPolyContainsPoint3D( pStartPoly, CachedPathParams.SearchStart, CachedPathParams.SearchExtent.Z ) ) )
+	{
+		m_LocationOfStartPoly = CachedPathParams.SearchStart;
+		m_pStartPoly = pStartPoly;
+	}
+	if( _pOutEdgeArray )
+	{
+		_pOutEdgeArray->Reset();
+	}
+
+	FNavMeshPolyBase* pCurPoly = pStartPoly;
+	FNavMeshPolyBase* pPreviousPoly = NULL;
+	FLOAT fLastStartToEndIntersect = -1.f;
+	while( TRUE )
+	{
+		FNavMeshEdgeBase* pExitEdge = NULL;
+		FNavMeshPolyBase* pNextPoly = NULL;
+		FLOAT fIntersect = 0.f;
+		for( INT EdgeIndex = 0; EdgeIndex < pCurPoly->PolyEdges.Num(); EdgeIndex++ )
+		{
+			FNavMeshEdgeBase* pEdge = pCurPoly->GetEdgeFromIdx( EdgeIndex );
+			FNavMeshPolyBase* pOtherPoly = pEdge->GetPoly0();
+			if( pOtherPoly == pCurPoly )
+			{
+				pOtherPoly = pEdge->GetPoly1();
+			}
+			if( pPreviousPoly != pOtherPoly
+				&& SegmentIntersect2D( StartPt, EndPt, pEdge->GetVertLocation( 0 ), pEdge->GetVertLocation( 1 ), fIntersect )
+				&& fIntersect > fLastStartToEndIntersect )
+			{
+				pExitEdge = pEdge;
+				pNextPoly = pOtherPoly;
+				break;
+			}
+		}
+		if( !pExitEdge )
+		{
+			break;
+		}
+		fLastStartToEndIntersect = fIntersect;
+		FVector Dummy( 0.f, 0.f, 0.f );
+		const INT Cost = pExitEdge->CostFor( CachedPathParams, pCurPoly->GetPolyCenter( WORLD_SPACE ), Dummy, pCurPoly );
+		if( Cost < 1 || Cost >= UCONST_BLOCKEDPATHCOST )
+		{
+			ArkNavMeshComputeHitPropertiesFromEdge( StartPt, EndPt, pExitEdge->GetVertLocation( 0 ), pExitEdge->GetVertLocation( 1 ), fIntersect, _pHit );
+			return FALSE;
+		}
+		pPreviousPoly = pCurPoly;
+		pCurPoly = pNextPoly;
+		if( _pOutEdgeArray )
+		{
+			_pOutEdgeArray->AddItem( pExitEdge );
+		}
+		if( !pNextPoly )
+		{
+			ArkNavMeshComputeHitPropertiesFromEdge( StartPt, EndPt, pExitEdge->GetVertLocation( 0 ), pExitEdge->GetVertLocation( 1 ), fIntersect, _pHit );
+			return FALSE;
+		}
+	}
+
+	if( !ArkNavMeshPolyContainsPoint2D( pCurPoly, EndPt ) )
+	{
+		ArkNavMeshComputeHitPropertiesFromPoly( StartPt, EndPt, pCurPoly, _pHit );
+		return FALSE;
+	}
+	const FVector Normal = pCurPoly->GetPolyNormal( WORLD_SPACE );
+	const FVector Center = pCurPoly->GetPolyCenter( WORLD_SPACE );
+	FLOAT fPlaneZ = EndPt.Z;
+	if( Abs( Normal.Z ) >= 0.0001f )
+	{
+		fPlaneZ = Center.Z - ( ( EndPt.Y - Center.Y ) * Normal.Y + ( EndPt.X - Center.X ) * Normal.X ) / Normal.Z;
+	}
+	const FLOAT fHeight = EndPt.Z - fPlaneZ;
+	return ( fHeight < 0.f ) ? ( fHeight > -CachedPathParams.SearchExtent.Z ) : ( ( pCurPoly->PolyHeight + CachedPathParams.SearchExtent.Z ) > fHeight );
+}
+
 UBOOL UNavigationHandle::PointReachable( FVector Point, FVector OverrideStartPoint/*=FVector(EC_EventParm)*/, UBOOL bAllowHitsInEndCollisionBox/*=TRUE*/ )
 {
 	if(!PopulatePathfindingParamCache())

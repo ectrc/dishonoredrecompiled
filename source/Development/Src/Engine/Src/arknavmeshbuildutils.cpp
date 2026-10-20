@@ -1,8 +1,8 @@
 // Engine/src/arknavmeshbuildutils.cpp
 // DISHONORED(port): agent GK - the three point tests; the ten build-time helpers stay named below.
 // PDB functions attributed to this file (13):
-//   0x53d5f0  void __cdecl ArkNavMeshComputeHitPropertiesFromEdge(class FVector const &, class FVector const &, class FVector const &, class FVector const &, float, struct FNavMeshCheckResult *)
-//   0x53d840  void __cdecl ArkNavMeshComputeHitPropertiesFromPoly(class FVector const &, class FVector const &, struct FNavMeshPolyBase const *, struct FNavMeshCheckResult *)
+//   0x53d5f0  void __cdecl ArkNavMeshComputeHitPropertiesFromEdge(class FVector const &, class FVector const &, class FVector const &, class FVector const &, float, struct FNavMeshCheckResult *)   [ported, agent IO2]
+//   0x53d840  void __cdecl ArkNavMeshComputeHitPropertiesFromPoly(class FVector const &, class FVector const &, struct FNavMeshPolyBase const *, struct FNavMeshCheckResult *)   [ported, agent IO2]
 //   0x5409e0  unsigned int __cdecl ArkNavMeshPolyContainsPoint2DAlreadyInBound(struct FNavMeshPolyBase const *, class FVector const &)   [ported, 2013 0x501880]
 //   0x540b50  void __cdecl ArkComputePolygonBoundingRectangle2D(class TArray<class FVector, class FDefaultAllocator> const &, class TArray<class FVector, class FDefaultAllocator> &)
 //   0x541100  void __cdecl ArkComputeCircleShape2D(class FVector const &, float, int, class TArray<class FVector, class FDefaultAllocator> &)
@@ -72,4 +72,64 @@ UBOOL ArkNavMeshPolyContainsPoint3D( const FNavMeshPolyBase* _pPoly, const FVect
 		return FALSE;
 	}
 	return TRUE;
+}
+
+// DISHONORED(port): agent IO2, 2012 rva 0x53d5f0. The time is clamped to [0, 1]; the normal is the 2D perpendicular of the
+// normalised edge (EdgeStart - EdgeEnd), turned to face the start of the segment.
+void ArkNavMeshComputeHitPropertiesFromEdge( const FVector& _rStartPt, const FVector& _rEndPt, const FVector& _rEdgeStartPt, const FVector& _rEdgeEndPt, FLOAT _fHitTime, FNavMeshCheckResult* _pHit )
+{
+	if( !_pHit )
+	{
+		return;
+	}
+	const FVector Edge2D = FVector( _rEdgeStartPt.X - _rEdgeEndPt.X, _rEdgeStartPt.Y - _rEdgeEndPt.Y, 0.f ).SafeNormal();
+	const FVector Move = _rEndPt - _rStartPt;
+	const FLOAT fHitTime = Clamp( _fHitTime, 0.f, 1.f );
+	_pHit->m_fHitTime = fHitTime;
+	_pHit->m_HitLocation = _rStartPt + Move * fHitTime;
+	_pHit->m_bHit = TRUE;
+	_pHit->m_HitNormal = FVector( Edge2D.Y, -Edge2D.X, Edge2D.X * 0.f - Edge2D.Y * 0.f );
+	if( ( _pHit->m_HitNormal | Move ) > 0.f )
+	{
+		_pHit->m_HitNormal *= -1.f;
+	}
+}
+
+// DISHONORED(port): agent IO2, 2012 rva 0x53d840. The poly's edges (previous vert -> vert, starting from the last) are crossed by
+// the segment at most twice; the crossing with the largest time on the segment becomes the hit.
+void ArkNavMeshComputeHitPropertiesFromPoly( const FVector& _rStartPt, const FVector& _rEndPt, const FNavMeshPolyBase* _pPoly, FNavMeshCheckResult* _pHit )
+{
+	if( !_pHit )
+	{
+		return;
+	}
+	const INT VertCount = _pPoly->PolyVerts.Num();
+	FVector PrevVertLoc = _pPoly->GetVertLocation( VertCount - 1, WORLD_SPACE );
+	FVector EdgeStartPt( 0.f, 0.f, 0.f );
+	FVector EdgeEndPt( 0.f, 0.f, 0.f );
+	FLOAT fBestHitTime = -1.f;
+	INT HitCount = 0;
+	for( INT VertIdx = 0; VertIdx < VertCount; VertIdx++ )
+	{
+		const FVector VertLoc = _pPoly->GetVertLocation( VertIdx, WORLD_SPACE );
+		FLOAT fHitTime = 1.f;
+		if( SegmentIntersect2D( _rStartPt, _rEndPt, PrevVertLoc, VertLoc, fHitTime ) )
+		{
+			if( fHitTime > fBestHitTime )
+			{
+				EdgeStartPt = PrevVertLoc;
+				EdgeEndPt = VertLoc;
+				fBestHitTime = fHitTime;
+			}
+			if( ++HitCount == 2 )
+			{
+				break;
+			}
+		}
+		PrevVertLoc = VertLoc;
+	}
+	if( HitCount >= 1 )
+	{
+		ArkNavMeshComputeHitPropertiesFromEdge( _rStartPt, _rEndPt, EdgeStartPt, EdgeEndPt, fBestHitTime, _pHit );
+	}
 }

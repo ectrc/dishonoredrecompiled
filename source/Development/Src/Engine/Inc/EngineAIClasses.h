@@ -1576,6 +1576,10 @@ public:
 	 * @return - TRUE if the pylon and poly were found succesfully
 	 */
 	static UBOOL GetPylonAndPolyFromPos(const FVector& Pos, FLOAT MinWalkableFloorZ, APylon*& out_Pylon, struct FNavMeshPolyBase*& out_Poly, TArray<APylon*>* PylonsToConsider=NULL);
+	/** DISHONORED(port): agent IO2, Arkane's 2012 rva 0x2a9ba0 (Engine/Src/arknavmeshbuildutils.h has FNavMeshCheckResult): walks the
+	    polys from the start poly along the 2D segment to EndPt, edge by edge; FALSE with the hit filled at a blocked edge or the mesh
+	    border, else whether EndPt is within the last poly's height band. */
+	UBOOL PointReachableZeroExtent(const FVector& EndPt, const FVector& OverrideStartPoint, TArray<struct FNavMeshEdgeBase*>* _pOutEdgeArray, struct FNavMeshCheckResult* _pHit, UBOOL _bUseCachedStartPoly);
 	/**
 	 * GetAllPylonsFromPos
 	 * - will populate a list of all pylons which are valid (in terms of can a pawn walk from the possible pylon) for the given position

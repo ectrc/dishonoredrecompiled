@@ -5507,6 +5507,11 @@ FLOAT PointDistToLine
 	const	FVector &Origin
 );
 
+// DISHONORED(port): agent IO2, Arkane's two 2D helpers in Core/Src/UnMath.cpp (2012 PDB): the distance of a point to the infinite
+// line through two others (0xd670), and the 2D intersection of segments A1-A2 / B1-B2 with A's parameter in _rOut_uA (0xd730).
+FLOAT DistanceToLine( const FVector& _rLineStart, const FVector& _rLineEnd, const FVector& _rPoint );
+UBOOL SegmentIntersect2D( const FVector& _rA1, const FVector& _rA2, const FVector& _rB1, const FVector& _rB2, FLOAT& _rOut_uA );
+
 
 FLOAT PointDistToSegment(const FVector &Point, const FVector &StartPoint, const FVector &EndPoint, FVector &OutClosestPoint);
 

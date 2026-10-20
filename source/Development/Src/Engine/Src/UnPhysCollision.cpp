@@ -305,6 +305,39 @@ UBOOL FKAggregateGeom::LineCheck(FCheckResult& Result, const FMatrix& Matrix, co
 			}
 		}
 	}
+	// DISHONORED(port): agent IO2, retail FKAggregateGeom::LineCheck (2012 rva 0x3dad50, 5,656 B): under a non-uniform Scale3D the
+	// spheres and capsules are still skipped, but every box element whose own TM is unrotated and unscaled is tested with its
+	// extents scaled by |Scale3D| and its offset by Scale3D, at scale 1 - the stock engine tested no box at all there (the hidden
+	// collision platforms of L_Tower_Script, platform_small_01 at Scale3D 7.4 / 9 / 1, let every trace through).
+	else
+	{
+		for(INT i=0; i<BoxElems.Num(); i++)
+		{
+			if((!bOnlyPerPolyShapes || BoxElems(i).bPerPolyShape) && BoxElems(i).TM.IsUnrotatedAndUnscaled(0.0001f))
+			{
+				FKBoxElem ScaledBox = BoxElems(i);
+				ScaledBox.X *= Abs(Scale3D.X);
+				ScaledBox.Y *= Abs(Scale3D.Y);
+				ScaledBox.Z *= Abs(Scale3D.Z);
+				FMatrix ElemTM = ScaledBox.TM;
+				ElemTM.ScaleTranslation(Scale3D);
+				ElemTM *= Matrix;
+
+				TempResult.Time = 1.0f;
+				ScaledBox.LineCheck(TempResult, ElemTM, 1.0f, End, Start, Extent, bSkipCloseAndParallelChecks);
+
+				if(TempResult.Time < Result.Time)
+				{
+					Result = TempResult;
+
+					if(bStopAtAnyHit)
+					{
+						return FALSE;
+					}
+				}
+			}
+		}
+	}
 
 
 

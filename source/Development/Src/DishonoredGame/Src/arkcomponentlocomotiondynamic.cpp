@@ -34,6 +34,7 @@
 #include "arkcomponentlocomotion.h"
 #include "arkcomponentfaceto.h"
 #include "ibdiag.h"
+#include "arknavmeshbuildutils.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
@@ -265,12 +266,35 @@ FLOAT FArkComponentLocomotion::UpdateMoveSpeed( FLOAT _fTimeStep ) const
 	yaw
 -----------------------------------------------------------------------------*/
 
+// The yaw of a 2D vector and the shortest signed delta between two yaws, as retail inlines them in ComputeTargetMoveYaw.
+static INT ArkLocoVectorYaw( FLOAT _fX, FLOAT _fY )
+{
+	return (INT)(WORD)( appTrunc( appAtan2( _fY, _fX ) * 10430.219f * 2.f + 0.5f ) >> 1 );
+}
+
+static INT ArkLocoYawDelta( INT _From, INT _To )
+{
+	return (INT)(SWORD)(WORD)( _To - _From );
+}
+
+// DISHONORED(port, agent IO2): 2012 rva 0x584f10 (1,053 B). Retail asks the game's FArkComponentAvoidance for its avoidable pairs and,
+// for each pair holding this pawn whose other actor is ahead (along the pawn -> path point direction), predicts both over
+// fPreAvoidDuration and reports the closest predicted other location within (this radius + its m_fPreAvoidanceRadius) of the pawn's
+// predicted segment that is not already at the path point.
+// DISHONORED(bringup): FArkComponentAvoidance (2012 0x574750..0x578ec0) is a comment-only stub in this tree - GetAvoidanceComponent has
+// nothing to return, which is retail's "no avoidance component" exit: FALSE.
+UBOOL FArkComponentLocomotion::DetectPreAvoidanceCollision( const FVector _PathPointWithPawnZ, const FVector& _PawnToPathPoint, FVector& _ImpactLoc ) const
+{
+	return FALSE;
+}
+
 // DISHONORED(port, agent IK): 2013 VA 0x947950 (2012 0x588700, 1,766 / 1,790 B). By root state: NONE and the START states aim
 // at the current path point while a path is computed and the pawn has not arrived, else at m_NearestLocationOnNavMesh while
 // the pawn walks back onto the mesh, else keep the current yaw; the turn states answer the turn's start / end yaw.
-// DISHONORED(bringup): the avoidance half of the path branch is not ported - beyond m_fAvoidanceUnstuckMinDist of the path
-// end and with a move-hit normal or one avoidance affector, retail swings the yaw by +-m_fAvoidanceAngle on the side
-// UNavigationHandle::PointReachableZeroExtent / DetectPreAvoidanceCollision pick (decompile build/agentIK/decomp2012/588700_*).
+// Agent IO2: the avoidance half of the path branch - beyond m_fAvoidanceUnstuckMinDist of the path end, with a move-hit normal
+// the path and the velocity both point into, the yaw swings by +-m_fAvoidanceAngle to the side a zero-extent navmesh probe from the
+// cylinder's leading corner reaches (UNavigationHandle::PointReachableZeroExtent); otherwise towards the side away from a
+// pre-avoidance collision (DetectPreAvoidanceCollision, FALSE while FArkComponentAvoidance is a stub).
 INT FArkComponentLocomotion::ComputeTargetMoveYaw() const
 {
 	switch( m_RootState )
@@ -282,7 +306,54 @@ INT FArkComponentLocomotion::ComputeTargetMoveYaw() const
 	case CPNT_LOCO_ROOT_STATE_START_END:
 		if( m_bHasRequestWithPathComputed && !m_bIsArrived )
 		{
-			return appTrunc( appAtan2( m_PathPoint.Y - m_CurPawnLocation.Y, m_PathPoint.X - m_CurPawnLocation.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+			const INT PathYaw = appTrunc( appAtan2( m_PathPoint.Y - m_CurPawnLocation.Y, m_PathPoint.X - m_CurPawnLocation.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+			if( m_bInertiaDisabled || GetSq2DDistToPathEnd() <= Square( m_pConfig->m_fAvoidanceUnstuckMinDist ) )
+			{
+				return PathYaw;
+			}
+			INT AvoidSide = 0;
+			if( !m_MoveHitNormal.IsZero() )
+			{
+				const INT HitYaw = ArkLocoVectorYaw( -m_MoveHitNormal.X, -m_MoveHitNormal.Y );
+				const INT VelocityYaw = ArkLocoVectorYaw( m_PreviousVelocity.X, m_PreviousVelocity.Y );
+				const FLOAT fAvoidanceAngle = m_pConfig->m_fAvoidanceAngle;
+				if( fAvoidanceAngle > Abs( ArkLocoYawDelta( PathYaw, HitYaw ) ) * 0.0054931641f
+					&& fAvoidanceAngle > Abs( ArkLocoYawDelta( VelocityYaw, HitYaw ) ) * 0.0054931641f )
+				{
+					// the pawn walks into a wall it is already pushing against: swing to the side where a probe from the cylinder's
+					// leading corner along the velocity, one radius long, stays on the navmesh
+					const FVector Origin = m_pPawnOwner->CollisionComponent->Bounds.Origin;
+					const FVector BoxExtent = m_pPawnOwner->CollisionComponent->Bounds.BoxExtent;
+					const FLOAT fSideX = ( (DWORD)( PathYaw + 24575 ) <= 0x7FFE ) ? 1.f : -1.f;
+					const FLOAT fSideY = ( (DWORD)( PathYaw + 0x1FFF ) <= 0x7FFE ) ? 1.f : -1.f;
+					const FVector StartRight( Origin.X + BoxExtent.X * fSideX, Origin.Y + BoxExtent.Y * fSideY, m_pPawnOwner->MaxStepHeight - BoxExtent.Z + Origin.Z );
+					const FVector EndRight = StartRight + FVector( m_PreviousVelocity.X, m_PreviousVelocity.Y, 0.f ).SafeNormal() * BoxExtent.X;
+					UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
+					AvoidSide = ( pNavHandle && pNavHandle->PointReachableZeroExtent( EndRight, StartRight, NULL, NULL, FALSE ) ) ? 1 : -1;
+				}
+			}
+			if( AvoidSide == 0 )
+			{
+				// DISHONORED(bringup): retail's single-affector branch (one UArkAvoidable affector whose owner tweaks do not opt out,
+				// its force more than 90 degrees off the path) reads the avoidable's owner tweaks through a folded accessor that is
+				// not resolved; with FArkComponentAvoidance unported no pawn has an affector, so the branch is never reached here.
+				const UBOOL bHaveAvoidanceAffector = m_pAvoidable && m_pAvoidable->m_AffectorCount > 0;
+				if( !m_MoveHitNormal.IsZero() || ( bHaveAvoidanceAffector && m_fRealScaledSpeed <= m_pConfig->m_fVelocityToStopMoving ) )
+				{
+					return PathYaw;
+				}
+				FVector CollisionLocation( 0.f, 0.f, 0.f );
+				const FVector PathPointWithPawnZ( m_PathPoint.X, m_PathPoint.Y, m_CurPawnLocation.Z );
+				const FVector PawnToPathPoint( m_PathPoint.X - m_CurPawnLocation.X, m_PathPoint.Y - m_CurPawnLocation.Y, 0.f );
+				if( !DetectPreAvoidanceCollision( PathPointWithPawnZ, PawnToPathPoint, CollisionLocation ) )
+				{
+					return PathYaw;
+				}
+				const INT CollisionYaw = ArkLocoVectorYaw( CollisionLocation.X - m_CurPawnLocation.X, CollisionLocation.Y - m_CurPawnLocation.Y );
+				AvoidSide = ( ArkLocoYawDelta( PathYaw, CollisionYaw ) > 0 ) ? -1 : 1;
+			}
+			const FLOAT fSwing = m_pConfig->m_fAvoidanceAngle * 182.04445f * (FLOAT)AvoidSide;
+			return (INT)(WORD)( (INT)fSwing + PathYaw + 0x7FFF ) - 0x7FFF;
 		}
 		if( m_bTryToReturnOnNavMesh )
 		{
@@ -306,11 +377,10 @@ INT FArkComponentLocomotion::ComputeTargetMoveYaw() const
 // relevant modifier slot (or, without one, by the two speed modes around the current move speed), times the wall-test
 // multiplier, in rotator units; acceleration = m_fRotationAccelMultiplier x that. Out: the rotation speed reached, the
 // maximum rotation speed in degrees per second, the multiplier (1 unless a wall test changed it).
-// DISHONORED(bringup): the wall test is not ported - past m_fMinAngleToTestWalls, on a speed mode above idle, retail probes
-// m_fTestWallsFrontDist ahead and m_fTestWallsLateralDist to the turn side on the navmesh with
-// UNavigationHandle::PointReachableZeroExtent (2012 0x2a9ba0, absent from this tree) and picks m_fEmergencyRotationSpeedMultiplier
-// (front clear, side blocked) or m_fRotationSpeedMultiplier (front blocked, less the hit's X when it reports one); here the
-// multiplier stays 1, retail's value whenever the angle is under the threshold or both probes pass.
+// The wall test (agent IO2): on a speed mode above idle and past m_fMinAngleToTestWalls of turn left, the navmesh is probed from
+// the pawn's feet + MaxStepHeight, m_fTestWallsFrontDist ahead along the move yaw projected on the floor plane; front reachable but
+// m_fTestWallsLateralDist to the turn side from there not -> m_fEmergencyRotationSpeedMultiplier; front blocked ->
+// m_fRotationSpeedMultiplier, less the hit time when the walk reports a hit (UNavigationHandle::PointReachableZeroExtent).
 INT FArkComponentLocomotion::UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxRotSpeedMultiplier ) const
 {
 	_rMaxRotSpeed = 0.f;
@@ -324,6 +394,40 @@ INT FArkComponentLocomotion::UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpe
 	{
 		_rCurRotSpeed = 0.f;
 		return m_TargetMoveYaw;
+	}
+
+	if( m_MostRelevantSpeedIdx > 0 )
+	{
+		const FLOAT fTurnLeft = (FLOAT)(INT)(SWORD)(WORD)( m_TargetMoveYaw - m_CurMoveYaw ) * 0.0054931641f;
+		UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
+		if( Abs( fTurnLeft ) > m_pConfig->m_fMinAngleToTestWalls && pNavHandle )
+		{
+			const FVector Start( m_CurPawnLocation.X, m_CurPawnLocation.Y, m_CurPawnLocation.Z - m_pPawnOwner->GetCylinderExtent().Z + m_pPawnOwner->MaxStepHeight );
+			const FLOAT fMoveYaw = (FLOAT)m_CurMoveYaw * 0.000095873802f;
+			const FVector MoveDir( appCos( fMoveYaw ), appSin( fMoveYaw ), 0.f );
+			const FVector& Floor = m_pPawnOwner->Floor;
+			const FVector FrontDir = ( Floor ^ ( MoveDir ^ Floor ) ).SafeNormal();
+			const FVector FrontEnd = Start + FrontDir * m_pConfig->m_fTestWallsFrontDist;
+			FNavMeshCheckResult Hit;
+			if( pNavHandle->PointReachableZeroExtent( FrontEnd, Start, NULL, &Hit, FALSE ) )
+			{
+				INT SideYaw = m_CurMoveYaw + 0x4000;
+				if( fTurnLeft < 0.f )
+				{
+					SideYaw -= 0x8000;
+				}
+				const FLOAT fSideYaw = (FLOAT)SideYaw * 0.000095873802f;
+				const FVector SideEnd = FrontEnd + FVector( appCos( fSideYaw ), appSin( fSideYaw ), 0.f ) * m_pConfig->m_fTestWallsLateralDist;
+				if( !pNavHandle->PointReachableZeroExtent( SideEnd, FrontEnd, NULL, NULL, FALSE ) )
+				{
+					_rMaxRotSpeedMultiplier = m_pConfig->m_fEmergencyRotationSpeedMultiplier;
+				}
+			}
+			else
+			{
+				_rMaxRotSpeedMultiplier = Hit.m_bHit ? ( m_pConfig->m_fRotationSpeedMultiplier - Hit.m_fHitTime ) : m_pConfig->m_fRotationSpeedMultiplier;
+			}
+		}
 	}
 
 	INT SpeedModeIdx0 = -1;

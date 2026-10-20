@@ -287,6 +287,18 @@ UBOOL DisIKDiagWatched( const AActor* _pActor )
 	{
 		return FALSE;
 	}
+	// agent IO2: -io2watch=<name>,<name>... watches the named pawns at any world time
+	static FString IO2Watch;
+	static UBOOL bIO2WatchRead = FALSE;
+	if( !bIO2WatchRead )
+	{
+		bIO2WatchRead = TRUE;
+		Parse( appCmdLine(), TEXT("io2watch="), IO2Watch );
+	}
+	if( IO2Watch.Len() > 0 && appStristr( *FString::Printf( TEXT(",%s,"), *IO2Watch ), *FString::Printf( TEXT(",%s,"), *_pActor->GetName() ) ) )
+	{
+		return TRUE;
+	}
 	const FLOAT Now = GWorld->GetTimeSeconds();
 	if( Now < 140.f || Now > 200.f )
 	{
