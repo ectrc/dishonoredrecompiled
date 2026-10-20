@@ -23,6 +23,7 @@
 	-akdiag logs every GetIDFromString with its answer, every Query::QueryAudioObjectIDs / GetPositioningInfo
 	with its result, and (in AkBankMgr.cpp) every bank operation.
 =============================================================================*/
+#include "AkFxContext.h"
 #include "AkBankMgr.h"
 #include "AkRegistryMgr.h"
 #include "AkAudioMgr.h"
@@ -113,6 +114,7 @@ AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings *
 		{
 			return AK_InsufficientMemory;
 		}
+		AkFXMemAlloc::m_instanceUpper.SetPoolId( g_DefaultPoolId );	// 2012 CreateDefaultMemPools 0x918270 (agent IH4)
 	}
 
 	AkInt64 iFrequency = 0;

@@ -49,3 +49,8 @@ public:
 	const class UDisTweaks_ChapterInfo* GetCurrentChapter() const;
 	// DISHONORED(port): 2013 rva 0x5fd0e0 (2012 0x6484c0). Body in dishonoredgameinfo.cpp.
 	void SetCurrentChapter( FName _ChapterTag );
+
+// ---- agent IH4b (PHASE23 IH4): the pawn shutdown's associated actors ----
+public:
+	// DISHONORED(port): 2012 0x6484a0, 2013 0x601dc0 (28 bytes both). Body in dishonoredgameinfo.cpp.
+	void AddToPendingDestroyList( AActor* _pActor );

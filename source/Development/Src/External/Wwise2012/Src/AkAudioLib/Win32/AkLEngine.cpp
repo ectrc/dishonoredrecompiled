@@ -9,15 +9,20 @@
 	  * RegisterDeviceChange / InternalWindowProc / CAkMMNotificationClient (the default-device-changed reset) are not
 	    ported: the sink is not recreated when the Windows default output device changes mid-game.
 	    m_bResetAudioDevice therefore only turns true when the sink itself reports a failure.
-	  * Environmental sends (GetEnvironmentalBus, CreateEnvMixBus, MergeLastAndCurrentValues and the per-environment
-	    mix in RunVPL) are the IH4 seam: an environment bus exists to run its reverb effect, which is IH4. A voice on
-	    an aux-sending bus mixes its dry path (scaled by the game object dry level) and its obstruction LPF only.
+	Agent IH4 fork F1: the environmental (aux) sends - m_EnvBusList, GetEnvironmentalBus 0x91cef0, CreateEnvMixBus
+	0x91ca30, DestroyEnvMixBus 0x91dc50, MergeLastAndCurrentValues 0x91db80 (aklengine_common.cpp), the per-environment
+	mix of RunVPL 0x91cf80 and the env bus pass of GetBuffer 0x91d510, the env halves of Stop / Term / RemoveMixBusses /
+	SetBusVolume / ForceBusVolume / BypassBusFx / StopMixBussesUsingThisSlot; the insert effects of a voice in RunVPL
+	(the filter chain pull / consume loop); UpdateMasterBusFX 0x91c0d0, UpdateMixBusFX 0x91c620, BypassEnvFx 0x91c440
+	(retail passes (0, bypass) to SetInsertFxBypass, kept), ForAllPluginParam 0x91cc10.
 	  * -akwav (SetWavCapture): diagnostic, not retail. When set, every refill handed to the sink (the 16-bit mixed
 	    output, or silence) is appended to a WAV file on the audio thread.
+	  * DISHONORED(diag, agent IH4): -akdiag logs each environment node's wet RMS once a second (AkEnvWetDiag), not retail.
 =============================================================================*/
 #include <AK/SoundEngine/Common/IAkStreamMgr.h>
 #include <windows.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "AkLEngine.h"
 #include "AkSink.h"
@@ -31,6 +36,12 @@
 #include "AkMath.h"
 #include "AkPositionRepository.h"
 #include "AkPlayingMgr.h"
+#include "AkHierarchy.h"
+#include "AkFxContext.h"
+#include "AkAudioLibIndex.h"
+
+static void MergeLastAndCurrentValues( const AkEnvironmentValue * in_pLastValues, const AkEnvironmentValue * in_pNewValues, AkMergedEnvironmentValue * io_paMergedValues );
+static void AkEnvWetDiag( AkUniqueID in_EnvID, AkAudioBufferBus & in_rBuffer );
 
 AkMemPoolId g_LEngineDefaultPoolId = AK_INVALID_POOL_ID;
 
@@ -58,6 +69,7 @@ AkUInt32 CAkLEngine::m_uLastStarvationTime = 0;
 bool CAkLEngine::m_bResetAudioDevice = false;
 bool CAkLEngine::m_bCoInitializeSucceeded = false;
 CAkLEngine::CachedBuffers CAkLEngine::m_CachedAudioBuffers[ 24 ];
+CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault> CAkLEngine::m_EnvBusList;
 
 static AkUInt32 s_uNumRetries = 0;
 static FILE * s_pWavFile = NULL;
@@ -98,6 +110,7 @@ AKRESULT CAkLEngine::Init()
 	{
 		return eResult;
 	}
+	m_EnvBusList.InitUnbounded();
 	eResult = CAkLEngineCmds::Init();
 	if( eResult != AK_Success )
 	{
@@ -139,6 +152,7 @@ void CAkLEngine::Term()
 	{
 		m_arrayVPLs.Term();
 	}
+	m_EnvBusList.Term();
 	if( m_MasterOut.pData )
 	{
 		AK::MemoryMgr::Free( g_LEngineDefaultPoolId, m_MasterOut.pData );
@@ -179,6 +193,10 @@ void CAkLEngine::Term()
 void CAkLEngine::Stop()
 {
 	DestroyAllVPLMixBusses();
+	for( CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * p = m_EnvBusList.m_pFirst; p; p = p->pNextListItem )
+	{
+		DestroyEnvMixBus( p->Item.item );
+	}
 	if( m_pFinalMixNode )
 	{
 		m_pFinalMixNode->DropFx();
@@ -213,7 +231,12 @@ AKRESULT CAkLEngine::CreateLEnginePools()
 	}
 	const AkUInt32 uSize = g_PDSettings.uLEngineDefaultPoolSize > 0x40 ? g_PDSettings.uLEngineDefaultPoolSize : 0x1000000;
 	g_LEngineDefaultPoolId = AK::MemoryMgr::CreatePool( NULL, uSize, 0x40, AkMalloc, 0x10 );
-	return g_LEngineDefaultPoolId != AK_INVALID_POOL_ID ? AK_Success : AK_InsufficientMemory;
+	if( g_LEngineDefaultPoolId == AK_INVALID_POOL_ID )
+	{
+		return AK_InsufficientMemory;
+	}
+	AkFXMemAlloc::m_instanceLower.SetPoolId( g_LEngineDefaultPoolId );
+	return AK_Success;
 }
 
 /** 2012 0x91db00. */
@@ -354,6 +377,13 @@ void CAkLEngine::GetBuffer()
 				runningVPL.state.buffer.uNumMarkers = 0;
 				runningVPL.state.buffer.pMarkers = NULL;
 				runningVPL.state.buffer.posInfo.uStartPos = (AkUInt32)-1;
+				if( bIsEnv )
+				{
+					AkEnvironmentValue aEnvValues[ 4 ];
+					pCbx->GetContext()->GetEnvironmentValues( aEnvValues );
+					MergeLastAndCurrentValues( pCbx->m_LastEnvironmentValues, aEnvValues, runningVPL.state.aMergedValues );
+					pCbx->SetLastEnvironmentalValues( aEnvValues );
+				}
 				RunVPL( runningVPL );
 				if( runningVPL.state.result == AK_NoDataReady )
 				{
@@ -391,30 +421,243 @@ void CAkLEngine::GetBuffer()
 			}
 			pVPL->m_MixBus.ReleaseBuffer();
 		}
+		if( bIsEnv )
+		{
+			// The environment nodes mix into the aux bus's parent (or the final mix); a node that mixed nothing goes.
+			CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * pPrev = NULL;
+			CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * pItem = m_EnvBusList.m_pFirst;
+			while( pItem )
+			{
+				CAkVPLMixBusNode * pEnvBus = pItem->Item.item;
+				AkAudioBufferBus * pBuffer;
+				pEnvBus->GetResultingBuffer( pBuffer );
+				AkEnvWetDiag( pEnvBus->m_EnvID, *pBuffer );
+				if( pVPL->m_pParent )
+				{
+					pVPL->m_pParent->m_MixBus.ConsumeBuffer( *pBuffer );
+				}
+				else
+				{
+					m_pFinalMixNode->ConsumeBuffer( pBuffer );
+				}
+				pEnvBus->ReleaseBuffer();
+				CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * pNext = pItem->pNextListItem;
+				if( pEnvBus->m_eState == NodeStatePlay )
+				{
+					pPrev = pItem;
+				}
+				else
+				{
+					DestroyEnvMixBus( pEnvBus );
+					m_EnvBusList.RemoveItem( pItem, pPrev );
+				}
+				pItem = pNext;
+			}
+		}
 	}
 	m_pFinalMixNode->GetResultingBuffer( m_MasterOut );
 }
 
-/** 2012 0x91cf80: pull the voice buffer through source -> pitch -> (effects) -> LPF, re-pulling upstream while a node
-    needs data, then mix it into its bus. */
+/** DISHONORED(diag, agent IH4): under -akdiag, once a second per environment, the RMS of the wet signal an environment
+    node hands to its parent (dB full scale), so the tower interior's reverb can be measured without the dry mix. */
+static void AkEnvWetDiag( AkUniqueID in_EnvID, AkAudioBufferBus & in_rBuffer )
+{
+	if( !DishonoredWwise::IsDiagnostics() )
+	{
+		return;
+	}
+	static AkUniqueID s_EnvID = 0;
+	static double s_fEnergy = 0.0;
+	static AkUInt32 s_uSamples = 0;
+	if( s_EnvID != in_EnvID )
+	{
+		s_EnvID = in_EnvID;
+		s_fEnergy = 0.0;
+		s_uSamples = 0;
+	}
+	const AkUInt32 uChannels = in_rBuffer.NumChannels();
+	for( AkUInt32 c = 0; c < uChannels; ++c )
+	{
+		const AkReal32 * pSamples = in_rBuffer.GetChannel( c );
+		for( AkUInt32 i = 0; i < in_rBuffer.uValidFrames; ++i )
+		{
+			s_fEnergy += (double)pSamples[ i ] * pSamples[ i ];
+		}
+	}
+	s_uSamples += in_rBuffer.uValidFrames * uChannels;
+	if( s_uSamples >= 48000 * uChannels && uChannels )
+	{
+		const double fRms = sqrt( s_fEnergy / s_uSamples );
+		AKDIAG( L"akdiag: environment 0x%08x wet rms %.1f dBFS over %u samples", in_EnvID, fRms > 1e-9 ? 20.0 * log10( fRms ) : -180.0, s_uSamples );
+		s_fEnergy = 0.0;
+		s_uSamples = 0;
+	}
+}
+
+/** 2012 0x91db80 (aklengine_common.cpp): this frame's environments first (their last value 0), then last frame's that
+    are no longer sent (fading out from their last value); at most 4, terminated by EnvID 0. */
+static void MergeLastAndCurrentValues( const AkEnvironmentValue * in_pLastValues, const AkEnvironmentValue * in_pNewValues, AkMergedEnvironmentValue * io_paMergedValues )
+{
+	AkUInt32 uNumMerged = 0;
+	for( ; uNumMerged < 4 && in_pNewValues[ uNumMerged ].EnvID; ++uNumMerged )
+	{
+		io_paMergedValues[ uNumMerged ].envValue = in_pNewValues[ uNumMerged ];
+		io_paMergedValues[ uNumMerged ].fLastControlValue = 0.f;
+	}
+	const AkUInt32 uNumNew = uNumMerged;
+	for( AkUInt32 iLast = 0; iLast < 4 && in_pLastValues[ iLast ].EnvID; ++iLast )
+	{
+		AkUInt32 i = 0;
+		for( ; i < uNumNew; ++i )
+		{
+			if( io_paMergedValues[ i ].envValue.EnvID == in_pLastValues[ iLast ].EnvID )
+			{
+				io_paMergedValues[ i ].fLastControlValue = in_pLastValues[ iLast ].fControlValue;
+				break;
+			}
+		}
+		if( i == uNumNew && uNumMerged < 4 )
+		{
+			io_paMergedValues[ uNumMerged ].envValue.EnvID = in_pLastValues[ iLast ].EnvID;
+			io_paMergedValues[ uNumMerged ].envValue.fControlValue = 0.f;
+			io_paMergedValues[ uNumMerged ].fLastControlValue = in_pLastValues[ iLast ].fControlValue;
+			++uNumMerged;
+		}
+	}
+	if( uNumMerged < 4 )
+	{
+		io_paMergedValues[ uNumMerged ].envValue.EnvID = 0;
+	}
+}
+
+/** 2012 0x91ca30: an environment node mixes in the master output's speaker configuration. */
+CAkVPLMixBusNode * CAkLEngine::CreateEnvMixBus( AkUniqueID in_EnvID, AK::CAkBusCtx in_BusContext )
+{
+	void * pMem = AK::MemoryMgr::Malloc( g_LEngineDefaultPoolId, sizeof( CAkVPLMixBusNode ) );
+	if( !pMem )
+	{
+		return NULL;
+	}
+	CAkVPLMixBusNode * pMixBus = AkPlacementNew( pMem ) CAkVPLMixBusNode();
+	pMixBus->m_BufferOut.pData = NULL;
+	pMixBus->m_BusContext.m_pBus = NULL;
+	if( pMixBus->Init( m_MasterOut.uChannelMask, LE_MAX_FRAMES_PER_BUFFER, in_BusContext ) != AK_Success || !m_EnvBusList.Set( in_EnvID, pMixBus ) )
+	{
+		pMixBus->Term();
+		AK::MemoryMgr::Free( g_LEngineDefaultPoolId, pMixBus );
+		return NULL;
+	}
+	return pMixBus;
+}
+
+/** 2012 0x91dc50. */
+void CAkLEngine::DestroyEnvMixBus( CAkVPLMixBusNode * in_pMixBus )
+{
+	in_pMixBus->Term();
+	AK::MemoryMgr::Free( g_LEngineDefaultPoolId, in_pMixBus );
+}
+
+/** 2012 0x91cef0, 2013 0x919790: the node of an environment, created on first use on the voice's (aux) bus with the
+    environment's share set as its only effect. */
+CAkVPLMixBusNode * CAkLEngine::GetEnvironmentalBus( AkUniqueID in_EnvID, CAkPBI * in_pCtx )
+{
+	CAkVPLMixBusNode ** ppEnvBus = m_EnvBusList.Exists( in_EnvID );
+	if( ppEnvBus )
+	{
+		return *ppEnvBus;
+	}
+	CAkVPLMixBusNode * pEnvBus = CreateEnvMixBus( in_EnvID, in_pCtx->GetBusContext() );
+	if( pEnvBus )
+	{
+		if( pEnvBus->SetAllInsertFx( in_EnvID ) != AK_Success )
+		{
+			pEnvBus->ReleaseBuffer();
+			m_EnvBusList.Unset( pEnvBus->m_EnvID );
+			DestroyEnvMixBus( pEnvBus );
+			return NULL;
+		}
+		AKDIAG( L"akdiag: environment 0x%08x: aux node created on bus 0x%08x (effect plug-in 0x%08x)", in_EnvID, pEnvBus->m_BusContext.ID(), pEnvBus->m_aFX[ 0 ].pEffect ? pEnvBus->m_aFX[ 0 ].id : 0 );
+		pEnvBus->Connect();
+		pEnvBus->Disconnect();
+	}
+	return pEnvBus;
+}
+
+/** 2012 0x91cf80: pull the voice buffer through source -> pitch -> insert effects -> LPF: the last filter that has a
+    buffer (a tail, or input left over) is asked first, a node that needs data sends the pull upstream, every node
+    downstream consumes. Then the voice mixes into each environment node it sends to (the dry mix replaced by the
+    environment mix times the environment's control value, ramped from its last value), through the obstruction LPF
+    into its own bus. */
 void CAkLEngine::RunVPL( AkRunningVPL & io_runningVPL )
 {
 	CAkVPLSrcCbxNode * pCbx = io_runningVPL.pCbx;
 	AkVPLState & rState = io_runningVPL.state;
-	pCbx->m_cbxRec.m_Pitch.GetBuffer( rState );
-	while( rState.result == AK_DataNeeded )
+	AkUInt32 uFilter = 4;
+	AkUInt32 uConsumeFrom = 0;
+	for( ;; )
 	{
-		rState.buffer.uMaxFrames = LE_MAX_FRAMES_PER_BUFFER;
-		pCbx->m_pSources[ 0 ]->GetBuffer( rState );
-		if( rState.result != AK_DataReady && rState.result != AK_NoMoreData )
+		bool bPulled = false;
+		while( uFilter )
 		{
-			return;
+			CAkVPLFilterNodeBase * pFilter = pCbx->m_cbxRec.m_pFilter[ --uFilter ];
+			if( pFilter )
+			{
+				pFilter->GetBuffer( rState );
+				if( rState.result != AK_DataNeeded )
+				{
+					if( rState.result != AK_DataReady && rState.result != AK_NoMoreData )
+					{
+						return;
+					}
+					uConsumeFrom = uFilter + 1;
+					bPulled = true;
+					break;
+				}
+			}
 		}
-		pCbx->m_cbxRec.m_Pitch.ConsumeBuffer( rState );
-	}
-	if( rState.result != AK_DataReady && rState.result != AK_NoMoreData )
-	{
-		return;
+		if( !bPulled )
+		{
+			uConsumeFrom = 0;
+			pCbx->m_cbxRec.m_Pitch.GetBuffer( rState );
+			while( rState.result == AK_DataNeeded )
+			{
+				rState.buffer.uMaxFrames = io_runningVPL.bFeedbackVPL ? (AkUInt16)( 384000 / AkAudioLibSettings::g_pipelineCoreFrequency ) : LE_MAX_FRAMES_PER_BUFFER;
+				pCbx->m_pSources[ 0 ]->GetBuffer( rState );
+				if( rState.result != AK_DataReady && rState.result != AK_NoMoreData )
+				{
+					return;
+				}
+				pCbx->m_cbxRec.m_Pitch.ConsumeBuffer( rState );
+			}
+			if( rState.result != AK_DataReady && rState.result != AK_NoMoreData )
+			{
+				return;
+			}
+		}
+		bool bRepull = false;
+		for( ; uConsumeFrom < 4; ++uConsumeFrom )
+		{
+			CAkVPLFilterNodeBase * pFilter = pCbx->m_cbxRec.m_pFilter[ uConsumeFrom ];
+			if( !pFilter )
+			{
+				continue;
+			}
+			pFilter->ConsumeBuffer( rState );
+			if( rState.result == AK_DataNeeded )
+			{
+				uFilter = uConsumeFrom;
+				bRepull = true;
+				break;
+			}
+			if( rState.result != AK_DataReady && rState.result != AK_NoMoreData )
+			{
+				return;
+			}
+		}
+		if( !bRepull )
+		{
+			break;
+		}
 	}
 	pCbx->m_cbxRec.m_LPF.ConsumeBuffer( rState );
 	pCbx->ConsumeBuffer( rState );
@@ -429,7 +672,35 @@ void CAkLEngine::RunVPL( AkRunningVPL & io_runningVPL )
 	}
 	if( rState.bIsEnvironmentalBus )
 	{
+		const AkUInt32 uNumChannels = rState.buffer.NumChannels();
+		AkAudioMix aDryMix[ AK_VOICE_MAX_NUM_CHANNELS ];
+		for( AkUInt32 i = 0; i < uNumChannels; ++i )
+		{
+			aDryMix[ i ] = rState.buffer.AudioMix[ i ];
+		}
+		CAkPBI * pCtx = pCbx->m_pSources[ 0 ] ? pCbx->m_pSources[ 0 ]->m_pCtx : NULL;
+		for( AkUInt32 iEnv = 0; iEnv < 4 && rState.aMergedValues[ iEnv ].envValue.EnvID; ++iEnv )
+		{
+			const AkMergedEnvironmentValue & rValue = rState.aMergedValues[ iEnv ];
+			CAkVPLMixBusNode * pEnvBus = GetEnvironmentalBus( rValue.envValue.EnvID, pCtx );
+			if( !pEnvBus )
+			{
+				continue;
+			}
+			for( AkUInt32 i = 0; i < uNumChannels; ++i )
+			{
+				rState.buffer.AudioMix[ i ].Next.Copy( rState.buffer.EnvMix[ i ].Next );
+				rState.buffer.AudioMix[ i ].Next.Mul( rValue.envValue.fControlValue );
+				rState.buffer.AudioMix[ i ].Previous.Copy( rState.buffer.EnvMix[ i ].Previous );
+				rState.buffer.AudioMix[ i ].Previous.Mul( rValue.fLastControlValue );
+			}
+			pEnvBus->ConsumeBuffer( rState, -1 );
+		}
 		pCbx->m_ObstructionLPF.ConsumeBuffer( rState );
+		for( AkUInt32 i = 0; i < uNumChannels; ++i )
+		{
+			rState.buffer.AudioMix[ i ] = aDryMix[ i ];
+		}
 	}
 	if( !io_runningVPL.bFeedbackVPL )
 	{
@@ -704,7 +975,8 @@ void CAkLEngine::RemoveMixBusses()
 	for( AkInt32 i = (AkInt32)m_arrayVPLs.Length() - 1; i >= 0; --i )
 	{
 		AkVPL * pVPL = m_arrayVPLs[ i ];
-		if( pVPL->m_MixBus.m_eState != NodeStatePlay && !pVPL->m_MixBus.m_uConnectCount )
+		if( pVPL->m_MixBus.m_eState != NodeStatePlay && !pVPL->m_MixBus.m_uConnectCount
+			&& ( !pVPL->m_MixBus.m_BusContext.IsEnvironmental() || !m_EnvBusList.Length() ) )
 		{
 			DestroyVPLMixBus( pVPL );
 			m_arrayVPLs.Erase( i );
@@ -720,9 +992,153 @@ void CAkLEngine::VPLDestroySource( CAkVPLSrcCbxNode * in_pCbx )
 	AK::MemoryMgr::Free( g_LEngineDefaultPoolId, in_pCbx );
 }
 
-/** 2012 0x91c480: only bus insert effects reference bank media, and none exist before IH4. */
+static bool AkBusFXIsUsingThisSlot( CAkBusFX & in_rBusFX, const CAkUsageSlot * in_pSlot )
+{
+	for( AkUInt32 i = 0; i < 4; ++i )
+	{
+		if( in_rBusFX.m_aFX[ i ].pBusFXContext && in_rBusFX.m_aFX[ i ].pBusFXContext->m_dataArray.IsUsingThisSlot( in_pSlot ) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/** 2012 0x91c480: a bus, environment or master effect holding media of an unloading bank is dropped. */
 void CAkLEngine::StopMixBussesUsingThisSlot( const CAkUsageSlot * in_pSlot )
 {
+	for( AkUInt32 i = 0; i < m_arrayVPLs.Length(); ++i )
+	{
+		if( AkBusFXIsUsingThisSlot( m_arrayVPLs[ i ]->m_MixBus, in_pSlot ) )
+		{
+			m_arrayVPLs[ i ]->m_MixBus.DropFx();
+		}
+	}
+	for( CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * p = m_EnvBusList.m_pFirst; p; p = p->pNextListItem )
+	{
+		if( AkBusFXIsUsingThisSlot( *p->Item.item, in_pSlot ) )
+		{
+			p->Item.item->DropFx();
+		}
+	}
+	if( m_pFinalMixNode && AkBusFXIsUsingThisSlot( *m_pFinalMixNode, in_pSlot ) )
+	{
+		m_pFinalMixNode->DropFx();
+		m_pFinalMixNode->m_eState = NodeStateStop;
+	}
+}
+
+/** 2012 0x91c0d0. */
+void CAkLEngine::UpdateMasterBusFX( AkUInt32 in_uFXIndex )
+{
+	if( m_pFinalMixNode )
+	{
+		m_pFinalMixNode->SetInsertFx( g_MasterBusCtx, in_uFXIndex, AK_INVALID_UNIQUE_ID );
+	}
+}
+
+/** 2012 0x91c620: a stopped node takes its effects when it restarts. */
+void CAkLEngine::UpdateMixBusFX( AkUniqueID in_MixBusID, AkUInt32 in_uFXIndex )
+{
+	for( AkUInt32 i = 0; i < m_arrayVPLs.Length(); ++i )
+	{
+		CAkVPLMixBusNode & rMixBus = m_arrayVPLs[ i ]->m_MixBus;
+		if( rMixBus.m_BusContext.ID() == in_MixBusID )
+		{
+			if( rMixBus.m_eState == NodeStateStop )
+			{
+				return;
+			}
+			rMixBus.SetInsertFx( rMixBus.m_BusContext, in_uFXIndex, AK_INVALID_UNIQUE_ID );
+		}
+	}
+}
+
+/** 2012 0x91c440: retail's call is SetInsertFxBypass( 0, in_bIsBypassed ) (bits 0, mask = the flag), kept as is. */
+void CAkLEngine::BypassEnvFx( AkUniqueID in_EnvID, bool in_bIsBypassed )
+{
+	for( CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * p = m_EnvBusList.m_pFirst; p; p = p->pNextListItem )
+	{
+		if( p->Item.item->m_EnvID == in_EnvID )
+		{
+			p->Item.item->SetInsertFxBypass( 0, in_bIsBypassed );
+		}
+	}
+}
+
+/** 2012 0x91cc10: every live parameter clone of an FX object (master, bus, voice insert and source plug-ins, environment
+    nodes), with its game object (NULL for buses). */
+void CAkLEngine::ForAllPluginParam( CAkFxBase * in_pFx, void ( *in_funcForAll )( AK::IAkPluginParam *, CAkRegisteredObj *, void * ), void * in_pCookie )
+{
+	for( AkUInt32 i = 0; i < 4; ++i )
+	{
+		AkFXDesc fxInfo;
+		g_MasterBusCtx.GetFX( AK_INVALID_UNIQUE_ID, i, fxInfo );
+		if( fxInfo.pFx && fxInfo.pFx == in_pFx && m_pFinalMixNode->m_aFX[ i ].pParam )
+		{
+			in_funcForAll( m_pFinalMixNode->m_aFX[ i ].pParam, NULL, in_pCookie );
+		}
+	}
+	for( AkUInt32 iVPL = 0; iVPL < m_arrayVPLs.Length(); ++iVPL )
+	{
+		AkVPL * pVPL = m_arrayVPLs[ iVPL ];
+		for( AkUInt32 i = 0; i < 4; ++i )
+		{
+			AkFXDesc fxInfo;
+			pVPL->m_MixBus.m_BusContext.GetFX( AK_INVALID_UNIQUE_ID, i, fxInfo );
+			if( fxInfo.pFx && fxInfo.pFx == in_pFx && pVPL->m_MixBus.m_aFX[ i ].pParam )
+			{
+				in_funcForAll( pVPL->m_MixBus.m_aFX[ i ].pParam, NULL, in_pCookie );
+			}
+		}
+		for( CAkVPLSrcCbxNode * pCbx = pVPL->m_listVPLSrcs.m_pFirst; pCbx; pCbx = pCbx->pNextItem )
+		{
+			CAkPBI * pCtx = pCbx->GetContext();
+			if( !pCtx )
+			{
+				continue;
+			}
+			CAkRegisteredObj * pGameObj = pCtx->GetGameObjectPtr();
+			CAkSoundBase * pSound = pCtx->GetSound();
+			AK::IAkPluginParam * pSrcParam = (AK::IAkPluginParam *)pCbx->m_pSources[ 0 ]->GetPluginParam();
+			if( pSrcParam && pSound->NodeCategory() == AkNodeCategory_Sound )
+			{
+				CAkFxCustom * pSrcFx = g_pIndex->m_idxFxCustom.GetPtrAndAddRef( pCtx->GetSource()->m_sSrcTypeInfo.mediaInfo.sourceID );
+				if( pSrcFx )
+				{
+					if( pSrcFx == in_pFx )
+					{
+						in_funcForAll( pSrcParam, pGameObj, in_pCookie );
+					}
+					pSrcFx->Release();
+				}
+			}
+			for( AkUInt32 i = 0; i < 4; ++i )
+			{
+				CAkVPLFilterNodeBase * pFilter = pCbx->m_cbxRec.m_pFilter[ i ];
+				if( !pFilter )
+				{
+					continue;
+				}
+				AkFXDesc fxInfo;
+				pSound->GetFX( i, fxInfo, pGameObj );
+				if( fxInfo.pFx && fxInfo.pFx == in_pFx && pFilter->m_pParam )
+				{
+					in_funcForAll( pFilter->m_pParam, pGameObj, in_pCookie );
+				}
+			}
+		}
+	}
+	if( in_pFx->Category() == ObjCategory_FxShareSet )
+	{
+		for( CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * p = m_EnvBusList.m_pFirst; p; p = p->pNextListItem )
+		{
+			if( p->Item.key == in_pFx->key && p->Item.item->m_aFX[ 0 ].pParam )
+			{
+				in_funcForAll( p->Item.item->m_aFX[ 0 ].pParam, NULL, in_pCookie );
+			}
+		}
+	}
 }
 
 /** 2012 0x91c2f0. */
@@ -735,6 +1151,14 @@ void CAkLEngine::SetBusVolume( AkUniqueID in_MixBusID, AkReal32 in_VolumeOffset 
 		{
 			rMixBus.m_fNextVolumedB += in_VolumeOffset;
 			rMixBus.m_fNextVolume = AkMath::dBToLin( rMixBus.m_fNextVolumedB );
+			if( rMixBus.m_BusContext.IsEnvironmental() )
+			{
+				for( CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * p = m_EnvBusList.m_pFirst; p; p = p->pNextListItem )
+				{
+					p->Item.item->m_fNextVolumedB += in_VolumeOffset;
+					p->Item.item->m_fNextVolume = AkMath::dBToLin( p->Item.item->m_fNextVolumedB );
+				}
+			}
 		}
 	}
 }
@@ -749,6 +1173,14 @@ void CAkLEngine::ForceBusVolume( AkUniqueID in_MixBusID, AkReal32 in_Volume )
 		{
 			rMixBus.m_fNextVolumedB = in_Volume;
 			rMixBus.m_fNextVolume = AkMath::dBToLin( in_Volume );
+			if( rMixBus.m_BusContext.IsEnvironmental() )
+			{
+				for( CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * p = m_EnvBusList.m_pFirst; p; p = p->pNextListItem )
+				{
+					p->Item.item->m_fNextVolumedB = in_Volume;
+					p->Item.item->m_fNextVolume = AkMath::dBToLin( in_Volume );
+				}
+			}
 		}
 	}
 }
@@ -775,6 +1207,13 @@ void CAkLEngine::BypassBusFx( AkUniqueID in_MixBusID, AkUInt32 in_bitsFXBypass, 
 		if( m_arrayVPLs[ i ]->m_MixBus.m_BusContext.ID() == in_MixBusID )
 		{
 			m_arrayVPLs[ i ]->m_MixBus.SetInsertFxBypass( in_bitsFXBypass, in_uTargetMask );
+			if( m_arrayVPLs[ i ]->m_MixBus.m_BusContext.IsEnvironmental() )
+			{
+				for( CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>::ListItem * p = m_EnvBusList.m_pFirst; p; p = p->pNextListItem )
+				{
+					p->Item.item->SetInsertFxBypass( in_bitsFXBypass, in_uTargetMask );
+				}
+			}
 		}
 	}
 }

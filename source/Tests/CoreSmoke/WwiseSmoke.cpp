@@ -36,6 +36,12 @@ void AkAudioLibLastBankCounts( AkUInt32 out_counts[ 20 ], AkUInt32 out_failures[
 typedef void ( *WwiseReportFunc )( bool Passed, const char * Name, const char * Detail );
 typedef void ( *WwiseSkipFunc )( const char * Name, const char * Reason );
 
+void TestWwiseMusic( WwiseReportFunc InReport, WwiseSkipFunc InSkip );
+void TermWwiseMusic();
+void TestWwiseFx( WwiseReportFunc InReport, WwiseSkipFunc InSkip );
+void TestWwiseFxPlugins2( WwiseReportFunc InReport, WwiseSkipFunc InSkip );
+void RegisterWwiseFxPlugins();
+
 namespace
 {
 const wchar_t * const CookedDir = L"D:\\RecompileDishonored\\Dishonored_Latest2026\\DishonoredGame\\CookedPCConsole\\";
@@ -592,6 +598,7 @@ void TestWwise( WwiseReportFunc InReport, WwiseSkipFunc InSkip )
 	GReport( Hook.DeviceID != AK_INVALID_DEVICE_ID, "Wwise blocking device + \"AK::IOThread\"", NULL );
 	AK::StreamMgr::SetFileLocationResolver( &Hook );
 	GReport( AK::SoundEngine::Init( NULL, NULL ) == AK_Success, "Wwise AK::SoundEngine::Init (bank manager thread)", NULL );
+	RegisterWwiseFxPlugins();
 
 	AkBankID InitID = 0;
 	const AKRESULT InitResult = AK::SoundEngine::LoadBank( L"Init.bnk", AK_DEFAULT_POOL_ID, InitID );
@@ -615,6 +622,9 @@ void TestWwise( WwiseReportFunc InReport, WwiseSkipFunc InSkip )
 
 	TestPipeline( InSkip );
 	TestGraph( InSkip );
+	TestWwiseMusic( InReport, InSkip );
+	TestWwiseFx( InReport, InSkip );
+	TestWwiseFxPlugins2( InReport, InSkip );
 
 	const char * CsvPath = getenv( "WWISE_SMOKE_CSV" ) ? getenv( "WWISE_SMOKE_CSV" ) : "../agentIH1/hirc_counts.csv";
 	const std::vector<FCsvBank> Rows = ReadCsv( CsvPath );
@@ -708,6 +718,7 @@ void TestWwise( WwiseReportFunc InReport, WwiseSkipFunc InSkip )
 	CheckEq( "Wwise UnloadBank(Init.bnk)", AK::SoundEngine::UnloadBank( L"Init.bnk", NULL ), AK_Success );
 	AkAudioLibIndexCounts( Index );
 	CheckEq( "Wwise index empty after the last unload", (long long)Index[ 0 ] + Index[ 1 ] + Index[ 2 ] + Index[ 3 ] + Index[ 8 ], 0 );
+	TermWwiseMusic();
 	AK::SoundEngine::Term();
 	AK::SoundEngine::StopAll( 2 );
 	GReport( AK::SoundEngine::RegisterGameObj( 100, "after Term" ) == AK_Fail, "Wwise API calls after Term answer AK_Fail (UAkComponent::Stop from GC after Teardown)", NULL );

@@ -210,3 +210,9 @@ public:
 private:
 	void OnUnlockNPCRotation( EDisFaceToPriority _UnlockedPriority );
 public:
+
+// ---- agent IH4b (PHASE23 IH4): the NPC's part of ADishonoredPawn::ShutPawnDown ----
+protected:
+	// DISHONORED(port): 2012 0x7c1d20 (271 B), 2013 0x76a880 (549 B). Body in dishonorednpcpawn.cpp.
+	virtual void ShutPawnDown_Derived();
+public:

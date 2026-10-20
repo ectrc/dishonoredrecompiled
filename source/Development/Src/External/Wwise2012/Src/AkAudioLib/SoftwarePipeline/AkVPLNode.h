@@ -9,6 +9,8 @@
 #pragma once
 
 #include "AkPBI.h"
+#include <AK/SoundEngine/Common/IAkPlugin.h>
+#include <AK/SoundEngine/Common/AkSoundEngine.h>
 
 class CAkVPLNode
 {
@@ -70,7 +72,7 @@ protected:
 typedef IAkSoftwareCodec * ( *AkCreateFileSourceCallback )( void * in_pCtx );
 typedef IAkSoftwareCodec * ( *AkCreateBankSourceCallback )( void * in_pCtx );
 
-/** CAkEffectsMgr (akeffectsmgr.cpp): the registered codecs and plug-ins; only the codec half runs before IH4. */
+/** CAkEffectsMgr (akeffectsmgr.cpp): the registered codecs and plug-ins (the plug-in half: agent IH4). */
 class CAkEffectsMgr
 {
 public:
@@ -82,12 +84,14 @@ public:
 
 	struct EffectTypeRecord
 	{
-		void *	pCreateFunc;
-		void *	pCreateParamFunc;
+		AK::AkCreatePluginCallback	pCreateFunc;
+		AK::AkCreateParamCallback	pCreateParamFunc;
 	};
 
 	static AKRESULT Term();
-	static AKRESULT RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, void * in_pCreateFunc, void * in_pCreateParamFunc );
+	static AKRESULT RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, AK::AkCreatePluginCallback in_pCreateFunc, AK::AkCreateParamCallback in_pCreateParamFunc );
+	static AKRESULT Alloc( AK::IAkPluginMemAlloc * in_pAllocator, AkPluginID in_EffectTypeID, AK::IAkPlugin *& out_pEffect );
+	static AKRESULT AllocParams( AK::IAkPluginMemAlloc * in_pAllocator, AkPluginID in_EffectTypeID, AK::IAkPluginParam *& out_pEffectParam );
 	static AKRESULT RegisterCodec( AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, AkCreateFileSourceCallback in_pFileCreateFunc, AkCreateBankSourceCallback in_pBankCreateFunc );
 	static IAkSoftwareCodec * AllocCodec( CAkPBI * in_pCtx, AkUInt32 in_uSrcType, AkCodecID in_CodecID );
 

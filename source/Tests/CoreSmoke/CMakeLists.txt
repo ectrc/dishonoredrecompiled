@@ -13,7 +13,8 @@ set_target_properties(CoreSmoke PROPERTIES FOLDER "Tests")
 if(TARGET wwise)
   # Agent IH2 (wave 26): the ported Vorbis decoder on a retail voice line (WwiseVorbisSmoke.cpp) reaches into the
   # decoder's private headers, as CAkSrcBankVorbis does inside the wwise library.
-  target_sources(CoreSmoke PRIVATE WwiseSmoke.cpp WwiseVorbisSmoke.cpp)
+  target_sources(CoreSmoke PRIVATE WwiseSmoke.cpp WwiseVorbisSmoke.cpp WwiseMusicSmoke.cpp WwiseFxSmoke.cpp WwiseFx2Smoke.cpp)
   target_include_directories(CoreSmoke PRIVATE "${DISHONORED_WWISE_DIR}/Src" "${DISHONORED_WWISE_DIR}/Src/AkVorbisDecoder" "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Common"
-                                               "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/SoftwarePipeline" "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Win32")
+                                               "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/SoftwarePipeline" "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Win32"
+                                               "${DISHONORED_WWISE_DIR}/Src/AkMusicEngine/Common" "${DISHONORED_WWISE_DIR}/Src/Plugins/Common" "${DISHONORED_WWISE_DIR}/Src/Plugins/Effects/Common")
 endif()

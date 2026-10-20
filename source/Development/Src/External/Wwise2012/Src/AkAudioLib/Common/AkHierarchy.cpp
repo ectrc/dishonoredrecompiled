@@ -10,6 +10,9 @@
 #include "AkContainers.h"
 #include "AkBankMgr.h"
 #include "AkBusCtx.h"
+#include "AkFxContext.h"
+#include "AkRTPCMgr.h"
+#include "AkVPLNode.h"
 
 #include <math.h>
 
@@ -2208,18 +2211,41 @@ AKRESULT CAkAttenuation::SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDat
 	return ulNumRTPC ? AK_Success : eResult;
 }
 
+/** DISHONORED(IH4): the FX object a node's slot names (index item at g_pIndex + 6400 for a share set, + 7200 for a
+    custom effect), AddRef'd; the lookup every GetFX / GetFXDataID of 2012 inlines. */
+CAkFxBase * AkGetFxAndAddRef( AkUniqueID in_id, bool in_bShareSet )
+{
+	if( in_bShareSet )
+	{
+		return g_pIndex->m_idxFxShareSets.GetPtrAndAddRef( in_id );
+	}
+	return g_pIndex->m_idxFxCustom.GetPtrAndAddRef( in_id );
+}
+
+/** DISHONORED(IH4): CAkParameterNodeBase has no effect slot of its own (the ports of 0x93a2b0 / 0x93d6b0 override). */
+void CAkParameterNodeBase::GetFX( AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo, CAkRegisteredObj * in_GameObj )
+{
+	out_rFXInfo.SetFx( NULL );
+	out_rFXInfo.bIsBypassed = false;
+}
+
 // ------------------------------------------------------------------------------------------------------------
 // CAkFxBase / CAkFxShareSet / CAkFxCustom (akfxbase.cpp)
 // ------------------------------------------------------------------------------------------------------------
 
+/** 2012 0x94ae50: the curves, the media list, then the parameter object (AkFXMemAlloc::m_instanceUpper, IH4). */
 CAkFxBase::~CAkFxBase()
 {
-	m_media.Term();
 	for( RTPCSubs * p = m_rtpcsubs.m_pItems; p != m_rtpcsubs.m_pItemsEnd; ++p )
 	{
 		p->ConversionTable.Unset();
 	}
 	m_rtpcsubs.Term();
+	m_media.Term();
+	if( m_pParam )
+	{
+		m_pParam->Term( &AkFXMemAlloc::m_instanceUpper );
+	}
 }
 
 AkUInt32 CAkFxBase::AddRef()
@@ -2242,10 +2268,52 @@ AkUInt32 CAkFxBase::Release()
 	return lRef;
 }
 
-/** 2012 0x94ab90: the plug-in's param object comes from CAkEffectsMgr::AllocParams; see the header. */
+/** 2012 0x94ab90, 2013 0x947ab0: the plug-in's parameter object from its registered factory, initialised with the
+    bank's block. An unregistered plug-in (no factory) is not an error: the object keeps no parameter, as retail. */
 AKRESULT CAkFxBase::SetFX( AkPluginID in_FXID, void * in_pParamBlock, AkUInt32 in_uParamBlockSize )
 {
+	AK::IAkPluginParam * pParam = NULL;
+	if( CAkEffectsMgr::AllocParams( &AkFXMemAlloc::m_instanceUpper, in_FXID, pParam ) != AK_Success || !pParam )
+	{
+		return AK_Success;
+	}
+	const AKRESULT eResult = pParam->Init( &AkFXMemAlloc::m_instanceUpper, in_pParamBlock, in_uParamBlockSize );
+	if( eResult != AK_Success )
+	{
+		pParam->Term( &AkFXMemAlloc::m_instanceUpper );
+		return eResult;
+	}
+	SetFX( in_FXID, pParam );
 	return AK_Success;
+}
+
+/** 2012 0x94ab40. */
+void CAkFxBase::SetFX( AkPluginID in_FXID, AK::IAkPluginParam * in_pParam )
+{
+	if( m_pParam )
+	{
+		m_pParam->Term( &AkFXMemAlloc::m_instanceUpper );
+		m_pParam = NULL;
+	}
+	m_FXID = in_FXID;
+	m_pParam = in_pParam;
+}
+
+/** 2012 0x94ad10: every curve of the object drives the subscriber (a plug-in parameter object) on the game object. */
+void CAkFxBase::SubscribeRTPC( AK::IAkRTPCSubscriber * in_pSubscriber, CAkRegisteredObj * in_pGameObj )
+{
+	for( RTPCSubs * p = m_rtpcsubs.m_pItems; p != m_rtpcsubs.m_pItemsEnd; ++p )
+	{
+		g_pRTPCMgr->SubscribeRTPC( in_pSubscriber, p->RTPCID, (AkRTPC_ParameterID)p->ParamID, p->RTPCCurveID, p->ConversionTable.m_eScaling,
+			p->ConversionTable.m_pArrayGraphPoints, p->ConversionTable.m_ulArraySize, in_pGameObj, CAkRTPCMgr::SubscriberType_IAkRTPCSubscriber );
+	}
+}
+
+/** 2012 0x939030: the media id of a plug-in data index, 0 when none. */
+AkUniqueID CAkFxBase::GetMediaID( AkUInt32 in_uIdx )
+{
+	AkUniqueID * pID = m_media.Exists( in_uIdx );
+	return pID ? *pID : 0;
 }
 
 /** 2012 0x94ac40. */

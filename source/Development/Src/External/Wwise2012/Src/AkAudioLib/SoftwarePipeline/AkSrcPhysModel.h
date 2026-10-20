@@ -4,17 +4,13 @@
 
 	DISHONORED(port): agent IH2 fork S (wave 26). Layout is the 2012 PDB's (80 bytes, CAkVPLSrcNode::Create mallocs 0x50).
 	Dishonored's banks do hold such sources (AkSilenceSource, plug-in ID 0x650002, 40 of them), so Create builds this
-	node as retail does; the plug-in interfaces and CAkEffectsMgr::Alloc are IH4, see AkSrcPhysModel.cpp.
+	node as retail does; agent IH4 runs the plug-in through it (AkSrcPhysModel.cpp).
 =============================================================================*/
 #pragma once
 
 #include "AkVPLNode.h"
 
-namespace AK
-{
-	class IAkPluginParam;
-	class IAkSourcePlugin;
-}
+#include <AK/SoundEngine/Common/IAkPlugin.h>
 class CAkSourceFXContext;
 
 class CAkSrcPhysModel : public CAkVPLSrcNode

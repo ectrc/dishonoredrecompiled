@@ -335,6 +335,43 @@ void ADishonoredNPCPawn::PostBeginPlay()
 	m_iNumFakeDeathRequestsFromSoiree = 0;
 }
 
+/**
+ * DISHONORED(port, agent IH4b): 2012 0x7c1d20 (271 B), 2013 0x76a880 (549 B). The controller is unpossessed and destroyed
+ * here, while the pawn's components still exist: its ClearComponents terminates the brain, whose behaviours stop their
+ * locomotion requests on this pawn's FArkComponentLocomotion. ADishonoredPawn::ShutPawnDown only removes the pawn's
+ * components after this returns (without it UWorld::CleanupWorld at exit reached TerminateBrain -> StopLoco on a removed
+ * locomotion component whenever the pawn came before its controller in the level's actor list: 3 of 10 exits).
+ * Ported: the controller, the master FSM (tested for NULL, retail calls DestroyFSM unconditionally), the six component
+ * pointers. Named, not ported (no body in this tree):
+ *   - the squad count (IsDead + UDishonoredMapInfo::FindSquadInfo 0x643760, m_NumNPCsAlive; 2013 also skips it on the
+ *     +1288 bit 0x400);
+ *   - UDisNPCTravelManager::OnPawnShutDown 0x720bc0, UDishonoredGlobalAIManager::OnPawnDestroyed 0x8cb480;
+ *   - 2013 only: FArkGameEventDispatcher event 32 (the spring-razor interaction) when the master state is not Dead;
+ *   - IDisConvSpeakerInterface::PostShutdown_Dialog 0x8a08e0, FDisPhysicsUtil::DisReleasePawnChannel 0x824590,
+ *     UArkAvoidable::UnregisterAvoidable 0x526d80, the event 2 OnLODChanged unregister, UDisConversationComponent::Shutdown;
+ *   - 2013 only: m_pStealable is destroyed when the +2404 bit 0x400000 is set;
+ *   - ADisTallboyNPCPawn::ShutPawnDown_Derived 0x7f2700 (the light, the particle system), not overridden here.
+ */
+void ADishonoredNPCPawn::ShutPawnDown_Derived()
+{
+	AController* const OwningController = Controller;
+	if( OwningController )
+	{
+		OwningController->UnPossess();
+		GWorld->DestroyActor( OwningController, FALSE, TRUE );
+	}
+	if( m_pNPCMasterFSM )
+	{
+		m_pNPCMasterFSM->DestroyFSM();
+	}
+	m_pCpntLocomotion = NULL;
+	m_pCpntFaceTo = NULL;
+	m_pCpntLookat = NULL;
+	m_pCpntAnimPlayer = NULL;
+	m_pCpntRBDamages = NULL;
+	m_pCpntLODManager = NULL;
+}
+
 /*-----------------------------------------------------------------------------
 	Agent FS (PHASE17 package FS): the matinee contract, the AI-group half.
 

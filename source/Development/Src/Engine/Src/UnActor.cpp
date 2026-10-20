@@ -1706,10 +1706,68 @@ void APlayerController::SetPlayer( UPlayer* InPlayer )
 	AActor.
 -----------------------------------------------------------------------------*/
 
+/** DISHONORED(port, agent IH4): 2012 0x17d010, 2013 0x173660 - the actor terminates before its components go. */
 void AActor::BeginDestroy()
 {
+	ConditionalTerminateActor();
 	ClearComponents();
 	Super::BeginDestroy();
+}
+
+/** DISHONORED(port, agent IH4): 2012 0x12d530, 2013 0x129460, in game only. */
+UBOOL AActor::IsActorTerminated() const
+{
+	return GIsGame && m_bLegalToTerminate && m_bHasTerminated;
+}
+
+/** DISHONORED(port, agent IH4): 2012 0x1731c0, 2013 0x1694c0. */
+void AActor::SetActorLegalToTerminate()
+{
+	m_bHasTerminated = FALSE;
+	m_bLegalToTerminate = TRUE;
+}
+
+/**
+ * DISHONORED(port, agent IH4): 2012 0x173180 (inlined into 2013 0x16d770). Named stop: retail first unregisters an actor that cares about other actors'
+ * termination (CaresAboutOtherActorTerminated / UWorld::UnregisterActorThatCaresAboutOtherActors 0x3aef10) and calls
+ * UWorld::OnAnyActorTerminated 0x3a97e0 (OnOtherActorTerminated on every registered actor, FArkGameEventDispatcher
+ * event 3). Nothing registers here (RegisterActorThatCaresAboutOtherActors 0x3a9880 has no caller in this tree) and the
+ * dispatcher is unported, so only the actor's own OnActorTerminated runs.
+ */
+void AActor::TerminateActor()
+{
+	OnActorTerminated();
+}
+
+/**
+ * DISHONORED(port, agent IH4): 2012 0x177460, 2013 0x16d770. Class defaults and archetypes (and anything inside one) never terminate; a
+ * legal, not yet terminated actor is marked (retail also sets ObjectFlags bit 62, the reference's RF_MarkedByCookerTemp,
+ * which nothing in game reads) and terminated while a world exists.
+ */
+void AActor::ConditionalTerminateActor()
+{
+	for( UObject* Object = this; Object; Object = Object->GetOuter() )
+	{
+		if( Object->HasAnyFlags( RF_ClassDefaultObject | RF_ArchetypeObject ) )
+		{
+			return;
+		}
+	}
+	if( m_bLegalToTerminate && !m_bHasTerminated )
+	{
+		SetFlags( RF_MarkedByCookerTemp );
+		m_bHasTerminated = TRUE;
+		if( GWorld )
+		{
+			TerminateActor();
+		}
+	}
+}
+
+/** DISHONORED(port, agent IH4): 2012 0x1774c0, 2013 0x16d7d0. */
+void AActor::OnLevelTerminated()
+{
+	ConditionalTerminateActor();
 }
 
 UBOOL AActor::IsReadyForFinishDestroy()

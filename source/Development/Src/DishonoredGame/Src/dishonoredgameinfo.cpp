@@ -92,6 +92,16 @@ const UDisTweaks_ChapterInfo* ADishonoredGameInfo::GetCurrentChapter() const
 	return NULL;
 }
 
+// DISHONORED(port): agent IH4b. 2012 0x6484a0, 2013 0x601dc0: the actor joins m_DestroyWhenNotVisible once. Named: the list's
+// consumer in ADishonoredGameInfo::Tick (2012 0x64b480) is not ported, so the actors stay until the game info goes.
+void ADishonoredGameInfo::AddToPendingDestroyList( AActor* _pActor )
+{
+	if( _pActor )
+	{
+		m_DestroyWhenNotVisible.AddUniqueItem( _pActor );
+	}
+}
+
 // DISHONORED(port): agent HG. 2013 rva 0x5fd0e0 (2012 0x6484c0): the tag of a chapter the map info knows becomes current and the two
 // target portraits follow it - the chapter's portrait override in slot 0 when it has one, else each target's portrait; a portrait that
 // changes is marked state 4.
@@ -261,6 +271,8 @@ void ADishonoredGameInfo::execGameEnding( FFrame& Stack, RESULT_DECL )
 // DLC manager and the faction manager. Each is named here with its retail call so that adding one is a single line.
 void ADishonoredGameInfo::InitGlobalManagers()
 {
+	// DISHONORED(port, agent IH4): retail's first store (2012 0x62f8b0: this+976 |= 1), the flag its Tick gates the managers on.
+	m_bGlobalManagersInitialized = TRUE;
 	if( m_pGlobalAIManager )
 	{
 		m_pGlobalAIManager->Init_GlobalAI();
@@ -283,7 +295,16 @@ void ADishonoredGameInfo::InitGlobalManagers()
 	// UDisWaterVolumeManager::Init( m_pWaterVolumeManager )           2013 rva 0x63ad30
 	// UDisGlobalCombatManager::Init_GlobalCombat( m_pGlobalCombatManager )   2013 rva 0x83f7b0
 	// UDisRatSwarmGlobalManager::Init( m_pRatSwarmGlobalManager )     2013 rva 0x64c6f0
-	// UDisGlobalMusicManager::Init_GlobalMusic( m_pGlobalMusicManager )      2013 rva 0x852a40's sibling
+	// DISHONORED(port, agent IH4): UDisGlobalMusicManager::Init_GlobalMusic is 2012 0x8c8310 / 2013 0x8529c0, called here at 2012
+	// 0x62f902 (the 0x852a40 recorded before is its ChooseNewState). Retail calls it unchecked.
+	if( m_pGlobalMusicManager )
+	{
+		m_pGlobalMusicManager->Init_GlobalMusic();
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredGameInfo::InitGlobalManagers has no m_pGlobalMusicManager sub-object") );
+	}
 	// DISHONORED(port, agent FP): UDisGlobalUIManager::Init is 2013 rva 0x85fdb0 (2012 0x8c45d0), called from this
 	// function's 0x5e9c38 on every map with no condition - the comment above used to say 0x8b8d10, which is not a
 	// function start in either database. The manager is the game info's pGlobalUIManager default sub-object; it
@@ -318,6 +339,11 @@ void ADishonoredGameInfo::InitGlobalManagers()
 // here; it is the one that closes the HUD before the world it draws over goes away.
 void ADishonoredGameInfo::PreCommitMapChange( const FString& PreviousMapName, const FString& NextMapName )
 {
+	// DISHONORED(port, agent IH4): retail's Term_GlobalMusic share (2012 0x6612d2).
+	if( m_pGlobalMusicManager )
+	{
+		m_pGlobalMusicManager->Term_GlobalMusic();
+	}
 	if( m_pGlobalUIManager )
 	{
 		m_pGlobalUIManager->PreCommitMapChange();
@@ -330,6 +356,11 @@ void ADishonoredGameInfo::PreCommitMapChange( const FString& PreviousMapName, co
 // OnPostCommitMapChange. Only the UI manager's share is written here: it reopens the HUD on the new map.
 void ADishonoredGameInfo::PostCommitMapChange()
 {
+	// DISHONORED(port, agent IH4): retail's Init_GlobalMusic share (2012 0x65f4a7), before the UI manager's.
+	if( m_pGlobalMusicManager )
+	{
+		m_pGlobalMusicManager->Init_GlobalMusic();
+	}
 	if( m_pGlobalUIManager )
 	{
 		m_pGlobalUIManager->PostCommitMapChange();
@@ -380,6 +411,13 @@ UBOOL ADishonoredGameInfo::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	if( m_pConvGlobalMan && UDisConvGlobalMan::s_pInstance == m_pConvGlobalMan )
 	{
 		m_pConvGlobalMan->TickGlobalConvMan( DeltaTime );
+	}
+	// DISHONORED(port, agent IH4): retail's Tick_GlobalMusic share (2012 0x64b598), inside the m_bGlobalManagersInitialized block
+	// with the real delta. DISHONORED(deviation): also skipped while there is no player pawn - the combat intensity reads
+	// ADishonoredPlayerPawn::s_pInstance unchecked, and retail's StartMatch at the head of the same tick has spawned it there.
+	if( m_bGlobalManagersInitialized && m_pGlobalMusicManager && ADishonoredPlayerPawn::s_pInstance )
+	{
+		m_pGlobalMusicManager->Tick_GlobalMusic( DeltaTime );
 	}
 	return bResult;
 }

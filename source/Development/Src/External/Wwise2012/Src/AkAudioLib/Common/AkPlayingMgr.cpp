@@ -3,15 +3,18 @@
 
 	DISHONORED(port): agent IH2 (wave 26).
 	Deviations (named):
-	  * The music notifications (NotifyMusic, NotifyMusicUserCues, NotifyMusicPlayStarted, PrepareMusicNotification),
-	    NotifySpeakerVolumeMatrix and NotifyEndOfDynamicSequenceItem are IH4's / unused by the glue (no caller
-	    registers AK_Music* / AK_SpeakerVolumeMatrix / dynamic sequences) and are not ported.
+	  * NotifySpeakerVolumeMatrix and NotifyEndOfDynamicSequenceItem are IH4's / unused by the glue (no caller
+	    registers AK_SpeakerVolumeMatrix / dynamic sequences) and are not ported.
+	  * Agent IH4 fork M: the music notifications PrepareMusicNotification 0x9278c0, NotifyMusicPlayStarted 0x927fb0,
+	    NotifyMusic 0x928250, NotifyMusicUserCues 0x928320 are retail's; NotifyMusic / NotifyMusicUserCues return when
+	    the playing id is gone where retail dereferences the missing item.
 	  * -akdiag logs every playing id's end (event, game object, the callback flags) - the IH2 acceptance measures
 	    play time from it.
 =============================================================================*/
 #include "AkPlayingMgr.h"
 #include "AkPBI.h"
 #include "AkPositionRepository.h"
+#include "../../AkMusicEngine/Common/AkMusicStructs.h"
 
 CAkPlayingMgr * g_pPlayingMgr = NULL;
 
@@ -330,4 +333,78 @@ void CAkPlayingMgr::NotifyMarkers( AkPipelineBuffer & io_CurrMarkerBuffer )
 		NotifyMarker( pMarker->pContext, &pMarker->marker );
 	}
 	io_CurrMarkerBuffer.FreeMarkers();
+}
+
+/** 2012 0x9278c0, 2013 0x923fe0: the grid in seconds. */
+void CAkPlayingMgr::PrepareMusicNotification( AkPlayingID in_PlayingID, PlayingMgrItem * in_pItem, AkCallbackType in_NotifType, const AkMusicGrid & in_rGrid, char * in_pszUserCueName, AkMusicSyncCallbackInfo & out_info )
+{
+	out_info.pCookie = in_pItem->pCookie;
+	out_info.gameObjID = in_pItem->GameObj;
+	out_info.musicSyncType = in_NotifType;
+	out_info.playingID = in_PlayingID;
+	out_info.fBarDuration = (AkReal32)( (AkReal64)in_rGrid.uBarDuration / (AkReal64)AkAudioLibSettings::g_pipelineCoreFrequency );
+	out_info.fBeatDuration = (AkReal32)( (AkReal64)in_rGrid.uBeatDuration / (AkReal64)AkAudioLibSettings::g_pipelineCoreFrequency );
+	out_info.fGridDuration = (AkReal32)( (AkReal64)in_rGrid.uGridDuration / (AkReal64)AkAudioLibSettings::g_pipelineCoreFrequency );
+	out_info.fGridOffset = (AkReal32)( (AkReal64)in_rGrid.uGridOffset / (AkReal64)AkAudioLibSettings::g_pipelineCoreFrequency );
+	out_info.pszUserCueName = in_pszUserCueName;
+}
+
+/** 2012 0x927fb0, 2013 0x924660. */
+void CAkPlayingMgr::NotifyMusicPlayStarted( AkPlayingID in_PlayingID )
+{
+	m_csMapLock.Lock();
+	PlayingMgrItem * pItem = m_PlayingMap.Exists( in_PlayingID );
+	if( !pItem || !( pItem->uiRegisteredNotif & AK_MusicPlayStarted ) || !pItem->pfnCallback )
+	{
+		m_csMapLock.Unlock();
+		return;
+	}
+	AkEventCallbackInfo info;
+	info.pCookie = pItem->pCookie;
+	info.gameObjID = pItem->GameObj;
+	info.playingID = in_PlayingID;
+	info.eventID = pItem->eventID;
+	const AkCallbackFunc pfnCallback = pItem->pfnCallback;
+	ResetEvent( m_CallbackEvent.m_Event );
+	m_csMapLock.Unlock();
+	pfnCallback( AK_MusicPlayStarted, &info );
+	SetEvent( m_CallbackEvent.m_Event );
+}
+
+/** 2012 0x928250, 2013 0x924900. */
+void CAkPlayingMgr::NotifyMusic( AkPlayingID in_PlayingID, AkCallbackType in_NotifType, const AkMusicGrid & in_rGrid )
+{
+	m_csMapLock.Lock();
+	PlayingMgrItem * pItem = m_PlayingMap.Exists( in_PlayingID );
+	if( !pItem || !pItem->pfnCallback || !( in_NotifType & pItem->uiRegisteredNotif ) )
+	{
+		m_csMapLock.Unlock();
+		return;
+	}
+	AkMusicSyncCallbackInfo info;
+	PrepareMusicNotification( in_PlayingID, pItem, in_NotifType, in_rGrid, NULL, info );
+	const AkCallbackFunc pfnCallback = pItem->pfnCallback;
+	ResetEvent( m_CallbackEvent.m_Event );
+	m_csMapLock.Unlock();
+	pfnCallback( in_NotifType, &info );
+	SetEvent( m_CallbackEvent.m_Event );
+}
+
+/** 2012 0x928320, 2013 0x9249d0. */
+void CAkPlayingMgr::NotifyMusicUserCues( AkPlayingID in_PlayingID, const AkMusicGrid & in_rGrid, char * in_pszUserCueName )
+{
+	m_csMapLock.Lock();
+	PlayingMgrItem * pItem = m_PlayingMap.Exists( in_PlayingID );
+	if( !pItem || !pItem->pfnCallback || !( pItem->uiRegisteredNotif & AK_MusicSyncUserCue ) )
+	{
+		m_csMapLock.Unlock();
+		return;
+	}
+	AkMusicSyncCallbackInfo info;
+	PrepareMusicNotification( in_PlayingID, pItem, AK_MusicSyncUserCue, in_rGrid, in_pszUserCueName, info );
+	const AkCallbackFunc pfnCallback = pItem->pfnCallback;
+	ResetEvent( m_CallbackEvent.m_Event );
+	m_csMapLock.Unlock();
+	pfnCallback( AK_MusicSyncUserCue, &info );
+	SetEvent( m_CallbackEvent.m_Event );
 }

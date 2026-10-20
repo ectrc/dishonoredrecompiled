@@ -29,6 +29,7 @@
 #include "AkGameSyncs.h"
 #include "AkLEngineStructs.h"
 #include "AkTransitionManager.h"
+#include <AK/SoundEngine/Common/IAkPlugin.h>
 
 class CAkUsageSlot;
 class CAkLayerCntr;
@@ -518,6 +519,10 @@ public:
 	virtual void DecrementVirtualCount( CounterParameters & io_params ) {}
 	virtual void PauseTransitions( bool in_bPause );
 	virtual bool GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr ) { return false; }
+	/** DISHONORED(IH4): the insert effect of a slot (AddRef'd share set or custom) and its media ids; the node base answers
+	    none, CAkParameterNode (0x93a2b0 / 0x93a370) and CAkBus (0x93d6b0 / 0x93d750) override. */
+	virtual void GetFX( AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo, CAkRegisteredObj * in_GameObj );
+	virtual void GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID ) { out_rDataID = (AkUInt32)-1; }
 	virtual CAkBus * GetMixingBus();
 	virtual AKRESULT GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck ) { return AK_Success; }
 	virtual bool IsPlayable() { return true; }
@@ -612,6 +617,8 @@ public:
 
 	virtual AKRESULT IncrementPlayCount( CounterParameters & io_params );
 	virtual void DecrementPlayCount( CounterParameters & io_params );
+	virtual void GetFX( AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo, CAkRegisteredObj * in_GameObj );
+	virtual void GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID );
 	virtual bool GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr );
 	virtual AKRESULT GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck );
 	AkBelowThresholdBehavior GetVirtualBehavior( AkVirtualQueueBehavior & out_Behavior ) const;
@@ -791,6 +798,8 @@ public:
 	virtual AKRESULT ExecuteActionExcept( ActionParamsExcept & in_rAction );
 	virtual AKRESULT IncrementPlayCount( CounterParameters & io_params );
 	virtual void DecrementPlayCount( CounterParameters & io_params );
+	virtual void GetFX( AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo, CAkRegisteredObj * in_GameObj );
+	virtual void GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID );
 	virtual bool GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr );
 	virtual CAkBus * GetMixingBus();
 	virtual AKRESULT GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck );
@@ -922,11 +931,12 @@ protected:
 class CAkFxBase : public CAkIndexable
 {
 public:
+	/** DISHONORED(IH4): the PDB order (RTPCID, RTPCCurveID, ParamID, ConversionTable). */
 	struct RTPCSubs
 	{
 		AkRtpcID										RTPCID;
-		AkUInt32										ParamID;
 		AkUniqueID										RTPCCurveID;
+		AkUInt32										ParamID;
 		CAkConversionTable<AkRTPCGraphPoint, AkReal32>	ConversionTable;
 	};
 
@@ -936,9 +946,12 @@ public:
 
 	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize );
 	AKRESULT SetFX( AkPluginID in_FXID, void * in_pParamBlock, AkUInt32 in_uParamBlockSize );
+	void SetFX( AkPluginID in_FXID, AK::IAkPluginParam * in_pParam );
+	void SubscribeRTPC( AK::IAkRTPCSubscriber * in_pSubscriber, CAkRegisteredObj * in_pGameObj );
+	AkUniqueID GetMediaID( AkUInt32 in_uIdx );
 
 	AkPluginID											m_FXID;
-	void *												m_pParam;
+	AK::IAkPluginParam *								m_pParam;
 	CAkKeyArray<AkUInt32, AkUniqueID, 8>				m_media;
 	AkArray<RTPCSubs, const RTPCSubs &, ArrayPoolDefault, 2>	m_rtpcsubs;
 
@@ -947,6 +960,32 @@ protected:
 	void UnsetRTPC( AkUInt32 in_ParamID, AkUniqueID in_RTPCCurveID );
 	virtual CAkIndexItemBase & Index() = 0;
 };
+
+/** 8 bytes: the 2012 PDB's AkFXDesc { CAkSmartPtr<CAkFxBase> pFx; bool bIsBypassed; }. DISHONORED(IH4): the smart
+    pointer's behaviour (release on reassignment and destruction) is written out on the struct. */
+struct AkFXDesc
+{
+	AkFXDesc() : pFx( NULL ), bIsBypassed( false ) {}
+	~AkFXDesc() { SetFx( NULL ); }
+	void SetFx( CAkFxBase * in_pFx )
+	{
+		CAkFxBase * pOld = pFx;
+		pFx = in_pFx;
+		if( pOld )
+		{
+			pOld->Release();
+		}
+	}
+
+	CAkFxBase *	pFx;
+	bool		bIsBypassed;
+
+private:
+	AkFXDesc( const AkFXDesc & );
+	AkFXDesc & operator=( const AkFXDesc & );
+};
+
+CAkFxBase * AkGetFxAndAddRef( AkUniqueID in_id, bool in_bShareSet );
 
 class CAkFxShareSet : public CAkFxBase
 {

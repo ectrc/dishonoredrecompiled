@@ -9,8 +9,11 @@
 	Agent IH3 (wave 26, fork P): GetVolumes's 3D branch (CAkPBI::Get3DPositioningParams + CAkListener::Get3DVolumes,
 	the voice and obstruction LPFs, silence from the six speakers of the dry and wet mixes), the AK_SpeakerVolumeMatrix
 	callback of the 2D branch, and AddSrc's IsInitiallyUnderThreshold (kill / start virtual from the beginning).
-	  * AddPipeline / RefreshBypassFx: GetFX (the sound's insert effects) is IH4's; no effect is inserted, the four
-	    filter slots stay empty and the refresh has nothing to refresh.
+	Agent IH4 fork F1: the insert effects - AddPipeline's filter slots, UpdateFx 0x926ee0, RefreshBypassFx 0x926e80 /
+	0x927210, IsUsingThisSlot 0x9268d0.
+	  * Deviation (named): AddPipeline terminates the plug-in of a node that cannot be allocated and skips the slot;
+	    retail returns AK_Fail there (0x927290, out of memory) and drops the voice. AddPipeline and UpdateFx share
+	    one node-creation helper.
 =============================================================================*/
 #include "AkVPLSrcCbxNode.h"
 #include "AkListener.h"
@@ -598,9 +601,17 @@ void CAkVPLSrcCbxNode::SetLastEnvironmentalValues( const AkEnvironmentValue * in
 	}
 }
 
-/** 2012 0x9268d0: only the insert effects' media reference a bank slot (none before IH4). */
+/** 2012 0x9268d0: only the insert effects' media reference a bank slot. */
 bool CAkVPLSrcCbxNode::IsUsingThisSlot( const CAkUsageSlot * in_pUsageSlot )
 {
+	for( AkUInt32 i = 0; i < 4; ++i )
+	{
+		CAkVPLFilterNodeBase * pFilter = m_cbxRec.m_pFilter[ i ];
+		if( pFilter && pFilter->m_pInsertFXContext && pFilter->m_pInsertFXContext->m_dataArray.IsUsingThisSlot( in_pUsageSlot ) )
+		{
+			return true;
+		}
+	}
 	return false;
 }
 
@@ -616,9 +627,129 @@ void CAkVPLSrcCbxNode::SetFxBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTarge
 	}
 }
 
-/** 2012 0x927210. DISHONORED(IH4 seam): GetFX is IH4's; with no filter inserted there is nothing to refresh. */
+/** 2012 0x926e80: a slot's bypass from the sound's effect description on the voice's game object. */
+void CAkVPLSrcCbxNode::RefreshBypassFx( AkUInt32 in_uFXIndex )
+{
+	if( !m_pSources[ 0 ] )
+	{
+		return;
+	}
+	CAkVPLFilterNodeBase * pFilter = m_cbxRec.m_pFilter[ in_uFXIndex ];
+	if( pFilter )
+	{
+		CAkPBI * pCtx = m_pSources[ 0 ]->m_pCtx;
+		AkFXDesc fxDesc;
+		pCtx->GetSound()->GetFX( in_uFXIndex, fxDesc, pCtx->GetGameObjectPtr() );
+		pFilter->m_bBypassed = fxDesc.bIsBypassed;
+	}
+}
+
+/** 2012 0x927210: the four slots. */
 void CAkVPLSrcCbxNode::RefreshBypassFx()
 {
+	for( AkUInt32 i = 0; i < 4; ++i )
+	{
+		RefreshBypassFx( i );
+	}
+}
+
+/** 2012 0x927290's slot creation, shared with UpdateFx (0x926ee0): an in-place or out-of-place node for the plug-in
+    (an asynchronous plug-in is refused and terminated). NULL when the node cannot be created or initialised. */
+static CAkVPLFilterNodeBase * AkCreateFilterNode( AK::IAkPlugin * in_pPlugin, const AkFXDesc & in_fxDesc, AkUInt32 in_uFXIndex, CAkPBI * in_pCtx, AkAudioFormat & io_format )
+{
+	AkPluginInfo pluginInfo;
+	in_pPlugin->GetPluginInfo( pluginInfo );
+	if( pluginInfo.bIsAsynchronous )
+	{
+		in_pPlugin->Term( &AkFXMemAlloc::m_instanceLower );
+		return NULL;
+	}
+	CAkVPLFilterNodeBase * pNode = NULL;
+	if( pluginInfo.bIsInPlace )
+	{
+		void * pMem = AK::MemoryMgr::Malloc( g_LEngineDefaultPoolId, sizeof( CAkVPLFilterNode ) );
+		pNode = pMem ? AkPlacementNew( pMem ) CAkVPLFilterNode() : NULL;
+	}
+	else
+	{
+		void * pMem = AK::MemoryMgr::Malloc( g_LEngineDefaultPoolId, sizeof( CAkVPLFilterNodeOutOfPlace ) );
+		pNode = pMem ? AkPlacementNew( pMem ) CAkVPLFilterNodeOutOfPlace() : NULL;
+	}
+	if( !pNode )
+	{
+		in_pPlugin->Term( &AkFXMemAlloc::m_instanceLower );
+		return NULL;
+	}
+	if( pNode->Init( in_pPlugin, in_fxDesc, in_uFXIndex, in_pCtx, io_format ) != AK_Success )
+	{
+		pNode->Term();
+		pNode->~CAkVPLFilterNodeBase();
+		AK::MemoryMgr::Free( g_LEngineDefaultPoolId, pNode );
+		return NULL;
+	}
+	return pNode;
+}
+
+/** 2012 0x926ee0, 2013 0x923820: swap the effect of one slot of a playing voice (the sound's FX changed), reconnecting
+    the chain around it: previous filter (or the pitch node) -> new filter -> next filter (or the voice LPF). */
+void CAkVPLSrcCbxNode::UpdateFx( AkUInt32 in_uFXIndex )
+{
+	if( in_uFXIndex == (AkUInt32)-1 || !m_pSources[ 0 ] )
+	{
+		return;
+	}
+	CAkVPLNode * pNext = &m_cbxRec.m_LPF;
+	for( AkUInt32 i = in_uFXIndex + 1; i < 4; ++i )
+	{
+		if( m_cbxRec.m_pFilter[ i ] )
+		{
+			pNext = m_cbxRec.m_pFilter[ i ];
+			break;
+		}
+	}
+	CAkVPLNode * pPrev = &m_cbxRec.m_Pitch;
+	for( AkInt32 i = (AkInt32)in_uFXIndex - 1; i >= 0; --i )
+	{
+		if( m_cbxRec.m_pFilter[ i ] )
+		{
+			pPrev = m_cbxRec.m_pFilter[ i ];
+			break;
+		}
+	}
+	CAkVPLFilterNodeBase * pOld = m_cbxRec.m_pFilter[ in_uFXIndex ];
+	if( pOld )
+	{
+		for( AkUInt32 i = in_uFXIndex; i < 4; ++i )
+		{
+			if( m_cbxRec.m_pFilter[ i ] && m_cbxRec.m_pFilter[ i ]->ReleaseInputBuffer() && i != in_uFXIndex )
+			{
+				break;
+			}
+		}
+		pOld->Term();
+		pOld->~CAkVPLFilterNodeBase();
+		AK::MemoryMgr::Free( g_LEngineDefaultPoolId, pOld );
+		m_cbxRec.m_pFilter[ in_uFXIndex ] = NULL;
+	}
+	CAkPBI * pCtx = m_pSources[ 0 ]->m_pCtx;
+	AkFXDesc fxDesc;
+	pCtx->GetSound()->GetFX( in_uFXIndex, fxDesc, pCtx->GetGameObjectPtr() );
+	AK::IAkPlugin * pPlugin = NULL;
+	if( fxDesc.pFx && CAkEffectsMgr::Alloc( &AkFXMemAlloc::m_instanceLower, fxDesc.pFx->m_FXID, pPlugin ) == AK_Success )
+	{
+		const AkUInt32 uChannelMask = pCtx->GetMediaFormat().uChannelMask;
+		AkAudioFormat format;
+		format.SetAll( m_uSampleRate, uChannelMask, 32, 4 * AkGetNumChannels( uChannelMask ), AK_FLOAT, AK_NONINTERLEAVED );
+		CAkVPLFilterNodeBase * pNode = AkCreateFilterNode( pPlugin, fxDesc, in_uFXIndex, pCtx, format );
+		if( pNode )
+		{
+			m_cbxRec.m_pFilter[ in_uFXIndex ] = pNode;
+			pNext->Connect( pNode );
+			pNode->Connect( pPrev );
+			return;
+		}
+	}
+	pNext->Connect( pPrev );
 }
 
 /** 2012 0x926920: becoming inaudible virtualizes the PBI, becoming audible again devirtualizes it. */
@@ -710,7 +841,8 @@ void CAkVPLSrcCbxNode::SwitchToNextSrc()
 	}
 }
 
-/** 2012 0x927290: source -> pitch -> (insert effects: IH4) -> voice LPF, plus the obstruction LPF on an aux-sending bus. */
+/** 2012 0x927290: source -> pitch -> the sound's insert effects (agent IH4) -> voice LPF, plus the obstruction LPF on an
+    aux-sending bus. A slot whose plug-in cannot be created or initialised is skipped, as retail. */
 AKRESULT CAkVPLSrcCbxNode::AddPipeline( bool in_bIsEnv )
 {
 	CAkPBI * pCtx = m_pSources[ 0 ]->m_pCtx;
@@ -721,6 +853,26 @@ AKRESULT CAkVPLSrcCbxNode::AddPipeline( bool in_bIsEnv )
 	m_cbxRec.m_Pitch.Init( &format, pCtx, m_uSampleRate );
 	format.uSampleRate = m_uSampleRate;
 	pNodes[ uNumNodes++ ] = &m_cbxRec.m_Pitch;
+	for( AkUInt32 uFXIndex = 0; uFXIndex < 4; ++uFXIndex )
+	{
+		AkFXDesc fxDesc;
+		pCtx->GetSound()->GetFX( uFXIndex, fxDesc, pCtx->GetGameObjectPtr() );
+		if( !fxDesc.pFx )
+		{
+			continue;
+		}
+		AK::IAkPlugin * pPlugin = NULL;
+		if( CAkEffectsMgr::Alloc( &AkFXMemAlloc::m_instanceLower, fxDesc.pFx->m_FXID, pPlugin ) != AK_Success )
+		{
+			continue;
+		}
+		CAkVPLFilterNodeBase * pNode = AkCreateFilterNode( pPlugin, fxDesc, uFXIndex, pCtx, format );
+		if( pNode )
+		{
+			m_cbxRec.m_pFilter[ uFXIndex ] = pNode;
+			pNodes[ uNumNodes++ ] = pNode;
+		}
+	}
 	m_uChannelMask = format.uChannelMask;
 	AKRESULT eResult = m_cbxRec.m_LPF.m_LPF.Init( m_uChannelMask, false );
 	if( eResult != AK_Success )

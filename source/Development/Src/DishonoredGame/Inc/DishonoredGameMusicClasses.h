@@ -58,6 +58,7 @@ public:
     DECLARE_FUNCTION(execTickCallback_Suspense);
     DECLARE_FUNCTION(execTickCallback_Exploration);
     DECLARE_CLASS(UDisGlobalMusicManager,UObject,0,DishonoredGame)
+#include "CppText/UDisGlobalMusicManager.h"
 };
 
 struct DisMusicState_Base_eventTickCallback_Parms
@@ -86,6 +87,7 @@ public:
         ProcessDelegate(DISHONOREDGAME_TickCallback,&__TickCallback__Delegate,&Parms);
     }
     DECLARE_ABSTRACT_CLASS(UDisMusicState_Base,UDishonoredNativeState,0,DishonoredGame)
+#include "CppText/UDisMusicState_Base.h"
 };
 
 // DishonoredGame.DisMusicState_Chase: retail sizeof 96, reflected span 88..93 (2012 PDB sizeof 96)
@@ -98,6 +100,7 @@ public:
     //## END PROPS DisMusicState_Chase
 
     DECLARE_CLASS(UDisMusicState_Chase,UDisMusicState_Base,0,DishonoredGame)
+#include "CppText/UDisMusicState_Chase.h"
 };
 
 // DishonoredGame.DisMusicState_Combat: retail sizeof 96, reflected span 88..93 (2012 PDB sizeof 96)
@@ -110,6 +113,7 @@ public:
     //## END PROPS DisMusicState_Combat
 
     DECLARE_CLASS(UDisMusicState_Combat,UDisMusicState_Base,0,DishonoredGame)
+#include "CppText/UDisMusicState_Combat.h"
 };
 
 // DishonoredGame.DisMusicState_Exploration: retail sizeof 88, reflected span 88..88 (2012 PDB sizeof 88)
@@ -120,6 +124,7 @@ public:
     //## END PROPS DisMusicState_Exploration
 
     DECLARE_CLASS(UDisMusicState_Exploration,UDisMusicState_Base,0,DishonoredGame)
+#include "CppText/UDisMusicState_Exploration.h"
 };
 
 // DishonoredGame.DisMusicState_RatAttack: retail sizeof 88, reflected span 88..88 (2012 PDB sizeof 88)
@@ -130,6 +135,7 @@ public:
     //## END PROPS DisMusicState_RatAttack
 
     DECLARE_CLASS(UDisMusicState_RatAttack,UDisMusicState_Base,0,DishonoredGame)
+#include "CppText/UDisMusicState_RatAttack.h"
 };
 
 // DishonoredGame.DisMusicState_Suspense: retail sizeof 88, reflected span 88..88 (2012 PDB sizeof 88)
@@ -140,6 +146,7 @@ public:
     //## END PROPS DisMusicState_Suspense
 
     DECLARE_CLASS(UDisMusicState_Suspense,UDisMusicState_Base,0,DishonoredGame)
+#include "CppText/UDisMusicState_Suspense.h"
 };
 
 // DishonoredGame.DisTweaks_MusicEvents: retail sizeof 240, reflected span 140..240 (2012 PDB sizeof 240)

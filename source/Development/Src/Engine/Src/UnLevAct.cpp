@@ -3,6 +3,9 @@
 =============================================================================*/
 
 #include "EnginePrivate.h"
+#if DISHONORED_WITH_WWISE
+#include "AkAudio.h"
+#endif
 #include "UnNet.h"
 #include "EngineAnimClasses.h"
 #include "EngineSequenceClasses.h"
@@ -912,6 +915,15 @@ UBOOL UWorld::DestroyActor( AActor* ThisActor, UBOOL bNetForce, UBOOL bShouldMod
  */
 void UWorld::CleanUpBeforeLevelTransition()
 {
+#if DISHONORED_WITH_WWISE
+	// DISHONORED(port, agent IH4): retail's first call (2012 0x26cec0, 2013 0x258bca): every Wwise sound stops before the
+	// transition (UAkAudioDevice::StopAllSounds = Flush(NULL) + StopAll). UGameEngine::CommitMapChange (2012 0x242e25) is the
+	// caller, so the main menu's looping Music_Menu (posted on the global object by its Kismet) ends at the map commit.
+	if( UAkAudioDevice* AudioDevice = UAkAudioDevice::Get() )
+	{
+		AudioDevice->StopAllSounds( FALSE );
+	}
+#endif
 	// Unmount the PersistentFaceFXAnimSet
 	SetPersistentFaceFXAnimSet(NULL);
 
@@ -2857,6 +2869,9 @@ void AActor::PostBeginPlay()
 
 void AActor::PreBeginPlay()
 {
+	// DISHONORED(port, agent IH4): 2012 0x25eb10 / 2013 0x2449d0 starts by making the actor legal to terminate.
+	SetActorLegalToTerminate();
+
 	// Send PostBeginPlay.
 	eventPreBeginPlay();
 

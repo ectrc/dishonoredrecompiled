@@ -3,7 +3,7 @@
 
 	DISHONORED(port): agent IH2 (wave 26).
 	IH3 fork N: GetBusEffectiveVolume with the bus's state values, RTPC, SIS and ducking.
-	Deviation (named): GetFX / GetFXDataID (the bus insert effects) are IH4's and not ported.
+	Agent IH4 fork F1: GetFX 0x93df60 (an environmental bus's slot 0 is the environment's share set) and GetFXDataID 0x93def0.
 =============================================================================*/
 #include "AkBusCtx.h"
 #include "AkPBI.h"
@@ -21,6 +21,38 @@ namespace AK
 			parentCtx.m_pBus = m_pBus->m_pBusOutputNode->GetMixingBus();
 		}
 		return parentCtx;
+	}
+
+	/** 2012 0x93df60, 2013 0x93a980: an environmental (aux) bus runs the environment's own share set in slot 0 and nothing
+	    else, unbypassed; any other bus answers its own slots. */
+	void CAkBusCtx::GetFX( AkUniqueID in_envID, AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo ) const
+	{
+		if( !m_pBus )
+		{
+			out_rFXInfo.SetFx( NULL );
+			out_rFXInfo.bIsBypassed = false;
+			return;
+		}
+		if( !m_pBus->m_bIsEnvironmental )
+		{
+			m_pBus->GetFX( in_uFXIndex, out_rFXInfo, NULL );
+			return;
+		}
+		out_rFXInfo.SetFx( in_uFXIndex == 0 ? AkGetFxAndAddRef( in_envID, true ) : NULL );
+		out_rFXInfo.bIsBypassed = false;
+	}
+
+	/** 2012 0x93def0. */
+	void CAkBusCtx::GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID ) const
+	{
+		if( m_pBus )
+		{
+			m_pBus->GetFXDataID( in_uFXIndex, in_uDataIndex, out_rDataID );
+		}
+		else
+		{
+			out_rDataID = (AkUInt32)-1;
+		}
 	}
 
 	/** 2012 0x93dea0. */

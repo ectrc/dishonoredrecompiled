@@ -314,29 +314,43 @@ void USeqAct_AkPostEvent::Activated()
 }
 
 /**
- * DISHONORED(port): 2013 rva 0x5b31b0. Signal counts the events still playing and m_pAudioSystem remembers
- * the world's audio system for the duration; each target gets the event with AK_EndOfEvent and AkCallback so
- * the count comes back down.
+ * DISHONORED(port, agent IH4): 2012 rva 0x5fbc40 (2013 0x5b31b0, which adds a tick re-enable on each target's actor after a
+ * successful post). Signal counts the events still playing and m_pAudioSystem remembers the world's audio system for the
+ * duration; each target gets the event with AK_EndOfEvent and AkCallback so the count comes back down. An action with no
+ * target posts once on the global object - the branch the previous port lacked, so every target-less Kismet post (the
+ * level's Play_Amb_LVL_Tower_Intro, Music_Tower_Intro, Play_Music_Brothel, the menu's Music_Menu) was dropped after its
+ * radius query. Without an audio device every target (or the one global post) counts as playing, as retail.
  */
 void USeqAct_AkPostEvent::PlayEventOnTargets()
 {
-	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
-	Signal = 0;
-	m_pAudioSystem = GWorld ? GWorld->m_pAudioSystem : NULL;
-	if( !AudioDevice || !Event )
-	{
-		return;
-	}
 	TArray<UObject**> Targets;
 	GetObjectVars( Targets, TEXT("Target") );
-	const FLOAT MaxRadius = Event->GetMaxRadius();
-	for( INT TargetIndex = 0; TargetIndex < Targets.Num(); ++TargetIndex )
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	Signal = 0;
+	m_pAudioSystem = GWorld->m_pAudioSystem;
+	if( Targets.Num() )
 	{
-		AActor* Target = Cast<AActor>( *Targets( TargetIndex ) );
-		if( AudioDevice->PostEvent( Event->m_akID, MaxRadius, Target, NAME_None, AK_EndOfEvent, AkCallback, this, FALSE ) != AK_INVALID_PLAYING_ID )
+		for( INT TargetIndex = 0; TargetIndex < Targets.Num(); ++TargetIndex )
 		{
-			++Signal;
+			if( !AudioDevice )
+			{
+				++Signal;
+				continue;
+			}
+			AActor* Target = Cast<AActor>( *Targets( TargetIndex ) );
+			if( Event )
+			{
+				const FLOAT MaxRadius = Event->GetMaxRadius();
+				if( AudioDevice->PostEvent( Event->m_akID, MaxRadius, Target, NAME_None, AK_EndOfEvent, AkCallback, this, FALSE ) != AK_INVALID_PLAYING_ID )
+				{
+					++Signal;
+				}
+			}
 		}
+	}
+	else if( !AudioDevice || AudioDevice->PostEvent( Event, NULL, NAME_None, AK_EndOfEvent, AkCallback, this, FALSE ) != AK_INVALID_PLAYING_ID )
+	{
+		Signal = 1;
 	}
 }
 

@@ -72,6 +72,7 @@
 
 #include "DishonoredGame.h"
 #include "gfarmsdiag.h"
+#include "dishonoredutilities.h"
 
 // DISHONORED(written): exec 2013 rva 0x5ecc30 -> vtable +1380 = 2013 rva 0x74d580 (2013 only; not overridden in retail): the
 // action is taken as a UDisSeqAct_DLC05_SetStoryGroup without a test, as retail does
@@ -103,6 +104,64 @@ void ADishonoredPawn::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
 	DisSerializeRelationshipOverrideInfo( m_PersonalRelationships, Ar );
+}
+
+/**
+ * DISHONORED(port, agent IH4 / IH4b): 2012 0x79ed80, 2013 0x766830 (27 bytes both). Reached from AActor::ConditionalTerminateActor
+ * (PostScriptDestroyed, ClearComponents - UWorld::CleanupWorld at every LoadMap -, MarkComponentsAsPendingKill, BeginDestroy).
+ * The pawn shuts down, then the base's OnActorTerminated (retail folds it onto an empty body) and the relationship interface's.
+ */
+void ADishonoredPawn::OnActorTerminated()
+{
+	ShutPawnDown();
+	Super::OnActorTerminated();
+	OnActorTerminated_RelationshipInterface();
+}
+
+/**
+ * DISHONORED(port, agent IH4 / IH4b): 2012 0x79d360 (802 B), 2013 0x761e60 (807 B, same order). Ported in retail's order; named
+ * stops for the callees this tree does not have:
+ *   - FArkGameEventDispatcher event 18 (pawn shut down) and the event 9 OnDifficultyChange unregister: the dispatcher's
+ *     ProcessEvent / UnregisterToEvent are unported (Engine/Inc/arkgameeventdispatcher.h) and nothing registered OnDifficultyChange;
+ *   - BreakAllLOS (2012 0x7aaef0: m_pCpntObservable->ResetLOS(FALSE), FDisComponentObservable::ResetLOS 0x8b9aa0 unported);
+ *   - UDishonoredMapInfo::DestroyAttractor 0x64cff0 (never reached: CreateAttractor is unported, m_pFishAttractor stays 0) and
+ *     OnPawnShutDown_MapInfo 0x62fea0 (= UDisFleePointManager::OnPawnShutDown_FleePointManager 0x8883f0, unported);
+ *   - UDisGlobalProjectileManager::GetActiveProjectiles 0x8c4560 + ADisProjectile::OnPawnShutDown 0x88ac00 (the projectile
+ *     manager has no body here);
+ *   - UDishonoredInventory::TerminateInventory 0x85a610 (needs UDishonoredInventoryItem::TerminateAllContextsForSlot 0x858330 ->
+ *     UDisItemContext::TerminateContext 0x865840, unported).
+ * Deviations: m_ComponentContainer and the game info are tested for NULL (retail calls RemoveAllComponents and
+ * AddToPendingDestroyList unconditionally).
+ */
+void ADishonoredPawn::ShutPawnDown()
+{
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	if( GameInfo )
+	{
+		for( INT i = 0; i < m_AssociatedActors.Num(); ++i )
+		{
+			GameInfo->AddToPendingDestroyList( m_AssociatedActors( i ) );
+		}
+	}
+	m_pCpntObservable = NULL;
+	ShutPawnDown_Derived();
+	if( m_ComponentContainer )
+	{
+		m_ComponentContainer->RemoveAllComponents();
+	}
+	if( Mesh )
+	{
+		Mesh->DeleteAnimTree();
+	}
+	const INT NumAttachments = m_Attachments.Num();
+	for( INT i = 0; i < NumAttachments; ++i )
+	{
+		if( m_Attachments( i ) )
+		{
+			GWorld->DestroyActor( m_Attachments( i ), FALSE, TRUE );
+			m_Attachments( i ) = NULL;
+		}
+	}
 }
 
 // DISHONORED(written): 2013 rva 0x748f60 (2012 0x78e270, same bytes): the controller inherits the pawn's m_bAlwaysOutOfBendTime

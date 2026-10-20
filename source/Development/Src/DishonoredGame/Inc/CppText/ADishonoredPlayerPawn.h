@@ -5,6 +5,8 @@ public:
 	static ADishonoredPlayerPawn* s_pInstance;
 
 	ADishonoredPlayerPawn();
+	/** agent IH4: 2012 0x70ef70, clears s_pInstance (body in dishonoredplayerpawn.cpp). */
+	virtual void ShutPawnDown_Derived();
 	// ---- agent BF (PHASE8 BF): the attributes system and the fall natives ----
 	// Bodies in dishonoredplayerpawn_body.cpp (TakeFallingDamage_Native 2013 rva 0x6a4fa0) and
 	// dishonoredplayerpawn.cpp (Landed_Native 0x6b53a0).

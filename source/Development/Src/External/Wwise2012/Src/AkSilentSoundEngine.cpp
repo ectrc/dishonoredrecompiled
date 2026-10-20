@@ -26,7 +26,8 @@
 	    remembered for the log). Query::GetActiveGameObjects (the AkArray form) is not declared by our public header and
 	    has no caller; CAkRegistryMgr::GetActiveGameObjects is ported behind it.
 	  * DishonoredWwise::SetDurationHint (agent ID) is a no-op shim now that a voice ends at its media end.
-	  * SetEffect is IH4's and answers AK_Success without queueing.
+	  * Agent IH4: SetEffect 0x918200 (message 40), RegisterPlugin with the plug-in factories.
+	  * Agent IH4 fork M: SetState 0x917320 (which the 2-argument form 0x918850 forwards to) and AddExternalBankHandler 0x918260.
 	  * Query::GetMaxRadius is IH3's (AkPositioning.cpp, 2012 0x91b180).
 	  * PostEvent logs every post (and -akdiag every unknown event) through the backend log hook: diagnostic.
 =============================================================================*/
@@ -128,7 +129,7 @@ namespace AK
 
 		// -- plug-ins ------------------------------------------------------------------------------
 
-		/** 2012 0x916e90 -> CAkEffectsMgr::RegisterPlugin; an effect needs its plug-in interfaces (IH4) to run. */
+		/** 2012 0x916e90 -> CAkEffectsMgr::RegisterPlugin (agent IH4: the factories are AK::AkCreatePluginCallback / ParamCallback). */
 		AKRESULT RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, AkCreatePluginCallback in_pCreateFunc, AkCreateParamCallback in_pCreateParamFunc )
 		{
 			return CAkEffectsMgr::RegisterPlugin( in_eType, in_ulCompanyID, in_ulPluginID, in_pCreateFunc, in_pCreateParamFunc );
@@ -371,17 +372,24 @@ namespace AK
 			return group && state ? SetSwitch( group, state, in_gameObjectID ) : AK_IDNotFound;
 		}
 
-		/** 2012 0x918850 / 0x917320: the state "none" (FNV of "none", 748895195) is state 0. */
-		AKRESULT SetState( AkStateGroupID in_stateGroup, AkStateID in_state )
+		/** 2012 0x917320: the state "none" (FNV of "none", 748895195) is state 0; the music engine posts its delayed
+			states with in_bSkipExtension so they are not delayed again. */
+		AKRESULT SetState( AkStateGroupID in_stateGroup, AkStateID in_state, bool in_bSkipTransition, bool in_bSkipExtension )
 		{
 			++AkSilent::MutableStats().StateSets;
 			AkQueuedMsg Item;
 			Item.type = QueuedMsgType_State;
 			Item.setstate.StateGroupID = in_stateGroup;
 			Item.setstate.StateID = in_state == 748895195 ? 0 : in_state;
-			Item.setstate.bSkipTransition = false;
-			Item.setstate.bSkipExtension = false;
+			Item.setstate.bSkipTransition = in_bSkipTransition;
+			Item.setstate.bSkipExtension = in_bSkipExtension;
 			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_State>() );
+		}
+
+		/** 2012 0x918850. */
+		AKRESULT SetState( AkStateGroupID in_stateGroup, AkStateID in_state )
+		{
+			return SetState( in_stateGroup, in_state, false, false );
 		}
 
 		/** 2012 0x9188a0. */
@@ -712,7 +720,16 @@ namespace AK
 
 		// -- environments / obstruction ------------------------------------------------------------
 
-		AKRESULT SetEffect( AkUniqueID, AkUInt32, AkUniqueID ) { return AK_Success; }
+		/** 2012 0x918200 (agent IH4): queued (message 40); the audio thread sets the node's effect slot to the share set. */
+		AKRESULT SetEffect( AkUniqueID in_audioNodeID, AkUInt32 in_uFXIndex, AkUniqueID in_shareSetID )
+		{
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_SetEffect;
+			Item.setEffect.audioNodeID = in_audioNodeID;
+			Item.setEffect.uFXIndex = in_uFXIndex;
+			Item.setEffect.shareSetID = in_shareSetID;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_SetEffect>() );
+		}
 		/** 2012 0x9174f0 (IH3 fork R). */
 		AKRESULT SetEnvironmentVolumes( AkAuxBusID in_FXParameterSetID, const AkSpeakerVolumes & in_sVolumes )
 		{
@@ -833,6 +850,12 @@ namespace AK
 		void AddExternalStateHandler( bool ( *in_pHandler )( AkStateGroupID, AkStateID ) )
 		{
 			g_pExternalStateHandler = in_pHandler;
+		}
+
+		/** 2012 0x918260 (agent IH4 fork M): AK::MusicEngine::Init's hook for HIRC types 10..13. */
+		void AddExternalBankHandler( AkExternalBankHandlerCallback in_pCallback )
+		{
+			g_pExternalBankHandlerCallback = in_pCallback;
 		}
 
 		// -- Query ---------------------------------------------------------------------------------

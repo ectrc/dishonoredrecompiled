@@ -4106,7 +4106,9 @@ public:
 	{
 		return bDeleteMe || HasAnyFlags(RF_PendingKill);
 	}
-	virtual void PostScriptDestroyed() {} // C++ notification that the script Destroyed() function has been called.
+	// DISHONORED(port, agent IH4b): retail's AActor::PostScriptDestroyed is OnLevelTerminated (2012 vtable slot +0x1bc of
+	// ??_7AActor 0xbdfe18 holds 0x1774c0; 2013 0x16d7d0): a destroyed actor terminates here, before the rest of DestroyActor.
+	virtual void PostScriptDestroyed() { OnLevelTerminated(); } // C++ notification that the script Destroyed() function has been called.
 
 	// AActor collision functions.
 	virtual UBOOL ShouldTrace(UPrimitiveComponent* Primitive,AActor *SourceActor, DWORD TraceFlags);
@@ -4436,6 +4438,16 @@ public:
 	virtual UBOOL VerifyNoUnreachableReferences();
 
 	virtual void ClearComponents();
+	// DISHONORED(port, agent IH4): Arkane's actor termination (2012 unactor.cpp): AActor::PreBeginPlay makes an actor legal to
+	// terminate (m_bLegalToTerminate); BeginDestroy, ClearComponents and MarkComponentsAsPendingKill terminate it once
+	// (m_bHasTerminated) and call OnActorTerminated. IsActorTerminated 0x12d530, SetActorLegalToTerminate 0x1731c0,
+	// TerminateActor 0x173180, ConditionalTerminateActor 0x177460, OnLevelTerminated 0x1774c0. Bodies in UnActor.cpp.
+	UBOOL IsActorTerminated() const;
+	void SetActorLegalToTerminate();
+	void ConditionalTerminateActor();
+	void TerminateActor();
+	void OnLevelTerminated();
+	virtual void OnActorTerminated() {}
 	void ConditionalUpdateComponents(UBOOL bCollisionUpdate = FALSE);
 
 	/** Used by octree RestrictedOverlapCheck to determine whether an actor should be considered

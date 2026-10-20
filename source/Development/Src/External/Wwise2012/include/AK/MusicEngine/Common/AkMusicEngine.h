@@ -10,6 +10,8 @@
 	UAkAudioDevice::EnsureInitialized (2013 rva 0x5b1430) calls GetDefaultInitSettings then Init right
 	after AK::SoundEngine::Init, and UAkAudioDevice::Teardown (0x5b3de0) calls Term first of all.
 	Note Init takes a pointer while GetDefaultInitSettings takes a reference - that asymmetry is Wwise's.
+	Agent IH4 fork M (wave 26): implemented by the ported music engine (Src/AkMusicEngine/Common/AkMusicRenderer.cpp);
+	Init installs the renderer's frame behaviour, the external state handler and AkMusicBank::LoadBankItem as retail.
 =============================================================================*/
 #ifndef _AK_MUSIC_ENGINE_H_
 #define _AK_MUSIC_ENGINE_H_

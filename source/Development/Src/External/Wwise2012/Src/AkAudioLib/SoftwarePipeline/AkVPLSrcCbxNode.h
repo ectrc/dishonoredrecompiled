@@ -4,14 +4,14 @@
 	(akvplfilternode*.cpp), the voice low-pass filter and the obstruction low-pass filter (akvpllpfnode.cpp).
 
 	DISHONORED(port): agent IH2 (wave 26). Layouts are the 2012 PDB's (CAkVPLSrcCbxNode 0x288 bytes).
-	CAkVPLFilterNodeBase is declared for the pipeline's four slots only: an insert effect needs an effect plug-in
-	(IH4), so AddPipeline's GetFX finds none and the slots stay empty.
+	The four insert-effect slots hold CAkVPLFilterNode / CAkVPLFilterNodeOutOfPlace (AkVPLFilterNode.h, agent IH4).
 =============================================================================*/
 #pragma once
 
 #include "AkVPLNode.h"
 #include "AkResampler.h"
 #include "AkSrcLpFilter.h"
+#include "AkVPLFilterNode.h"
 
 class CAkVPLSrcCbxNode;
 
@@ -57,23 +57,6 @@ public:
 	void ConsumeBuffer( AkVPLState & io_state );
 
 	CAkSrcLpFilter m_LPF;
-};
-
-class CAkVPLFilterNodeBase : public CAkVPLNode
-{
-public:
-	virtual void Term() = 0;
-	virtual void GetBuffer( AkVPLState & io_state ) = 0;
-	virtual void ConsumeBuffer( AkVPLState & io_state ) = 0;
-
-	CAkPBI *	m_pCtx;
-	void *		m_pInsertFXContext;
-	void *		m_pParam;
-	AkPluginID	m_FXID;
-	bool		m_bLast;
-	bool		m_bBypassed;
-	bool		m_LastBypassed;
-	AkUInt32	m_uFXIndex;
 };
 
 struct AkVPLSrcCbxRec
@@ -137,6 +120,8 @@ public:
 	bool IsUsingThisSlot( const CAkUsageSlot * in_pUsageSlot );
 	void SetFxBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask );
 	void RefreshBypassFx();
+	void RefreshBypassFx( AkUInt32 in_uFXIndex );
+	void UpdateFx( AkUInt32 in_uFXIndex );
 
 	AkUInt32		m_uSampleRate;
 	AkUInt32		m_uChannelMask;

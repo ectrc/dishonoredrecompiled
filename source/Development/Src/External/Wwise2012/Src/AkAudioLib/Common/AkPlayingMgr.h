@@ -16,6 +16,7 @@ class CAkPBI;
 class CAkTransportAware;
 class AkPipelineBuffer;
 struct AkAudioMarker;
+struct AkMusicGrid;
 
 class CAkPlayingMgr
 {
@@ -56,6 +57,9 @@ public:
 	void NotifyEndOfDynamicSequenceItem( AkPlayingID in_PlayingID, AkUniqueID in_audioNodeID, void * in_pCustomInfo );
 	void NotifyMarkers( AkPipelineBuffer & io_CurrMarkerBuffer );
 	void NotifySpeakerVolumeMatrix( AkPlayingID in_PlayingID, AkSpeakerVolumeMatrixCallbackInfo * in_pInfo );
+	void NotifyMusicPlayStarted( AkPlayingID in_PlayingID );
+	void NotifyMusic( AkPlayingID in_PlayingID, AkCallbackType in_NotifType, const AkMusicGrid & in_rGrid );
+	void NotifyMusicUserCues( AkPlayingID in_PlayingID, const AkMusicGrid & in_rGrid, char * in_pszUserCueName );
 
 	AkHashListBare<AkPlayingID, PlayingMgrItem, 31, PlayingMgrItemPolicy>	m_PlayingMap;
 	CAkLock			m_csMapLock;
@@ -63,6 +67,7 @@ public:
 
 private:
 	void CheckRemovePlayingID( AkPlayingID in_PlayingID, PlayingMgrItem * in_pItem );
+	void PrepareMusicNotification( AkPlayingID in_PlayingID, PlayingMgrItem * in_pItem, AkCallbackType in_NotifType, const AkMusicGrid & in_rGrid, char * in_pszUserCueName, AkMusicSyncCallbackInfo & out_info );
 };
 
 extern CAkPlayingMgr * g_pPlayingMgr;

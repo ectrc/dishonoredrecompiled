@@ -18,6 +18,8 @@
 	  * The feedback (motion) master bus swap around a load and CAkFeedbackBus are not ported: no Dishonored
 	    bank has bFeedbackInBank set (wwise_bank_dump.py --all).
 	  * -akdiag: every load / prepare / unload logs bank name, id, size, result and HIRC counts by type.
+	  * Agent IH4 fork M: AkMusicBankReader (AkMusicEngine/Common/AkMusicBank.cpp, retail's StdBankRead<music node> /
+	    ReadSourceParent<CAkMusicTrack> instances) is a friend for the reader, AddLoadedItem and CheckParseEnd.
 =============================================================================*/
 #pragma once
 
@@ -282,6 +284,8 @@ public:
 	AkUInt32	m_uLoadBytes;
 
 private:
+	friend struct AkMusicBankReader;
+
 	static DWORD WINAPI BankThreadFunc( LPVOID lpParameter );
 	AKRESULT StartThread();
 	AKRESULT ExecuteCommand();

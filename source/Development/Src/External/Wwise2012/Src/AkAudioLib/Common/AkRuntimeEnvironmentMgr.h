@@ -7,31 +7,15 @@
 #pragma once
 
 #include <AK/SoundEngine/Common/AkTypes.h>
+#include <AK/SoundEngine/Common/IAkPlugin.h>	// DISHONORED(IH4): IAkProcessorFeatures and AkSIMDProcessorSupport are public (IAkPlugin.h)
 
 namespace AK
 {
-	enum AkSIMDProcessorSupport
-	{
-		AK_SIMD_SSE		= 0x1,
-		AK_SIMD_SSE2	= 0x2,
-		AK_SIMD_SSE3	= 0x4,
-		AK_SIMD_SSSE3	= 0x8
-	};
-
 	struct AkProcessorSupportInfo
 	{
 		AkUInt32 uSIMDProcessorSupport;
 		AkUInt32 uL2CacheSize;
 		AkUInt32 uCacheLineSize;
-	};
-
-	class IAkProcessorFeatures
-	{
-	public:
-		virtual ~IAkProcessorFeatures() {}
-		virtual bool GetSIMDSupport( AkSIMDProcessorSupport in_eSIMD ) = 0;
-		virtual AkUInt32 GetCacheSize() = 0;
-		virtual AkUInt32 GetCacheLineSize() = 0;
 	};
 
 	class AkRuntimeEnvironmentMgr : public IAkProcessorFeatures

@@ -29,6 +29,8 @@ namespace AK
 		bool GetBypassAllFX() const;
 		bool HasEffect() const;
 		bool IsEnvironmental() const;
+		void GetFX( AkUniqueID in_envID, AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo ) const;
+		void GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID ) const;
 
 		CAkBus * m_pBus;
 	};

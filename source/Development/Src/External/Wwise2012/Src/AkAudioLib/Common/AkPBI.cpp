@@ -21,6 +21,7 @@
 #include "AkBusCtx.h"
 #include "AkPath.h"
 #include "AkBankMgr.h"
+#include "AkEnvironmentsMgr.h"
 #include "AkVPLSrcCbxNode.h"
 
 AkUInt32 CAkPBI::ms_PBIIDGenerator = 0;
@@ -1014,7 +1015,7 @@ AK::CAkBusCtx CAkPBI::GetBusContext()
 	return busCtx;
 }
 
-/** 2012 0x93f490: the object's sends, minus the bypassed environments. DISHONORED(IH3 seam): nothing is bypassed. */
+/** 2012 0x93f490: the object's sends, minus the bypassed environments (agent IH4: the bypass test). */
 void CAkPBI::GetEnvironmentValues( AkEnvironmentValue * io_paEnvVal )
 {
 	AkUInt32 uNumValues = 0;
@@ -1024,6 +1025,10 @@ void CAkPBI::GetEnvironmentValues( AkEnvironmentValue * io_paEnvVal )
 		if( !rValue.EnvID )
 		{
 			break;
+		}
+		if( g_pEnvironmentMgr->IsBypassed( rValue.EnvID ) )
+		{
+			continue;
 		}
 		io_paEnvVal[ uNumValues++ ] = rValue;
 	}

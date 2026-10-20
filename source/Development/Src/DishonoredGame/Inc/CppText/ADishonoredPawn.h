@@ -3,6 +3,11 @@
 // GetTweaks_Derived 0x749110 / SetTweaks_Derived 0x74d350 (m_pPawnTweaks) / ApplyTweakChanges_Derived 0x769720 with
 // ApplyTweakChanges_Body 0x757060. Bodies in dishonoredpawn.cpp.
 public:
+	// ---- agent IH4 (PHASE23 IH4): the pawn's termination, OnActorTerminated 2012 0x79ed80 -> ShutPawnDown 0x79d360 ->
+	// ShutPawnDown_Derived (empty in the base). Bodies in dishonoredpawn.cpp.
+	virtual void OnActorTerminated();
+	void ShutPawnDown();
+	virtual void ShutPawnDown_Derived() {}
 	virtual void Serialize( FArchive& Ar );
 	virtual void PossessedBy( AController* C );
 	virtual UObject* GetUObjectInterfaceDisTweaksInterface() { return this; }

@@ -4,17 +4,15 @@
 	0x100 bytes, final mix node 0xE0).
 
 	DISHONORED(port): agent IH2 (wave 26).
-	Deviations (named):
-	  * CAkBusFX's four effect slots keep the PDB layout but their plug-in pointers are opaque: a bus insert effect
-	    needs the effect plug-in interfaces (IH4). SetInsertFx (0x93b430) is the IH4 seam: it leaves a slot empty, so
-	    ProcessAllFX and the final mix's effect loop find nothing to run.
-	  * Environment volumes (CAkEnvironmentsMgr::GetEnvironmentVolumes) are IH3/IH4's; an aux (environmental) bus node
-	    mixes at unity as retail does for m_EnvID 0.
+	Agent IH4 fork F1: the bus insert effects (SetInsertFx 0x93b430, DropFx 0x93ad30, ProcessAllFX 0x93b1b0, the final
+	mix's effect loop in GetResultingBuffer 0x93e210) and an environment bus node's output volumes (PostProcessFx
+	0x93b220: the environment share set's speaker volumes times the bus volume).
 =============================================================================*/
 #pragma once
 
 #include "AkMixer.h"
 #include "AkBusCtx.h"
+#include "AkFxContext.h"
 
 class CAkBusVolumes
 {
@@ -29,10 +27,10 @@ class __declspec(align(16)) CAkBusFX : public CAkBusVolumes
 public:
 	struct FX
 	{
-		AkUniqueID	id;
-		void *		pParam;
-		void *		pEffect;
-		void *		pBusFXContext;
+		AkUniqueID						id;
+		AK::IAkPluginParam *			pParam;
+		AK::IAkInPlaceEffectPlugin *	pEffect;
+		CAkBusFXContext *				pBusFXContext;
 		AkUInt8		bBypass : 1;
 		AkUInt8		bLastBypass : 1;
 	};
@@ -41,6 +39,7 @@ public:
 	AKRESULT SetInsertFx( const AK::CAkBusCtx & in_BusContext, AkUInt32 in_uFXIndex, AkUniqueID in_EnvID );
 	void DropFx( AkUInt32 in_uFXIndex );
 	void DropFx();
+	void ProcessFX( AkAudioBufferBus & io_rBuffer );
 
 	CAkMixer			m_Mixer;
 	AkAudioBufferBus	m_BufferOut;

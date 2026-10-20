@@ -5,13 +5,13 @@
 
 	DISHONORED(port): agent IH3 (wave 26), fork R; replaces IH1's AkGameSyncs data store. Layouts are the 2012 PDB's
 	(CAkRTPCMgr::AkRTPCEntry 0x28, AkRTPCSubscription 0x20, RTPCCurve 0x14, CAkRTPCTransition 0x18).
-	Deviation (named): AK::IAkRTPCSubscriber (the effect plug-ins' parameter interface, IAkPlugin.h in the SDK) is
-	declared here with the one slot the manager calls; the plug-ins themselves are IH4's.
+	AK::IAkRTPCSubscriber now comes from the public IAkPlugin.h (agent IH4 moved it there, as the SDK has it).
 =============================================================================*/
 #pragma once
 
 #include "AkAudioLibGlobals.h"
 #include "AkTransitionManager.h"
+#include <AK/SoundEngine/Common/IAkPlugin.h>
 
 class CAkRegisteredObj;
 class CAkSwitchAware;
@@ -44,17 +44,6 @@ enum AkRTPC_ParameterID
 	RTPC_FeedbackPitch							= 31,
 	RTPC_MaxNumRTPC								= 32
 };
-
-namespace AK
-{
-	class IAkRTPCSubscriber
-	{
-	protected:
-		virtual ~IAkRTPCSubscriber() {}
-	public:
-		virtual AKRESULT SetParam( AkUInt16 in_paramID, const void * in_pValue, AkUInt32 in_uParamSize ) = 0;
-	};
-}
 
 typedef AkArray<CAkRegisteredObj *, CAkRegisteredObj *, ArrayPoolDefault, 16> GameObjExceptArray;
 

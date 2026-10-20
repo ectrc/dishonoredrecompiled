@@ -2333,6 +2333,13 @@ IMPLEMENT_CLASS(UDishonoredVisibilityComponent);
 extern void DishonoredLinkArkAnimNodeLocomotion();
 extern void DishonoredLinkDisBehaviorGoTo();
 extern void DishonoredLinkDisBehaviorGoToBase();
+extern void DishonoredLinkDisGlobalMusicManager();
+extern void DishonoredLinkDisMusicStateBase();
+extern void DishonoredLinkDisMusicStateChase();
+extern void DishonoredLinkDisMusicStateCombat();
+extern void DishonoredLinkDisMusicStateExploration();
+extern void DishonoredLinkDisMusicStateRatAttack();
+extern void DishonoredLinkDisMusicStateSuspense();
 extern void DishonoredLinkDisSeqActAddObjective();
 extern void DishonoredLinkDisSeqActCompleteObjective();
 extern void DishonoredLinkDisSeqActFailObjective();
@@ -2446,6 +2453,13 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkArkAnimNodeLocomotion,
 	&DishonoredLinkDisBehaviorGoTo,
 	&DishonoredLinkDisBehaviorGoToBase,
+	&DishonoredLinkDisGlobalMusicManager,
+	&DishonoredLinkDisMusicStateBase,
+	&DishonoredLinkDisMusicStateChase,
+	&DishonoredLinkDisMusicStateCombat,
+	&DishonoredLinkDisMusicStateExploration,
+	&DishonoredLinkDisMusicStateRatAttack,
+	&DishonoredLinkDisMusicStateSuspense,
 	&DishonoredLinkDisSeqActAddObjective,
 	&DishonoredLinkDisSeqActCompleteObjective,
 	&DishonoredLinkDisSeqActFailObjective,

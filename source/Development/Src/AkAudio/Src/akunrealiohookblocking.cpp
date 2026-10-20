@@ -120,6 +120,7 @@ UBOOL FAkFilePackage::Load( const TCHAR* InFullPath, AkUInt32 InPackageID )
 
 	ReadTable( 28 + LanguageMapSize, SoundBanksSize, SoundBanks );
 	ReadTable( 28 + LanguageMapSize + SoundBanksSize, StreamedFilesSize, StreamedFiles );
+	Shared = new FAkSharedReader( Reader );
 	return TRUE;
 }
 
@@ -163,7 +164,15 @@ const FAkPackagedFile* FAkFilePackage::Find( AkFileID InFileID, UBOOL bStreamed 
 
 void FAkFilePackage::CloseReader()
 {
-	delete Reader;
+	if( Shared )
+	{
+		Shared->Release();
+	}
+	else
+	{
+		delete Reader;
+	}
+	Shared = NULL;
 	Reader = NULL;
 }
 
@@ -331,7 +340,7 @@ AKRESULT CAkFilePackageLowLevelIO::Open( const AkOSChar* InFileName, AkOpenMode 
 		OutFileDesc.iFileSize = (AkInt64)File->FileSize;
 		OutFileDesc.uSector = 0;
 		OutFileDesc.deviceID = m_DeviceID;
-		OutFileDesc.hFile = MakeHandle( Package->Reader, FALSE, File->Offset );
+		OutFileDesc.hFile = MakeHandle( Package->Shared, File->Offset );
 		IoSyncOpen = true;
 		return AK_Success;
 	}
@@ -355,7 +364,7 @@ AKRESULT CAkFilePackageLowLevelIO::Open( AkFileID InFileID, AkOpenMode InOpenMod
 	appMemzero( &OutFileDesc, sizeof(OutFileDesc) );
 	OutFileDesc.iFileSize = (AkInt64)File->FileSize;
 	OutFileDesc.deviceID = m_DeviceID;
-	OutFileDesc.hFile = MakeHandle( Package->Reader, FALSE, File->Offset );
+	OutFileDesc.hFile = MakeHandle( Package->Shared, File->Offset );
 	IoSyncOpen = true;
 	return AK_Success;
 }
@@ -364,11 +373,11 @@ AKRESULT CAkFilePackageLowLevelIO::Open( AkFileID InFileID, AkOpenMode InOpenMod
 	CAkUnrealIOHookBlocking: the loose-file half
 -----------------------------------------------------------------------------*/
 
-void* CAkUnrealIOHookBlocking::MakeHandle( FArchive* InReader, UBOOL bOwnsReader, AkInt64 InBaseOffset )
+void* CAkUnrealIOHookBlocking::MakeHandle( FAkSharedReader* InShared, AkInt64 InBaseOffset )
 {
 	FAkOpenFile* Handle = new FAkOpenFile();
-	Handle->Reader = InReader;
-	Handle->bOwnsReader = bOwnsReader;
+	InShared->AddRef();
+	Handle->Shared = InShared;
 	Handle->BaseOffset = InBaseOffset;
 	return Handle;
 }
@@ -393,7 +402,9 @@ AKRESULT CAkUnrealIOHookBlocking::Open( const AkOSChar* InFileName, AkOpenMode I
 	}
 	OutFileDesc.iFileSize = (AkInt64)Reader->TotalSize();
 	OutFileDesc.deviceID = m_DeviceID;
-	OutFileDesc.hFile = MakeHandle( Reader, TRUE, 0 );
+	FAkSharedReader* Shared = new FAkSharedReader( Reader );
+	OutFileDesc.hFile = MakeHandle( Shared, 0 );
+	Shared->Release();
 	IoSyncOpen = true;
 	return AK_Success;
 }
@@ -412,31 +423,32 @@ AKRESULT CAkUnrealIOHookBlocking::Open( AkFileID /*InFileID*/, AkOpenMode /*InOp
 AKRESULT CAkUnrealIOHookBlocking::Read( AkFileDesc& InFileDesc, const AkIoHeuristics& /*InHeuristics*/, void* OutBuffer, AkIOTransferInfo& IoTransferInfo )
 {
 	FAkOpenFile* Handle = (FAkOpenFile*)InFileDesc.hFile;
-	if( !Handle || !Handle->Reader || !OutBuffer )
+	if( !Handle || !Handle->Shared || !OutBuffer )
 	{
 		return AK_Fail;
 	}
+	FArchive* Reader = Handle->Shared->Reader;
 	const AkInt64 Position = Handle->BaseOffset + (AkInt64)IoTransferInfo.uFilePosition;
 	AkUInt32 Size = IoTransferInfo.uRequestedSize;
 	if( Position + (AkInt64)Size > Handle->BaseOffset + InFileDesc.iFileSize )
 	{
 		Size = (AkUInt32)Max<AkInt64>( 0, Handle->BaseOffset + InFileDesc.iFileSize - Position );
 	}
-	if( Position + (AkInt64)Size > (AkInt64)Handle->Reader->TotalSize() )
+	if( Position + (AkInt64)Size > (AkInt64)Reader->TotalSize() )
 	{
 		return AK_Fail;
 	}
-	Handle->Reader->Seek( (INT)Position );
+	Reader->Seek( (INT)Position );
 	if( Size )
 	{
-		Handle->Reader->Serialize( OutBuffer, (INT)Size );
+		Reader->Serialize( OutBuffer, (INT)Size );
 	}
 	// The caller sized its buffer to a block multiple; anything past the file is zero, as Wwise expects.
 	if( Size < IoTransferInfo.uRequestedSize )
 	{
 		appMemzero( (BYTE*)OutBuffer + Size, IoTransferInfo.uRequestedSize - Size );
 	}
-	return Handle->Reader->IsError() ? AK_Fail : AK_Success;
+	return Reader->IsError() ? AK_Fail : AK_Success;
 }
 
 // DISHONORED(bringup): retail's hook is read-only in the shipping build too (the write path is the Wwise
@@ -452,10 +464,7 @@ AKRESULT CAkUnrealIOHookBlocking::Close( AkFileDesc& InFileDesc )
 	FAkOpenFile* Handle = (FAkOpenFile*)InFileDesc.hFile;
 	if( Handle )
 	{
-		if( Handle->bOwnsReader )
-		{
-			delete Handle->Reader;
-		}
+		Handle->Shared->Release();
 		delete Handle;
 		InFileDesc.hFile = NULL;
 	}

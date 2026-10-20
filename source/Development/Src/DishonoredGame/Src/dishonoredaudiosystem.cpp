@@ -217,7 +217,7 @@ static void DisSetAkSoundPositions( FDisAudioPropagationCache& _rPropagationCach
 }
 
 // DISHONORED(port): agent IH3 (fork G). The Wwise ids Init resolves (2013 statics dword_14671C8..14671F8) and the overseer effect's
-// globals (2012 GOverseerEffectRTPC / GOverseerEffectRTPC_ID); nothing in this tree writes GOverseerEffectRTPC yet.
+// globals (2012 GOverseerEffectRTPC / GOverseerEffectRTPC_ID); DisAkGlobalCallbackFunc below writes GOverseerEffectRTPC (agent IH4).
 DWORD UDishonoredAudioSystem::ms_TimeDilationRTPC_ID = 0;
 DWORD UDishonoredAudioSystem::ms_FreezeEvent_ID = 0;
 DWORD UDishonoredAudioSystem::ms_UnfreezeEvent_ID = 0;
@@ -233,6 +233,23 @@ DWORD UDishonoredAudioSystem::ms_AmbientVolumeRTPC_ID = 0;
 DWORD UDishonoredAudioSystem::ms_MenuVolumeRTPC_ID = 0;
 FLOAT GOverseerEffectRTPC = 0.f;
 DWORD GOverseerEffectRTPC_ID = 0;
+
+/** DISHONORED(port, agent IH4): 2012 0x7f3f50 / 2013 0x7873a0. Wwise's global callback (the audio thread, once per audio frame):
+    the overseer effect's RTPC read back as its global value into GOverseerEffectRTPC, which UDishonoredAudioSystem::Update tests. */
+void DisAkGlobalCallbackFunc( bool /*in_bLastCall*/ )
+{
+	AK::SoundEngine::Query::RTPCValue_type Type = AK::SoundEngine::Query::RTPCValue_Global;
+	AK::SoundEngine::Query::GetRTPCValue( GOverseerEffectRTPC_ID, AK_INVALID_GAME_OBJECT, GOverseerEffectRTPC, Type );
+}
+
+/** DISHONORED(deviation, agent IH4): hands DisAkGlobalCallbackFunc to UAkAudioDevice across the module boundary (AkAudioWwise.h). */
+static struct FDisAkGlobalCallbackInstaller
+{
+	FDisAkGlobalCallbackInstaller()
+	{
+		GDisAkGlobalCallback = &DisAkGlobalCallbackFunc;
+	}
+} GDisAkGlobalCallbackInstaller;
 
 UBOOL DisIH3DiagEnabled()
 {
@@ -456,7 +473,7 @@ void UAnimNotify_AkEvent::Notify( UAnimNodeSequence* NodeSeq )
  * UAkAudioDevice::Update issued on retail's behalf until this port).
  * Deviations (named): 2013's ambient-sound time dilation (AActor::SetAkComponentsTimeDilation 0x38a670 with the game info's
  * per-channel dilation, slot +976) is not ported - neither exists in this tree - so the 2012 shape of that loop is kept; the
- * component set is iterated as UDisAkComponent (retail casts nothing); GOverseerEffectRTPC has no writer in this tree (0).
+ * component set is iterated as UDisAkComponent (retail casts nothing); GOverseerEffectRTPC is written by DisAkGlobalCallbackFunc (agent IH4).
  */
 void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveComponents )
 {

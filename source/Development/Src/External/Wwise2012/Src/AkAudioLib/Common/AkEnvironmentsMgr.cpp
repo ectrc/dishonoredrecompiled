@@ -3,11 +3,11 @@
 	matched by bytes).
 
 	DISHONORED(port): agent IH3 (wave 26), fork R. Rva on each definition.
-	Deviation (named): BypassEnvironment stores the share set's flag but does not call CAkLEngine::BypassEnvFx
-	(2012 0x91c440): the environmental FX busses of the lower engine are IH4's (no env bus is ever created).
+	Agent IH4: BypassEnvironment also bypasses the environment's live aux nodes (CAkLEngine::BypassEnvFx 0x91c440).
 =============================================================================*/
 #include "AkHierarchy.h"
 #include "AkEnvironmentsMgr.h"
+#include "AkLEngine.h"
 
 /** 2012 0x933ec0. */
 AKRESULT CAkEnvironmentsMgr::Init()
@@ -85,6 +85,7 @@ AKRESULT CAkEnvironmentsMgr::BypassEnvironment( AkAuxBusID in_FXParameterSetID, 
 	}
 	pFx->m_bBypassed = in_bIsBypassed;
 	pFx->Release();
+	CAkLEngine::BypassEnvFx( in_FXParameterSetID, in_bIsBypassed );
 	return AK_Success;
 }
 

@@ -69,3 +69,35 @@ cmake/Wwise.cmake              GLOB_RECURSE over Src/, each module folder a priv
   The class data members are the PDB's; add virtuals to `CAkParameterNodeBase` rather than new classes.
 - **IH4** installs `AkMusicBank::LoadBankItem` as `g_pExternalBankHandlerCallback` (today AkSilentMusicEngine
   declines every music item with AK_PartialSuccess and the bank manager skips it).
+
+## Closing (agent IH4, end of the IH program)
+
+**Ported.** Of the 3,070 Wwise rows of `ih1_inventory.csv` (the ~3,100 of the plan), the last owner's status counts
+**2,812 ported** (rva cited in a port file, ported by name, or a body in an earlier package's file), plus 62 SDK header
+templates instantiated by their users (`AkPrivateTypes.h`) and 2 static initialisers: **2,876 of 3,070 (93.7 %)**.
+Per package: IH1 memory + stream + bank manager, IH2 the audio thread, renderer, lower engine, Vorbis, sink (989 of 1,170
+rows), IH3 the parameter graph, positioning, containers (542 of 620), IH4 the music engine, nine effects + the silence
+source, insert / bus effects, environmental sends (811 of 829).
+
+**Named, not ported (194 rows), each for a measured reason:**
+
+| rows | what | why |
+|---|---|---|
+| 69 | feedback (motion) device, feedback bus / node, `CAkSplitterBus` | no feedback device is ever created, no feedback object in any bank |
+| 38 | deferred lined-up stream device | the blocking scheduler is the one the glue creates |
+| 26 | IH1-scope leftovers (agentIH1.md) | not on the game's path |
+| 20 | playback functions off Dishonored's path (agentIH2.md) | |
+| 14 | dialogue events / decision tree | 0 of 42,548 objects |
+| 8 | unreached or folded symbols (agentIH3.md) | |
+| 7 | default-output-device-change reset | named deviation |
+| 7 | mislabelled handovers (IH3's `DynamicSequence::*`, a folded engine symbol) | ported elsewhere / not Wwise |
+| 4 | authoring tool / profiler link | no profiler |
+| 1 | `CAkListener::ComputeConeEffect` (handed between IH2/IH3/IH4) | the cone path IH3 ported does not reach it |
+
+**What the A/B still shows** (IH4 build 2, `build/agentIH4/ab/IH4b..e_ab.md`, world 57-150 against retail.mp4's audio):
+Pearson r of the per-second RMS **0.59-0.62** (IH2 0.20, IH3 0.51), ours a median **4.8-5.1 dB** under retail (IH3 7.2).
+What remains: the second at w60 before our first ambience / music posts (60.4 / 62.1), retail's sub-150 Hz drone in
+w105-118 (10-13 dB), and a constant ~4 dB that is the recording level of retail.mp4 (an OBS capture at the user's unknown
+sliders). The `-startmap` load Critical the music manager exposed is closed by IH4b (retail's pawn termination chain,
+agentIH4.md section 6; build 5: r 0.659, -4.8 dB). Open: 3 of 16 cutscene exits end silently right after the exit GC
+unprepares `WwiseDefaultBank_WwiseGlobal.bnk`, while continuous ambience containers still post their next item.

@@ -477,6 +477,47 @@ bool CAkParameterNode::GetBypassFX( AkUInt32 in_uFXIndex, CAkRegisteredObj * in_
 	return ( bits >> in_uFXIndex ) & 1;
 }
 
+/** 2012 0x93a2b0, 2013 0x936cd0 (agent IH4): the slot's effect, from this node when it overrides its parent's effects
+    (or has no parent), else from the parent. */
+void CAkParameterNode::GetFX( AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo, CAkRegisteredObj * in_GameObj )
+{
+	if( !m_bIsFXOverrideParent && m_pParentNode )
+	{
+		m_pParentNode->GetFX( in_uFXIndex, out_rFXInfo, in_GameObj );
+		return;
+	}
+	if( !m_pFXChunk )
+	{
+		out_rFXInfo.SetFx( NULL );
+		out_rFXInfo.bIsBypassed = false;
+		return;
+	}
+	const FXStruct & fx = m_pFXChunk->aFX[ in_uFXIndex ];
+	out_rFXInfo.SetFx( fx.id ? AkGetFxAndAddRef( fx.id, fx.bShareSet ) : NULL );
+	out_rFXInfo.bIsBypassed = GetBypassFX( in_uFXIndex, in_GameObj );
+}
+
+/** 2012 0x93a370 (agent IH4): the media id of the slot's effect data index, -1 when the slot has no effect object. */
+void CAkParameterNode::GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID )
+{
+	if( !m_bIsFXOverrideParent && m_pParentNode )
+	{
+		m_pParentNode->GetFXDataID( in_uFXIndex, in_uDataIndex, out_rDataID );
+		return;
+	}
+	out_rDataID = (AkUInt32)-1;
+	if( m_pFXChunk )
+	{
+		const FXStruct & fx = m_pFXChunk->aFX[ in_uFXIndex ];
+		CAkFxBase * pFx = AkGetFxAndAddRef( fx.id, fx.bShareSet );
+		if( pFx )
+		{
+			out_rDataID = pFx->GetMediaID( in_uDataIndex );
+			pFx->Release();
+		}
+	}
+}
+
 // ------------------------------------------------------------------------------------------------------------
 // CAkSoundBase: the PBIs of the sound
 // ------------------------------------------------------------------------------------------------------------
@@ -833,13 +874,20 @@ void CAkPBI::ParamNotification( NotifParams & in_rParams )
 	}
 }
 
-/** 2012 0x93f500 (2013 0x93be80). See the banner: the effect swap itself is IH4's. */
+/** 2012 0x93f500 (2013 0x93be80): the voice swaps the slot's effect, then re-reads its bypass (agent IH4). */
 void CAkPBI::UpdateFx( AkUInt32 in_uFXIndex )
 {
 	if( m_pCbx )
 	{
-		m_pCbx->RefreshBypassFx();
+		m_pCbx->UpdateFx( in_uFXIndex );
+		m_pCbx->RefreshBypassFx( in_uFXIndex );
 	}
+}
+
+/** 2012 0x93f4f0 (agent IH4). */
+void CAkPBI::GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID )
+{
+	m_pSound->GetFXDataID( in_uFXIndex, in_uDataIndex, out_rDataID );
 }
 
 /** DISHONORED(IH3 -akdiag, see AkPBI.h): the node chain's authored volume, state values, RTPC and SIS, and the whole bus

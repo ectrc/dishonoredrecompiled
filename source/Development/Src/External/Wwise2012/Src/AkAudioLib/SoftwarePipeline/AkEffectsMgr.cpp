@@ -4,9 +4,9 @@
 
 	DISHONORED(port): agent IH2 fork S (wave 26). A registered type's key is its AkPluginID:
 	(plugin ID << 16) | (company ID << 4) | plugin type, the codec type being 1.
+	Agent IH4 fork F1: CAkEffectsMgr::Alloc / AllocParams (0x9254b0 / 0x925510, 2013 0x921ca0 / 0x921d00), the
+	plug-in instances and parameter objects from the registered factories.
 	Deviations (named):
-	  * CAkEffectsMgr::Alloc / AllocParams (0x9254b0 / 0x925510, plug-in instances) are IH4 and not ported:
-	    RegisterPlugin only stores the factories.
 	  * The motion half (m_RegisteredFeedbackBus, RegisterFeedbackBus 0x9255c0, AllocFeedbackBus 0x925610) is not
 	    declared - no feedback device exists - so Term frees the two lists it has, in retail's order.
 =============================================================================*/
@@ -24,7 +24,7 @@ AKRESULT CAkEffectsMgr::Term()
 }
 
 /** 2012 0x9253d0: a type registers once; both factories are required. */
-AKRESULT CAkEffectsMgr::RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, void * in_pCreateFunc, void * in_pCreateParamFunc )
+AKRESULT CAkEffectsMgr::RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, AK::AkCreatePluginCallback in_pCreateFunc, AK::AkCreateParamCallback in_pCreateParamFunc )
 {
 	const AkPluginID uPluginID = ( in_ulPluginID << 16 ) + ( in_ulCompanyID << 4 ) + ( in_eType & 0xF );
 	if( m_RegisteredFXList.Exists( uPluginID ) )
@@ -39,6 +39,36 @@ AKRESULT CAkEffectsMgr::RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCom
 	record.pCreateFunc = in_pCreateFunc;
 	record.pCreateParamFunc = in_pCreateParamFunc;
 	return m_RegisteredFXList.Set( uPluginID, record ) ? AK_Success : AK_Fail;
+}
+
+/** 2012 0x9254b0: AK_Fail for an unregistered plug-in or a failed creation. */
+AKRESULT CAkEffectsMgr::Alloc( AK::IAkPluginMemAlloc * in_pAllocator, AkPluginID in_EffectTypeID, AK::IAkPlugin *& out_pEffect )
+{
+	out_pEffect = NULL;
+	EffectTypeRecord * pRecord = m_RegisteredFXList.Exists( in_EffectTypeID );
+	if( !pRecord )
+	{
+		return AK_Fail;
+	}
+	out_pEffect = pRecord->pCreateFunc( in_pAllocator );
+	return out_pEffect ? AK_Success : AK_Fail;
+}
+
+/** 2012 0x925510: a plug-in registered without a parameter factory has no parameter object (AK_Success). */
+AKRESULT CAkEffectsMgr::AllocParams( AK::IAkPluginMemAlloc * in_pAllocator, AkPluginID in_EffectTypeID, AK::IAkPluginParam *& out_pEffectParam )
+{
+	out_pEffectParam = NULL;
+	EffectTypeRecord * pRecord = m_RegisteredFXList.Exists( in_EffectTypeID );
+	if( !pRecord )
+	{
+		return AK_Fail;
+	}
+	if( !pRecord->pCreateParamFunc )
+	{
+		return AK_Success;
+	}
+	out_pEffectParam = pRecord->pCreateParamFunc( in_pAllocator );
+	return out_pEffectParam ? AK_Success : AK_Fail;
 }
 
 /** 2012 0x925440. */

@@ -10,7 +10,7 @@
 	  * the initialisation order, the pool sizes, the speaker masks, the plug-in and codec registrations,
 	    the bank directory, the language map and the global game object are retail's, read out of
 	    UAkAudioDevice::EnsureInitialized (0x5b1430) and ::SetBankDirectory (0x5b0b40);
-	  * the eight effect plug-ins are registered by id with no factory, because the effects are IH4's; the Vorbis
+	  * the seven effect plug-ins and the silence source are registered with their ported factories (agent IH4); the Vorbis
 	    codec is registered with its ported factories (agent IH2);
 	  * DISHONORED(deviation, agent IH2): the sink window is the desktop window and bGlobalFocus stays TRUE, where
 	    retail passes GGameWindow and clears bGlobalFocus: the game must stay audible while it runs windowed and
@@ -27,12 +27,23 @@
 
 #include "akunrealiohookblocking.h"
 #include <AK/Plugin/AkVorbisFactory.h>
+#include <AK/Plugin/AkParametricEQFXFactory.h>
+#include <AK/Plugin/AkRoomVerbFXFactory.h>
+#include <AK/Plugin/AkSilenceSourceFactory.h>
+#include <AK/Plugin/AkMatrixReverbFXFactory.h>
+#include <AK/Plugin/AkDelayFXFactory.h>
+#include <AK/Plugin/AkTimeStretchFXFactory.h>
+#include <AK/Plugin/AkPitchShifterFXFactory.h>
+#include <AK/Plugin/AkTremoloFXFactory.h>
 
 /** DISHONORED(retail): ?m_bSoundEngineInitialized@UAkAudioDevice@@1_NA, 2013 rva 0x105b43c */
 UBOOL UAkAudioDevice::m_bSoundEngineInitialized = FALSE;
 
 /** DISHONORED(retail): the g_lowLevelIO global of akaudiodevice.cpp (2012 initializer rva 0xba2fa0) */
 static CAkFilePackageLowLevelIO g_lowLevelIO;
+
+/** DISHONORED(deviation, agent IH4): DisAkGlobalCallbackFunc across the module boundary (AkAudioWwise.h). */
+AkGlobalCallbackFunc GDisAkGlobalCallback = NULL;
 
 /** DISHONORED(bringup): stands in for GEngine->Client->GetAkAudioDevice(); see the file header. */
 static UAkAudioDevice* GBringupAkAudioDevice = NULL;
@@ -146,8 +157,8 @@ UBOOL UAkAudioDevice::Init()
  *   9. SetBankDirectory, RegisterGameObj(2, "Unreal Global"), SetPosition(2, origin)
  *  10. LoadAllReferencedBanks, then RegisterGlobalCallback(DisAkGlobalCallbackFunc)
  *
- * The effect plug-in factories are Audiokinetic's (CAkFDNReverbFX::Create, ...) and are IH4's, so those
- * registrations pass NULL factories; the Vorbis codec gets its ported factories (AkVorbisFactory.h, agent IH2).
+ * The effect plug-in factories are Audiokinetic's create functions (CreateMatrixReverbFX, ...), ported by agent IH4;
+ * the Vorbis codec gets its ported factories (AkVorbisFactory.h, agent IH2).
  * The sink window and focus flag are the other deviation, marked in the body.
  */
 UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
@@ -238,16 +249,16 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 		return FALSE;
 	}
 
-	// DISHONORED(retail): the ids retail passes at 0x5b1430, in its order. The effect factories are IH4's, so the
-	// effect registrations carry the ids only.
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 115, NULL, NULL );	// AkMatrixReverb
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 106, NULL, NULL );	// AkDelay
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 105, NULL, NULL );	// AkParametricEQ
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 118, NULL, NULL );	// AkRoomVerb
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 130, NULL, NULL );	// AkTimeStretch
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 136, NULL, NULL );	// AkPitchShifter
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 131, NULL, NULL );	// AkTremolo
-	AK::SoundEngine::RegisterPlugin( AkPluginTypeSource, AKCOMPANYID_AUDIOKINETIC, 101, NULL, NULL );	// AkSilenceSource
+	// DISHONORED(retail): the ids retail passes at 0x5b1430, in its order. The factories are the
+	// ported plug-ins' create functions (agent IH4).
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 115, CreateMatrixReverbFX, CreateMatrixReverbFXParams );	// AkMatrixReverb
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 106, CreateDelayFX, CreateDelayFXParams );	// AkDelay
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 105, CreateParametricEQFX, CreateParametricEQFXParams );	// AkParametricEQ
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 118, CreateRoomVerbFX, CreateRoomVerbFXParams );	// AkRoomVerb
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 130, CreateTimeStretchFX, CreateTimeStretchFXParams );	// AkTimeStretch
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 136, CreatePitchShifterFX, CreatePitchShifterFXParams );	// AkPitchShifter
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 131, CreateTremoloFX, CreateTremoloFXParams );	// AkTremolo
+	AK::SoundEngine::RegisterPlugin( AkPluginTypeSource, AKCOMPANYID_AUDIOKINETIC, 101, CreateSilenceSource, CreateSilenceSourceParams );	// AkSilenceSource
 	AK::SoundEngine::RegisterCodec( AKCOMPANYID_AUDIOKINETIC, AKCODECID_VORBIS, CreateVorbisFilePlugin, CreateVorbisBankPlugin );	// AkVorbisDecoder
 
 	SetBankDirectory();
@@ -259,6 +270,11 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 
 	m_bSoundEngineInitialized = TRUE;
 	LoadAllReferencedBanks();
+	// DISHONORED(port, agent IH4): retail's last call (2013 0x5b1430); see GDisAkGlobalCallback.
+	if( GDisAkGlobalCallback )
+	{
+		AK::SoundEngine::RegisterGlobalCallback( GDisAkGlobalCallback );
+	}
 	return TRUE;
 }
 
@@ -289,6 +305,11 @@ void UAkAudioDevice::Teardown()
 	if( !m_bSoundEngineInitialized )
 	{
 		return;
+	}
+	// DISHONORED(port, agent IH4): retail unregisters the game's global callback first (2013 0x5b3de0).
+	if( GDisAkGlobalCallback )
+	{
+		AK::SoundEngine::UnregisterGlobalCallback( GDisAkGlobalCallback );
 	}
 	AK::MusicEngine::Term();
 	Flush( NULL );
@@ -691,10 +712,12 @@ AKRESULT UAkAudioDevice::SeekOnEvent( const FString& EventName, AActor* Actor, F
 	return AK::SoundEngine::SeekOnEvent( *EventName, GameObject, Position, false );
 }
 
-// DISHONORED(port): 2013 rva 0x5b4020
+// DISHONORED(port): 2013 rva 0x5b4020 (2012 0x5fa200, agent IH4: the scene flush first, as the 2012 body; the previous port
+// had the StopAll only)
 void UAkAudioDevice::StopAllSounds( UBOOL /*bImmediate*/ )
 {
-	AK::SoundEngine::StopAll();
+	Flush( NULL );
+	AK::SoundEngine::StopAll( AK_INVALID_GAME_OBJECT );
 }
 
 #endif // DISHONORED_WITH_WWISE

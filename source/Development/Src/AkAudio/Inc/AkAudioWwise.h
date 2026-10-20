@@ -61,6 +61,14 @@
 void DisAkEndOfEventCallback( AkCallbackType InType, AkCallbackInfo* InInfo );
 
 /**
+ * DISHONORED(deviation, agent IH4): retail's UAkAudioDevice registers DisAkGlobalCallbackFunc (2012 0x7f3f50 / 2013 0x7873a0,
+ * a DishonoredGame function) with AK::SoundEngine::RegisterGlobalCallback at the end of EnsureInitialized (2013 0x5b1430) and
+ * unregisters it first thing in Teardown (0x5b3de0). The module boundary makes it a pointer the game module fills at static
+ * initialisation (dishonoredaudiosystem.cpp); NULL without the game module.
+ */
+extern AkGlobalCallbackFunc GDisAkGlobalCallback;
+
+/**
  * Unreal to Wwise. DISHONORED(retail): UAkAudioDevice::SetListener (2013 rva 0x5aecb0) writes each vector as
  * (-X, Z, Y): Unreal is Z-up left-handed, Wwise Y-up left-handed, and the X flip keeps left and right where
  * the mix expects them.

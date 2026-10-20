@@ -751,6 +751,21 @@ AKRESULT CAkAudioMgr::ProcessMsgQueue()
 				CAkLEngine::SetPanningRule( item.setPanningRule.panRule );
 				break;
 
+			case QueuedMsgType_SetEffect:
+			{
+				// 2012 0x924240 case 40 (agent IH4): a node of the actor-mixer / container / music hierarchy only.
+				CAkParameterNodeBase * pNode = g_pIndex->m_idxAudioNode.GetPtrAndAddRef( item.setEffect.audioNodeID );
+				if( pNode )
+				{
+					if( pNode->NodeCategory() <= AkNodeCategory_MusicSwitchCntr )
+					{
+						pNode->SetFX( item.setEffect.uFXIndex, item.setEffect.shareSetID, true );
+					}
+					pNode->Release();
+				}
+				break;
+			}
+
 			default:
 				break;
 			}

@@ -233,6 +233,7 @@ public:
 	void MuteNotification( AkReal32 in_fMuteRatio, AkMutedMapItem & in_rMutedItem, bool in_bPrioritizeGameObjectSpecificItems );
 	void ParamNotification( NotifParams & in_rParams );
 	void UpdateFx( AkUInt32 in_uFXIndex );
+	void GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID );
 	AKRESULT SetMuteMapEntry( AkMutedMapItem & in_key, AkReal32 in_fFadeRatio );
 	void NotifyBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask );
 	bool IsUsingThisSlot( const CAkUsageSlot * in_pSlotToCheck );

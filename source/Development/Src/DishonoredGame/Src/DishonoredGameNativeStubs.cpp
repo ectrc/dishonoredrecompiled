@@ -2146,26 +2146,6 @@ void ADisFish::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADisFish, execTakeDamage_Native);
 }
-void UDisGlobalMusicManager::execTickCallback_Chase( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGlobalMusicManager, execTickCallback_Chase);
-}
-void UDisGlobalMusicManager::execTickCallback_Combat( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGlobalMusicManager, execTickCallback_Combat);
-}
-void UDisGlobalMusicManager::execTickCallback_RatAttack( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGlobalMusicManager, execTickCallback_RatAttack);
-}
-void UDisGlobalMusicManager::execTickCallback_Suspense( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGlobalMusicManager, execTickCallback_Suspense);
-}
-void UDisGlobalMusicManager::execTickCallback_Exploration( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGlobalMusicManager, execTickCallback_Exploration);
-}
 void ADisEmitterCameraLensEffect_Looping::execNotifyRetriggered( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADisEmitterCameraLensEffect_Looping, execNotifyRetriggered);

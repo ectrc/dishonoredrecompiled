@@ -8,8 +8,8 @@
 	DISHONORED(port): agent IH3 fork N (wave 26); 2012 rva on each definition, 2013 from ih1_inventory.csv. Each action
 	type's Create is IH1's CAkAction::Create dispatch (AkHierarchy.cpp).
 	Deviations (named):
-	  * The BypassFX action sets the bypass bits on the nodes, their SIS and the voices; an effect instance that would
-	    honour them is IH4's.
+	  * The BypassFX action sets the bypass bits on the nodes, their SIS and the voices (agent IH4: the voices' insert
+	    effect nodes and the bus effect slots now honour them - CAkVPLFilterNode*::ConsumeBuffer, CAkBusFX::ProcessFX).
 	  * -akdiag logs every SetValue / SetState / SetSwitch action executed.
 =============================================================================*/
 #include "AkAudioMgr.h"

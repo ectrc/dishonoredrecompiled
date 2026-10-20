@@ -193,6 +193,16 @@ AKRESULT CAkURenderer::Play( CAkSoundBase * in_pSound, CAkSource * in_pSource, A
 	return AK_Success;
 }
 
+/** 2012 0x91f980: the memory limit fails outright, then the voice limit decides. */
+AKRESULT CAkURenderer::ValidateLimits( AkReal32 in_fPriority )
+{
+	if( !ValidateMemoryLimit( in_fPriority ) )
+	{
+		return AK_Fail;
+	}
+	return ValidateMaximumNumberVoiceLimit( in_fPriority );
+}
+
 /** 2012 0x91fc60. */
 void CAkURenderer::Play( CAkPBI * in_pContext, TransParams & in_rTparameters, AkPlaybackState in_ePlaybackState )
 {

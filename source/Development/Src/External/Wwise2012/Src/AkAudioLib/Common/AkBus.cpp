@@ -5,7 +5,7 @@
 
 	DISHONORED(port): agent IH3 fork N (wave 26); 2012 rva on each definition, 2013 from ih1_inventory.csv.
 	Deviations (named):
-	  * UpdateFx: CAkLEngine::UpdateMasterBusFX / UpdateMixBusFX (the bus insert-effect swap) are IH4's; the bus's voices
+	  * UpdateFx, GetFX, GetFXDataID: agent IH4 (the bus insert effects through CAkLEngine). The bus's voices
 	    are not touched by an effect change before then.
 	  * GetFX / GetFXDataID (and AK::CAkBusCtx::GetFX) wait for IH4's insert effects.
 =============================================================================*/
@@ -246,9 +246,47 @@ void CAkBus::RecalcNotification()
 	}
 }
 
-/** 2012 0x93c020 (2013 0x9389c0). See the banner. */
+/** 2012 0x93c020 (2013 0x9389c0): the lower engine swaps the effect of the bus's mix node (agent IH4). */
 void CAkBus::UpdateFx( AkUInt32 in_uFXIndex )
 {
+	if( this == s_pMasterBus )
+	{
+		CAkLEngine::UpdateMasterBusFX( in_uFXIndex );
+	}
+	else
+	{
+		CAkLEngine::UpdateMixBusFX( key, in_uFXIndex );
+	}
+}
+
+/** 2012 0x93d6b0, 2013 0x93a0d0 (agent IH4). */
+void CAkBus::GetFX( AkUInt32 in_uFXIndex, AkFXDesc & out_rFXInfo, CAkRegisteredObj * )
+{
+	if( !m_pFXChunk )
+	{
+		out_rFXInfo.SetFx( NULL );
+		out_rFXInfo.bIsBypassed = false;
+		return;
+	}
+	const FXStruct & fx = m_pFXChunk->aFX[ in_uFXIndex ];
+	out_rFXInfo.SetFx( fx.id ? AkGetFxAndAddRef( fx.id, fx.bShareSet ) : NULL );
+	out_rFXInfo.bIsBypassed = GetBypassFX( in_uFXIndex );
+}
+
+/** 2012 0x93d750 (agent IH4): the media id of the slot's effect data index (0 when the effect has none, -1 without one). */
+void CAkBus::GetFXDataID( AkUInt32 in_uFXIndex, AkUInt32 in_uDataIndex, AkUInt32 & out_rDataID )
+{
+	out_rDataID = (AkUInt32)-1;
+	if( m_pFXChunk )
+	{
+		const FXStruct & fx = m_pFXChunk->aFX[ in_uFXIndex ];
+		CAkFxBase * pFx = AkGetFxAndAddRef( fx.id, fx.bShareSet );
+		if( pFx )
+		{
+			out_rDataID = pFx->GetMediaID( in_uDataIndex );
+			pFx->Release();
+		}
+	}
 }
 
 /** 2012 0x93b7a0 (2013 0x938140): a bus has the global limit only. */

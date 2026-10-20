@@ -2,13 +2,15 @@
 	AkVPLMixBusNode.cpp - CAkBusFX (0x93ac30..0x93b430), CAkVPLMixBusNode (0x93acc0..0x93b660), CAkVPLFinalMixNode
 	(0x93e000..0x93e320); 2013 matched by bytes.
 
-	DISHONORED(port): agent IH2 (wave 26). Deviations named in AkVPLMixBusNode.h (effect slots: IH4; environment
-	volumes: IH3/IH4).
+	DISHONORED(port): agent IH2 (wave 26); the effect slots and environment volumes agent IH4 fork F1 (see the header).
+	Bus effects are in-place plug-ins only, as retail (SetInsertFx refuses an out-of-place or asynchronous one).
 =============================================================================*/
 #include "AkVPLMixBusNode.h"
 #include "AkLEngine.h"
 #include "AkCommon.h"
 #include "AkMath.h"
+#include "AkRTPCMgr.h"
+#include "AkEnvironmentsMgr.h"
 
 /** The slots' reset, inlined in both Init (0x93adc0, 0x93e000). */
 void CAkBusFX::InitFX()
@@ -42,22 +44,124 @@ void CAkBusFX::SetInsertFxBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetM
 	}
 }
 
-/** 2012 0x93b430. DISHONORED(IH4 seam): CAkBusCtx::GetFX finds no effect plug-in, so the slot is dropped and left empty
-    (the retail path for a bus without an effect in that slot). */
+/** 2012 0x93b430, 2013 0x937dd0: the slot's effect (the environment's share set on an aux bus node) as an in-place
+    plug-in on the lower-engine pool, with a clone of the FX object's parameters subscribed to its RTPC curves (global
+    game object) and a bus context; initialised on the bus's float, deinterleaved output format. */
 AKRESULT CAkBusFX::SetInsertFx( const AK::CAkBusCtx & in_BusContext, AkUInt32 in_uFXIndex, AkUniqueID in_EnvID )
 {
 	DropFx( in_uFXIndex );
-	return AK_Success;
+	AkFXDesc fxDesc;
+	in_BusContext.GetFX( in_EnvID, in_uFXIndex, fxDesc );
+	if( !fxDesc.pFx )
+	{
+		return AK_Success;
+	}
+	FX & rFX = m_aFX[ in_uFXIndex ];
+	rFX.id = fxDesc.pFx->m_FXID;
+	AK::IAkPlugin * pPlugin = NULL;
+	AKRESULT eResult = CAkEffectsMgr::Alloc( &AkFXMemAlloc::m_instanceLower, rFX.id, pPlugin );
+	if( eResult != AK_Success )
+	{
+		return eResult;
+	}
+	rFX.pEffect = static_cast<AK::IAkInPlaceEffectPlugin *>( pPlugin );
+	AkPluginInfo pluginInfo;
+	rFX.pEffect->GetPluginInfo( pluginInfo );
+	if( !pluginInfo.bIsInPlace )
+	{
+		rFX.pEffect->Term( &AkFXMemAlloc::m_instanceLower );
+		rFX.pEffect = NULL;
+		if( rFX.pBusFXContext )
+		{
+			rFX.pBusFXContext->~CAkBusFXContext();
+			AK::MemoryMgr::Free( g_LEngineDefaultPoolId, rFX.pBusFXContext );
+			rFX.pBusFXContext = NULL;
+		}
+		return AK_Fail;
+	}
+	eResult = AK_Fail;
+	rFX.pParam = fxDesc.pFx->m_pParam ? fxDesc.pFx->m_pParam->Clone( &AkFXMemAlloc::m_instanceLower ) : NULL;
+	if( rFX.pParam )
+	{
+		fxDesc.pFx->SubscribeRTPC( rFX.pParam, NULL );
+		void * pMem = AK::MemoryMgr::Malloc( g_LEngineDefaultPoolId, sizeof( CAkBusFXContext ) );
+		rFX.pBusFXContext = pMem ? AkPlacementNew( pMem ) CAkBusFXContext( this, in_uFXIndex, in_BusContext, in_EnvID ) : NULL;
+		if( rFX.pBusFXContext )
+		{
+			rFX.bBypass = fxDesc.bIsBypassed;
+			eResult = rFX.pEffect->GetPluginInfo( pluginInfo );
+			if( pluginInfo.bIsAsynchronous )
+			{
+				eResult = AK_Fail;
+			}
+			else if( eResult == AK_Success )
+			{
+				AkAudioFormat format;
+				format.SetAll( AkAudioLibSettings::g_pipelineCoreFrequency, m_BufferOut.uChannelMask, 32, 4 * m_BufferOut.NumChannels(), AK_FLOAT, AK_NONINTERLEAVED );
+				eResult = rFX.pEffect->Init( &AkFXMemAlloc::m_instanceLower, rFX.pBusFXContext, rFX.pParam, format );
+				if( eResult == AK_Success )
+				{
+					eResult = rFX.pEffect->Reset();
+					if( eResult == AK_Success )
+					{
+						return AK_Success;
+					}
+				}
+			}
+		}
+	}
+	DropFx( in_uFXIndex );
+	return eResult;
 }
 
-/** 2012 0x93ad30: nothing to terminate in an empty slot. */
+/** 2012 0x93ad30: terminate the plug-in, free the context, unsubscribe and terminate the parameter clone. */
 void CAkBusFX::DropFx( AkUInt32 in_uFXIndex )
 {
 	FX & rFX = m_aFX[ in_uFXIndex ];
-	rFX.pEffect = NULL;
-	rFX.pBusFXContext = NULL;
+	if( rFX.pEffect )
+	{
+		rFX.pEffect->Term( &AkFXMemAlloc::m_instanceLower );
+		rFX.pEffect = NULL;
+	}
+	if( rFX.pBusFXContext )
+	{
+		rFX.pBusFXContext->~CAkBusFXContext();
+		AK::MemoryMgr::Free( g_LEngineDefaultPoolId, rFX.pBusFXContext );
+		rFX.pBusFXContext = NULL;
+	}
 	rFX.id = AK_INVALID_UNIQUE_ID;
-	rFX.pParam = NULL;
+	if( rFX.pParam )
+	{
+		g_pRTPCMgr->UnSubscribeRTPC( rFX.pParam );
+		rFX.pParam->Term( &AkFXMemAlloc::m_instanceLower );
+		rFX.pParam = NULL;
+	}
+}
+
+/** The effect loop ProcessAllFX (0x93b1b0) and the final mix (0x93e210) inline: a bypassed slot (or bus) is reset on its
+    first bypassed frame, an active one runs on the bus output in place. */
+void CAkBusFX::ProcessFX( AkAudioBufferBus & io_rBuffer )
+{
+	for( AkUInt32 i = 0; i < 4; ++i )
+	{
+		FX & rFX = m_aFX[ i ];
+		if( !rFX.pEffect )
+		{
+			continue;
+		}
+		if( rFX.bBypass | m_bBypassAllFX )
+		{
+			if( !( rFX.bLastBypass | m_bLastBypassAllFX ) )
+			{
+				rFX.pEffect->Reset();
+			}
+		}
+		else
+		{
+			rFX.pEffect->Execute( &io_rBuffer );
+		}
+		rFX.bLastBypass = rFX.bBypass;
+	}
 }
 
 /** 2012 0x93b380. */
@@ -194,9 +298,13 @@ void CAkVPLMixBusNode::ConsumeBuffer( AkVPLState & io_rVPLState, AkInt8 in_iVPLE
 	m_Mixer.Mix3D( &io_rVPLState.buffer, &m_BufferOut );
 }
 
-/** 2012 0x93b1b0: the insert effects of a playing bus (none before IH4, see SetInsertFx). */
+/** 2012 0x93b1b0: the insert effects of a playing bus. */
 void CAkVPLMixBusNode::ProcessAllFX()
 {
+	if( m_eState == NodeStatePlay )
+	{
+		ProcessFX( m_BufferOut );
+	}
 }
 
 /** 2012 0x93b220: the output ramp is the bus volume (times the environment volumes on an aux bus), clamped to 1. */
@@ -208,6 +316,10 @@ void CAkVPLMixBusNode::PostProcessFx( AkAudioBufferBus *& io_rpBuffer )
 	}
 	AkSIMDSpeakerVolumes env;
 	env.Set( 1.f );
+	if( m_EnvID )
+	{
+		env.volumes = g_pEnvironmentMgr->GetEnvironmentVolumes( m_EnvID );
+	}
 	const __m128 vOne = _mm_set1_ps( 1.f );
 	const __m128 vNext = _mm_set1_ps( m_fNextVolume );
 	const __m128 vPrevious = _mm_set1_ps( m_fPreviousVolume );
@@ -348,6 +460,7 @@ void CAkVPLFinalMixNode::GetResultingBuffer( AkPipelineBufferBase & io_rBuffer )
 {
 	if( m_eState == NodeStatePlay )
 	{
+		ProcessFX( m_BufferOut );
 		m_bLastBypassAllFX = m_bBypassAllFX;
 		io_rBuffer.uValidFrames = m_BufferOut.uMaxFrames;
 	}

@@ -2,7 +2,8 @@
 	AkURenderer.h - CAkURenderer (akurenderer.cpp): the upper renderer - every live PBI, the context notifications the
 	lower engine posts back (play started, finished, play failed), the voice limits and kicks.
 
-	DISHONORED(port): agent IH2 (wave 26). All members static, as in retail.
+	DISHONORED(port): agent IH2 (wave 26). All members static, as in retail. Agent IH4 fork M: _CalcInitialPriority is
+	public and ValidateLimits 0x91f980 is ported for CAkMusicRenderer::Play (the monitor reason it reports is dropped).
 =============================================================================*/
 #pragma once
 
@@ -53,8 +54,10 @@ public:
 	static CAkLimiter												m_GlobalLimiter;
 	static AkUInt32													m_uNumVirtualizedSounds;
 
-private:
 	static PriorityInfoCurrent _CalcInitialPriority( CAkSoundBase * in_pSound, CAkRegisteredObj * in_pGameObj, AkReal32 & out_fMaxRadius );
+	static AKRESULT ValidateLimits( AkReal32 in_fPriority );
+
+private:
 	static AKRESULT ProcessCommand( ActionParamType in_eCommand, CAkSoundBase * in_pSound, CAkRegisteredObj * in_pGameObj, AkPlayingID in_PlayingID, TransParams & in_rTparameters, bool in_bIsMasterResume );
 	static void DestroyAllPBIs();
 };

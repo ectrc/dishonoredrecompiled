@@ -193,8 +193,10 @@ FPrimitiveSceneAttachmentContext::~FPrimitiveSceneAttachmentContext()
 }
 
 
+/** DISHONORED(port, agent IH4): 2012 0x17efd0 / 2013 0x1756f0 terminates the actor first. */
 void AActor::ClearComponents()
 {
+	ConditionalTerminateActor();
 	for(INT ComponentIndex = 0;ComponentIndex < Components.Num();ComponentIndex++)
 	{
 		UActorComponent* Component = Components(ComponentIndex); 
@@ -213,6 +215,8 @@ void AActor::ClearComponents()
  */
 void AActor::MarkComponentsAsPendingKill( UBOOL bAllowComponentOverride )
 {
+	// DISHONORED(port, agent IH4): 2012 0x17f040 / 2013 0x175760 terminates the actor first.
+	ConditionalTerminateActor();
 	// Iterate over Components array and mark entries as pending kill.
 	for (INT Index = 0; Index < Components.Num(); Index++)
 	{

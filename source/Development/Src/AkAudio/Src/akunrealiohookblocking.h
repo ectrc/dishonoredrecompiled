@@ -42,12 +42,36 @@ protected:
 	TArray<FString>	m_AdditionalPaths;
 };
 
-/** What AkFileDesc::hFile points at: a reader plus where this file starts inside it. */
+/**
+ * DISHONORED(deviation, agent IH4): a reader shared by a file package and every file opened out of it. Retail reads by
+ * file name through GIOManager (CAkUnrealIOHookBlocking::Read 2013 0x5b0c20), so a package unloaded while a stream still
+ * reads from it leaves that stream holding the package's freed path string and the read fails. Here the reader is an
+ * FArchive, and deleting it under a live stream made the "AK::IOThread" call through a freed vtable (EIP 1, the IH3 exit
+ * deaths: build/agentIH4/G/r1_result.txt, r2_result.txt). The package and each open file hold a reference; the last
+ * one deletes the archive.
+ */
+struct FAkSharedReader
+{
+	FArchive*		Reader;
+	volatile INT	RefCount;
+
+	explicit FAkSharedReader( FArchive* InReader ) : Reader(InReader), RefCount(1) {}
+	void AddRef() { appInterlockedIncrement( &RefCount ); }
+	void Release()
+	{
+		if( appInterlockedDecrement( &RefCount ) == 0 )
+		{
+			delete Reader;
+			delete this;
+		}
+	}
+};
+
+/** What AkFileDesc::hFile points at: a shared reader plus where this file starts inside it. */
 struct FAkOpenFile
 {
-	FArchive*	Reader;
-	UBOOL		bOwnsReader;		///< FALSE while the reader belongs to a still-loaded file package
-	AkInt64		BaseOffset;
+	FAkSharedReader*	Shared;
+	AkInt64				BaseOffset;
 };
 
 /** One entry of an AKPK soundbank or streamed-file table (see FAkFilePackage::Load for the evidence). */
@@ -63,7 +87,7 @@ struct FAkPackagedFile
 /** One loaded AKPK container. */
 struct FAkFilePackage
 {
-	FAkFilePackage() : Reader(NULL), PackageID(0), Version(0) {}
+	FAkFilePackage() : Reader(NULL), Shared(NULL), PackageID(0), Version(0) {}
 	~FAkFilePackage() { CloseReader(); }
 
 	UBOOL Load( const TCHAR* InFullPath, AkUInt32 InPackageID );
@@ -71,6 +95,7 @@ struct FAkFilePackage
 	void CloseReader();
 
 	FArchive*					Reader;
+	FAkSharedReader*			Shared;
 	FString						FullPath;
 	AkUInt32					PackageID;
 	AkUInt32					Version;
@@ -101,7 +126,7 @@ public:
 	virtual AkUInt32 GetDeviceData();
 
 protected:
-	static void* MakeHandle( FArchive* InReader, UBOOL bOwnsReader, AkInt64 InBaseOffset );
+	static void* MakeHandle( FAkSharedReader* InShared, AkInt64 InBaseOffset );
 
 	AkDeviceID m_DeviceID;
 };

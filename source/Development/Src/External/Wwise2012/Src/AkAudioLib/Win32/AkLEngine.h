@@ -63,6 +63,10 @@ public:
 	static void ForceMasterBusVolume( AkReal32 in_Volume );
 	static void BypassBusFx( AkUniqueID in_MixBusID, AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask );
 	static void BypassMasterBusFx( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask );
+	static void BypassEnvFx( AkUniqueID in_EnvID, bool in_bIsBypassed );
+	static void UpdateMasterBusFX( AkUInt32 in_uFXIndex );
+	static void UpdateMixBusFX( AkUniqueID in_MixBusID, AkUInt32 in_uFXIndex );
+	static void ForAllPluginParam( CAkFxBase * in_pFx, void ( *in_funcForAll )( AK::IAkPluginParam *, CAkRegisteredObj *, void * ), void * in_pCookie );
 
 	static void * GetCachedAudioBuffer( AkUInt32 in_uSize );
 	static void ReleaseCachedAudioBuffer( AkUInt32 in_uSize, void * in_pvBuffer );
@@ -74,6 +78,8 @@ public:
 	static AkPipelineBufferBase				m_MasterOut;
 	static CAkVPLFinalMixNode *				m_pFinalMixNode;
 	static AkArray<AkVPL *, AkVPL *, ArrayPoolLEngineDefault, 8>	m_arrayVPLs;
+	/** The environment (aux send) mix bus nodes, one per environment share set in use (agent IH4). */
+	static CAkKeyList<AkUniqueID, CAkVPLMixBusNode *, 1, ArrayPoolLEngineDefault>	m_EnvBusList;
 	static AkUInt32							m_uLastStarvationTime;
 	static bool								m_bResetAudioDevice;
 	static bool								m_bCoInitializeSucceeded;
@@ -97,6 +103,9 @@ private:
 	static AkVPL * CreateVPLMixBus( AK::CAkBusCtx in_BusCtx, AkChannelMask in_uChannelMask, AkUInt16 in_usMaxFrames );
 	static void DestroyVPLMixBus( AkVPL * in_pMixBus );
 	static void DestroyAllVPLMixBusses();
+	static CAkVPLMixBusNode * GetEnvironmentalBus( AkUniqueID in_EnvID, CAkPBI * in_pCtx );
+	static CAkVPLMixBusNode * CreateEnvMixBus( AkUniqueID in_EnvID, AK::CAkBusCtx in_BusContext );
+	static void DestroyEnvMixBus( CAkVPLMixBusNode * in_pMixBus );
 	static void RemoveMixBusses();
 	static void WriteWav( const AkPipelineBufferBase * in_pBuffer );
 
