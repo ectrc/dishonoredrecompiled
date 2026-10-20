@@ -378,3 +378,4 @@ Target were one cause IH4 found; the water events are the next); NPC mouths are 
 **IS** launched on `2898de5` (the sprint anim-tree assert).
 **FX1** + **FX2** (the FaceFX program: core; face graph) and **IT** (the newgame gate failure) launched on `91352d7`. FX3 (runtime + engine integration, lip-sync on) after FX1/FX2 merge.
 **IQ** launched on `60da56f` (water/landing/lock audio; the silent exit death). FX1 running; FX3 after it (reconcile the shim, runtime, engine integration, lip-sync on).
+**FX3** launched on `b9eb647` (FxActor/Instance/MasterBoneList, WITH_FACEFX on, UpdateFaceFX + DisFaceFxStartAudio, the bone application; lip-sync measured on 'SheWaiting' and the captain's ride lines).
