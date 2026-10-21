@@ -173,8 +173,8 @@
   },
   "probe_natives": {
     "op": "<=",
-    "value": 12,
-    "note": "natives without a body reached only when -distouchprobe walks the pawn to every volume, trigger and pickup: 7 at HEAD. Gameplay a plain walk never reaches, so this is a ratchet to drive down, not a gate."
+    "value": 3,
+    "note": "natives without a body reached only when -distouchprobe walks the pawn to every volume, trigger and pickup: 7 at HEAD, 3 since wave 26 (IF ported CalcPlayerSwimAccelRate; HL the toggles). Gameplay a plain walk never reaches, so this is a ratchet to drive down, not a gate. Wave 27: the user set the bound to 3."
   },
   "newgame_log_lines": {
     "op": ">=",
