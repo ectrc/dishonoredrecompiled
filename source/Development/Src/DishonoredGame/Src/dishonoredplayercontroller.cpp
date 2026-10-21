@@ -114,6 +114,7 @@
 #include "dishonoredutilities.h"
 #include "disaicensus.h"
 #include "disusestate.h"
+#include "jhdiag.h"
 #include "gddiag.h"
 #include "disheadcensus.h"
 #include "dispowercensus.h"
@@ -1119,6 +1120,7 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	DisIRTick( this );
 	// agent GD (PHASE19 GD): -gddiag / -gdface / -gduse, the crosshair and the Use (gddiag.cpp)
 	DisGDReport( this );
+	DisJHReport( this );
 	// agent GE (PHASE19 GE): -gediag, the camera fade state once a second (gediag.cpp)
 	{
 		extern void DisGEReport( APlayerController* PC );

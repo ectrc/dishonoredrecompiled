@@ -2330,6 +2330,8 @@ IMPLEMENT_CLASS(UDisTweaks_PlayerVisibility);
 IMPLEMENT_CLASS(UDishonoredVisibilityComponent);
 
 // Link anchors: void DishonoredLink<X>() of every unit taken off the exclude list (see link_anchors in the generator).
+extern void DishonoredLinkADisClimbable();
+extern void DishonoredLinkADishonoredMovable();
 extern void DishonoredLinkArkAnimNodeLocomotion();
 extern void DishonoredLinkDisBehaviorGoTo();
 extern void DishonoredLinkDisBehaviorGoToBase();
@@ -2447,11 +2449,15 @@ extern void DishonoredLinkUDisAttentionInfo_Base();
 extern void DishonoredLinkUDisAttentionInfo_Complex();
 extern void DishonoredLinkUDisAttentionInfo_Simple();
 extern void DishonoredLinkUDisGlobalAIAttentionManager();
+extern void DishonoredLinkUDisKeyRing();
 extern void DishonoredLinkUDisSeqAct_SetCurrentChapter();
 extern void DishonoredLinkUDisTweaks_AIBrainProcess_Attention();
 extern void DishonoredLinkUDisTweaks_PawnAttention();
+extern void DishonoredLinkUDishonoredPowersComponent();
 void (*GDishonoredGameLinkAnchors[])() =
 {
+	&DishonoredLinkADisClimbable,
+	&DishonoredLinkADishonoredMovable,
 	&DishonoredLinkArkAnimNodeLocomotion,
 	&DishonoredLinkDisBehaviorGoTo,
 	&DishonoredLinkDisBehaviorGoToBase,
@@ -2569,7 +2575,9 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkUDisAttentionInfo_Complex,
 	&DishonoredLinkUDisAttentionInfo_Simple,
 	&DishonoredLinkUDisGlobalAIAttentionManager,
+	&DishonoredLinkUDisKeyRing,
 	&DishonoredLinkUDisSeqAct_SetCurrentChapter,
 	&DishonoredLinkUDisTweaks_AIBrainProcess_Attention,
 	&DishonoredLinkUDisTweaks_PawnAttention,
+	&DishonoredLinkUDishonoredPowersComponent,
 };

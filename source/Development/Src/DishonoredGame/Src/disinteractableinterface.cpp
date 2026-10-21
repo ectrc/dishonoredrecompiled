@@ -37,6 +37,7 @@
 
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
+#include "jhdiag.h"
 
 // DISHONORED(written): 2013 rva 0x621550 (2012 0x67c3f0): the implementing class's interactable tweaks, or the class
 // default of UDisTweaks_InteractableInterface. Every text and distance accessor below goes through it.
@@ -82,20 +83,21 @@ void IDisInteractableInterface::FormatText( FString& Text ) const
 	Text = Text.Replace( TEXT("`~"), Name.Len() > 0 ? *Name : TEXT("") );
 }
 
-// DISHONORED(written): 2013 rva 0x627ff0 (2012 0x67d0b0, same bytes): highlighting needs a HUD, the tweaks' permission
-// and a highlight material.
+// DISHONORED(written): 2013 rva 0x627ff0 (2012 0x67d0b0, same bytes): highlighting needs a HUD whose player settings show
+// highlights (2013 rva 0x787e60: bit 3 of the settings word, m_bShowHighlight - agent JH), the tweaks' permission and a material.
 void IDisInteractableInterface::DoHighlight()
 {
 	const UDisTweaks_InteractableInterface& Tweaks = GetInteractableTweaks();
-	if( !DisGetGFxHUD() )
+	UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD();
+	if( !HUD || !HUD->m_Settings.m_bShowHighlight )
 	{
+		DisJHLogHighlight( this, TEXT("DoHighlight refused by the HUD setting"), HUD ? 0 : -1 );
 		return;
 	}
-	// DISHONORED(bringup): retail also asks the HUD whether highlighting is switched on (2013 rva 0x7bd0d0's caller);
-	// that accessor is GFx and not ported.
 	if( Tweaks.m_bAllowedToHighlight && Tweaks.m_HighLightMaterial )
 	{
 		ShowHighlight( Tweaks.m_HighLightMaterial );
+		DisJHLogHighlight( this, TEXT("ShowHighlight"), 1 );
 	}
 }
 
@@ -105,6 +107,7 @@ void IDisInteractableInterface::UnDoHighlight()
 	if( GetInteractableTweaks().m_bAllowedToHighlight )
 	{
 		HideHighlight();
+		DisJHLogHighlight( this, TEXT("HideHighlight"), 0 );
 	}
 }
 
@@ -144,6 +147,32 @@ void IDisInteractableInterface::ClearHighlightBit( INT Bit )
 void IDisInteractableInterface::GainCrosshairFocus()
 {
 	SetHighlightBit( 1 );
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x630810 (2012 0x681750, same bytes)
+void IDisInteractableInterface::LoseCrosshairFocus()
+{
+	ClearHighlightBit( 1 );
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x6280d0 (2012 0x67d190): the tweaks' interact text, when it has one, as the Use line
+void IDisInteractableInterface::FillUIInteraction( FDisUIInteractionContext& _rContext ) const
+{
+	const UDisTweaks_InteractableInterface& Tweaks = GetInteractableTweaks();
+	if( Tweaks.m_InteractText.Len() > 0 )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Crosshair_Use, &Tweaks.m_InteractText ) );
+	}
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x628130 (2012 0x67d1f0): the alt-interact text as the AltUse line
+void IDisInteractableInterface::FillUIAltInteraction( FDisUIInteractionContext& _rContext ) const
+{
+	const UDisTweaks_InteractableInterface& Tweaks = GetInteractableTweaks();
+	if( Tweaks.m_AltInteractText.Len() > 0 )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Crosshair_AltUse, &Tweaks.m_AltInteractText ) );
+	}
 }
 
 // DISHONORED(written): 2013 rva 0x63b560 (2012 0x6774e0, same bytes).

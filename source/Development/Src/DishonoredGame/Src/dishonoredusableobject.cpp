@@ -116,3 +116,147 @@ void UDisTweaks_UsableObject::Serialize( FArchive& Ar )
 		}
 	}
 }
+
+// ---- agent JH (PHASE24 JH): the usable object's interaction prompt and hover glow ----
+
+// DISHONORED(port): agent JH. 2012 0x66d8f0 (DisUsableObjectHelperFunctions::HasKey, 2013 0x645510): the first of the keys the
+// pawn holds.
+// DISHONORED(bringup): retail asks a possessed pawn's possessor (ADishonoredPawn::DisIsPossessed, unported); this asks the pawn.
+static const FString* DisUsableObjectHasKey( const ADishonoredPawn* _pPawn, const TArray<FString>& _rKeys )
+{
+	for( INT Index = 0; Index < _rKeys.Num(); Index++ )
+	{
+		if( _pPawn->HasKey( _rKeys(Index) ) )
+		{
+			return &_rKeys(Index);
+		}
+	}
+	return NULL;
+}
+
+// DISHONORED(port): agent JH. The usable tweaks or their class default (retail's inline pattern in every caller below)
+UDisTweaks_UsableObject* ADishonoredUsableObject::GetUsableObjectTweaks() const
+{
+	UDisTweaksBase* Tweaks = const_cast<ADishonoredUsableObject*>( this )->GetTweaks_Derived();
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaksBase*)UDisTweaks_UsableObject::StaticClass()->GetDefaultObject();
+	}
+	return (UDisTweaks_UsableObject*)Tweaks;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x64eec0 (2012 0x684440)
+const FUsableObjectStage& ADishonoredUsableObject::GetActiveStage( const UDisTweaks_UsableObject* _pOptionalTweaks ) const
+{
+	const UDisTweaks_UsableObject* Tweaks = _pOptionalTweaks ? _pOptionalTweaks : GetUsableObjectTweaks();
+	return Tweaks->GetUsableStage( m_iActiveStage );
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x64e840 (2012 0x683b90)
+const UDisTweaks_InteractableInterface* ADishonoredUsableObject::GetInteractableTweaks_Derived() const
+{
+	return GetUsableObjectTweaks()->m_pInteractableTweaks;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x64e5c0 (2012 0x683910): the focus message, or the locked one while locked and the player's
+// pawn holds none of the matching keys
+const FString& ADishonoredUsableObject::GetCrosshairFocusText() const
+{
+	const ADishonoredPawn* PlayerPawn = (const ADishonoredPawn*)ADishonoredPlayerController::s_pInstance->Pawn;
+	const UDisTweaks_UsableObject* Tweaks = GetUsableObjectTweaks();
+	if( !m_bLocked || DisUsableObjectHasKey( PlayerPawn, m_MatchingKeys ) )
+	{
+		return Tweaks->m_FocusMessage;
+	}
+	return Tweaks->m_FocusLockedMessage;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x653b30 (2012 0x688c40). The Use line: unauthorised without the required abstract item, the
+// unlock text when locked and a key is held, nothing while it is in use or locked without a locked message, else the active stage's
+// override text or the interactable's own.
+// DISHONORED(bringup): retail counts the item in the possessor's inventory when the player's pawn is possessed
+// (ADishonoredPawn::DisIsPossessed, unported); this counts the pawn's.
+void ADishonoredUsableObject::FillUIInteraction( FDisUIInteractionContext& _rContext ) const
+{
+	const ADishonoredPawn* PlayerPawn = (const ADishonoredPawn*)ADishonoredPlayerController::s_pInstance->Pawn;
+	const UDisTweaks_UsableObject* Tweaks = GetUsableObjectTweaks();
+	if( Tweaks->m_RequiredAbstractItem && PlayerPawn->m_pInventory->GetAbstractItemQuantity( Tweaks->m_RequiredAbstractItem ) <= 0 )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Crosshair_Use, &Tweaks->m_UnauthorizedMessage ) );
+		return;
+	}
+	if( m_bLocked && DisUsableObjectHasKey( PlayerPawn, m_MatchingKeys ) )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Crosshair_Use, &Tweaks->m_UnlockInteractText ) );
+		return;
+	}
+	if( ( m_bLocked && Tweaks->m_LockedMessage.Len() <= 0 ) || m_bIsBeingUsed )
+	{
+		return;
+	}
+	if( m_iActiveStage < Tweaks->GetNumUsableStages() )
+	{
+		const FUsableObjectStage& Stage = GetActiveStage( Tweaks );
+		if( Stage.m_InteractTextOverride.Len() > 0 )
+		{
+			_rContext.Add( FDisUIInteraction( DUI_Crosshair_Use, &Stage.m_InteractTextOverride ) );
+			return;
+		}
+	}
+	IDisInteractableInterface::FillUIInteraction( _rContext );
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x645630 (2012 0x66da10): a highlight copy of the skeletal mesh (no shadows, parented to the
+// original's animation, sorted after the water), or of the static usable mesh when there is no skeletal one, in the highlight material
+void ADishonoredUsableObject::ShowHighlight( UMaterialInterface* _pMaterial )
+{
+	const UBOOL bHasSkeletalMesh = SkeletalMeshComponent && SkeletalMeshComponent->SkeletalMesh;
+	const UBOOL bHasStaticMesh = m_pStaticUsableComponent && m_pStaticUsableComponent->StaticMesh;
+	if( !_pMaterial )
+	{
+		return;
+	}
+	if( bHasSkeletalMesh && !m_pHighlightSkeletalMeshComponent )
+	{
+		m_pHighlightSkeletalMeshComponent = ConstructObject<USkeletalMeshComponent>( USkeletalMeshComponent::StaticClass(), this );
+		m_pHighlightSkeletalMeshComponent->bCastDynamicShadow = FALSE;
+		m_pHighlightSkeletalMeshComponent->CastShadow = FALSE;
+		m_pHighlightSkeletalMeshComponent->SetSkeletalMesh( SkeletalMeshComponent->SkeletalMesh );
+		m_pHighlightSkeletalMeshComponent->SetMaterial( 0, _pMaterial );
+		m_pHighlightSkeletalMeshComponent->SetParentAnimComponent( SkeletalMeshComponent );
+		m_pHighlightSkeletalMeshComponent->m_bReallyInheritTransformFromAnimParent = TRUE;
+		m_pHighlightSkeletalMeshComponent->DisTranslucencySortPriority = (EDisTranslucencySortPriority)5;
+		AttachComponent( m_pHighlightSkeletalMeshComponent );
+	}
+	if( bHasStaticMesh && !bHasSkeletalMesh && !m_pHighlightStaticMeshComponent )
+	{
+		m_pHighlightStaticMeshComponent = ConstructObject<UStaticMeshComponent>( UStaticMeshComponent::StaticClass(), this );
+		m_pHighlightStaticMeshComponent->SetStaticMesh( m_pStaticUsableComponent->StaticMesh );
+		m_pHighlightStaticMeshComponent->SetMaterial( 0, _pMaterial );
+		AttachComponent( m_pHighlightStaticMeshComponent );
+	}
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x6422c0 (2012 0x66b370)
+void ADishonoredUsableObject::HideHighlight()
+{
+	if( m_pHighlightSkeletalMeshComponent )
+	{
+		DetachComponent( m_pHighlightSkeletalMeshComponent );
+		m_pHighlightSkeletalMeshComponent = NULL;
+	}
+	if( m_pHighlightStaticMeshComponent )
+	{
+		DetachComponent( m_pHighlightStaticMeshComponent );
+		m_pHighlightStaticMeshComponent = NULL;
+	}
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x657ea0 (2012 0x68dbf0): the interface's (highlight bit 1 cleared), then HandleUseStopped.
+// DISHONORED(bringup): HandleUseStopped (2013 0x657cc0 / 2012 0x68d9f0: the Used Kismet event and the hold-to-use rewind of an object
+// in use, m_bIsBeingUsed cleared, the light environment's dynamic flag from m_State) belongs to the unported use path
+// (UseObject / HandleTransition*), which never puts an object in use in this tree; it is not called.
+void ADishonoredUsableObject::LoseCrosshairFocus()
+{
+	IDisInteractableInterface::LoseCrosshairFocus();
+}

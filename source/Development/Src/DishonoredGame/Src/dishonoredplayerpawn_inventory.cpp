@@ -231,3 +231,10 @@ UBOOL ADishonoredPlayerPawn::IsSliding() const
 {
 	return m_pPlayerMasterFSM != NULL && m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSlide::StaticClass(), TRUE );
 }
+
+// DISHONORED(port): agent JH (PHASE24 JH). 2012 0x70fef0 (32 B): the key ring holds the key. Retail reads the ring without a test;
+// this tree tests it.
+UBOOL ADishonoredPlayerPawn::HasKey( const FString& _rKey ) const
+{
+	return m_pKeyRing && m_pKeyRing->FindKey( _rKey ) != INDEX_NONE;
+}

@@ -32,3 +32,44 @@
 //   0x681110  public: virtual unsigned int __thiscall ADisClimbable::OnWindblast(struct AActor::WindBlastParams const &, float &)
 //   0x6811e0  public: virtual void __thiscall ADisClimbable::GameLoad(class FArchive &, enum ESaveLoadLocation)
 //   0x688610  protected: virtual unsigned int __thiscall UDisTweaks_Climbable::FixupDefaults_Derived(void)
+
+// ---- agent JH (PHASE24 JH): the climbable's interactable tweaks and hover glow ----
+
+#include "DishonoredGame.h"
+
+void DishonoredLinkADisClimbable()
+{
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x62bfa0 (2012 0x680c70)
+const UDisTweaks_InteractableInterface* ADisClimbable::GetInteractableTweaks_Derived() const
+{
+	UDisTweaksBase* Tweaks = const_cast<ADisClimbable*>( this )->GetTweaks_Derived();
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaksBase*)UDisTweaks_Climbable::StaticClass()->GetDefaultObject();
+	}
+	return ((UDisTweaks_Climbable*)Tweaks)->m_pInteractableTweaks;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x61a200 (2012 0x66ae20): the mesh's first material is kept once, then replaced
+void ADisClimbable::ShowHighlight( UMaterialInterface* _pMaterial )
+{
+	if( !m_MaterialBackup && SkeletalMeshComponent )
+	{
+		m_MaterialBackup = SkeletalMeshComponent->GetMaterial( 0 );
+	}
+	if( _pMaterial && m_MaterialBackup )
+	{
+		SkeletalMeshComponent->SetMaterial( 0, _pMaterial );
+	}
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x61a240 (2012 0x66ae60, same bytes): the kept material back
+void ADisClimbable::HideHighlight()
+{
+	if( SkeletalMeshComponent && m_MaterialBackup )
+	{
+		SkeletalMeshComponent->SetMaterial( 0, m_MaterialBackup );
+	}
+}

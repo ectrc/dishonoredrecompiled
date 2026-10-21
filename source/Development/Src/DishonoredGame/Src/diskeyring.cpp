@@ -13,3 +13,24 @@
 //   0x718f30  public: void __thiscall UDisKeyRing::BackupAndClear(void)
 //   0x719d40  public: static class UClass * __cdecl UDisKeyRing::GetPrivateStaticClassUDisKeyRing(wchar_t const *)
 //   0x71af70  public: static class UClass * __cdecl UDisKeyRing::StaticClassNoInline(void)
+
+// ---- agent JH (PHASE24 JH) ----
+
+#include "DishonoredGame.h"
+
+void DishonoredLinkUDisKeyRing()
+{
+}
+
+// DISHONORED(port): agent JH. 2012 0x708530: the index of the key of that name, INDEX_NONE when the ring does not hold it
+INT UDisKeyRing::FindKey( const FString& _rKey ) const
+{
+	for( INT Index = 0; Index < m_Keys.Num(); Index++ )
+	{
+		if( m_Keys(Index).m_Name == _rKey )
+		{
+			return Index;
+		}
+	}
+	return INDEX_NONE;
+}

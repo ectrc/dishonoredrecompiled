@@ -8,3 +8,6 @@ public:
 	// 59 such bodies are ICF-folded onto UObject::IsRefSaveable's (2012 rva 0x66a860), which is why the PDB
 	// names only the 11 overrides that have a body of their own. vtables.csv slot 67 is the record.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+	// DISHONORED(port): agent JH (PHASE24 JH), 2013 rva 0x6c8a00 (2012 0x707b20). Body in dishonoredpowerscomponent.cpp.
+	INT GetPowerLevel( FName _PowerName ) const;

@@ -16,3 +16,26 @@
 //   0x7133c0  public: virtual void __thiscall UDishonoredPowersComponent::GameLoad(class FArchive &, enum ESaveLoadLocation)
 //   0x71ecc0  public: static class UClass * __cdecl UDishonoredPowersComponent::GetPrivateStaticClassUDishonoredPowersComponent(wchar_t const *)
 //   0x71f710  public: static class UClass * __cdecl UDishonoredPowersComponent::StaticClassNoInline(void)
+
+// ---- agent JH (PHASE24 JH) ----
+
+#include "DishonoredGame.h"
+
+void DishonoredLinkUDishonoredPowersComponent()
+{
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x6c8a00 (2012 0x707b20, 192 B): the current level of the named power, -1 when the player
+// does not have it (the last entry of that name wins, as retail's loop runs to the end)
+INT UDishonoredPowersComponent::GetPowerLevel( FName _PowerName ) const
+{
+	INT CurrentLevel = -1;
+	for( INT Index = 0; Index < m_Powers.Num(); Index++ )
+	{
+		if( m_Powers(Index).m_Name == _PowerName )
+		{
+			CurrentLevel = m_Powers(Index).m_CurrentLevel;
+		}
+	}
+	return CurrentLevel;
+}

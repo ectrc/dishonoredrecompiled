@@ -5,3 +5,6 @@
 public:
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+	// DISHONORED(port): agent JH (PHASE24 JH). FindKey 2012 0x708530 (118 B). Body in diskeyring.cpp.
+	INT FindKey( const FString& _rKey ) const;

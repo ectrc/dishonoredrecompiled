@@ -22,6 +22,9 @@ public:
 	virtual UObject* GetUObjectInterfaceDisInteractableInterface() { return this; }
 	virtual INT* GetHighlightFlags() { return &m_HighlightFlags; }
 	virtual const class UDisTweaks_InteractableInterface* GetInteractableTweaks_Derived() const;
+	// DISHONORED(port): agent JH (PHASE24 JH). ShowHighlight 2013 rva 0x61d8c0 (2012 0x66c9a0), HideHighlight 0x619bc0 (0x66a990).
+	virtual void ShowHighlight( class UMaterialInterface* _pMaterial );
+	virtual void HideHighlight();
 	virtual UBOOL AttemptInteract_Derived( class ADishonoredPawn* Pawn, UBOOL& bOutCanBeWitnessed );
 	virtual UBOOL AttemptCannotUseInteract_Derived( class ADishonoredPawn* Pawn, UBOOL& bOutCanBeWitnessed );
 

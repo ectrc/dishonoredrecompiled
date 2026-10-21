@@ -219,3 +219,16 @@ protected:
 	// DISHONORED(port): 2012 0x7c1d20 (271 B), 2013 0x76a880 (549 B). Body in dishonorednpcpawn.cpp.
 	virtual void ShutPawnDown_Derived();
 public:
+// ---- agent JH (PHASE24 JH): the interaction prompt on an NPC. Slots of the NPC's interactable vtable (2013 0x1141458): +4
+// GetUObjectInterfaceDisInteractableInterface (2012 0x7c5210), +52 GetCrosshairFocusText (2013 rva 0x753a30 / 2012 0x7b1f00, body in
+// dishonorednpcpawn.cpp), +60 FillUIInteraction (0x74ea80 / 0x7ad2d0), +84 GetInteractableTweaks_Derived (0x752980 / 0x7b1480); the
+// pawn virtual IsAsleep (vtable +1836, 0x74e870 / 0x7ad1c0). Bodies but the focus text in dishonorednpcpawn_interact.cpp. The +88 / +92
+// highlight slots are retail's empty ones (an NPC never glows) and +64 FillUIAltInteraction (2013 0x765040) is reached only through
+// CanAltInteract (+36, 0x7679d0, with CanBeCarriedBy 0x764aa0, 1,020 B), not ported: the interface default answers FALSE.
+public:
+	virtual UObject* GetUObjectInterfaceDisInteractableInterface() { return this; }
+	virtual const FString& GetCrosshairFocusText() const;
+	virtual void FillUIInteraction( struct FDisUIInteractionContext& _rContext ) const;
+	virtual const class UDisTweaks_InteractableInterface* GetInteractableTweaks_Derived() const;
+	virtual UBOOL IsAsleep() const;
+	class UDisTweaks_NPCPawn* GetNPCPawnTweaks() const;

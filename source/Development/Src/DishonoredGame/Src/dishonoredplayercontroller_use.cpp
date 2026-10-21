@@ -18,18 +18,20 @@
 
 #include "DishonoredGame.h"
 #include "gddiag.h"
+#include "jhdiag.h"
 #include "dishonoredutilities.h"
 
+// DISHONORED(port): agents GD and JH. Retail: UObject::GetInterfaceAddress( UDisInteractableInterface::StaticClass() ) for every
+// implementer (2013 0x6a6280, 0x6a9130 and the use states), which this is. The address comes from the class's VfTable property, laid
+// out against this tree's headers; for the native classes the C++ cast is known, and under -jhdiag every class is checked once against
+// it (a mismatch is logged and the C++ answer kept, so a layout fault cannot turn into a wrong vtable call).
 IDisInteractableInterface* DisGDInteractableOf( AActor* _pActor )
 {
 	if( !_pActor )
 	{
 		return NULL;
 	}
-	// Retail: UObject::GetInterfaceAddress( UDisInteractableInterface::StaticClass() ), which adds the cooked class's
-	// Interfaces(i).PointerOffset - retail's offset of the interface subobject. The native classes this tree implements the
-	// interface on are reached by the C++ cast, which is right for THIS tree's layout; InterfaceCast is the fallback for any
-	// other implementer, and the two answers are compared once under -gddiag.
+	IDisInteractableInterface* Interface = (IDisInteractableInterface*)_pActor->GetInterfaceAddress( UDisInteractableInterface::StaticClass() );
 	IDisInteractableInterface* Native = NULL;
 	if( ADishonoredNPCPawn* NPC = Cast<ADishonoredNPCPawn>( _pActor ) )
 	{
@@ -39,18 +41,40 @@ IDisInteractableInterface* DisGDInteractableOf( AActor* _pActor )
 	{
 		Native = Pickup;
 	}
-	IDisInteractableInterface* Interface = InterfaceCast<IDisInteractableInterface>( _pActor );
-	if( Native && DisGDDiagEnabled() )
+	else if( ADishonoredUsableObject* Usable = Cast<ADishonoredUsableObject>( _pActor ) )
 	{
-		static UBOOL bNoted = FALSE;
-		if( !bNoted )
+		Native = Usable;
+	}
+	else if( ADishonoredMovable* Movable = Cast<ADishonoredMovable>( _pActor ) )
+	{
+		Native = Movable;
+	}
+	else if( ADisClimbable* Climbable = Cast<ADisClimbable>( _pActor ) )
+	{
+		Native = Climbable;
+	}
+	if( Native && Native != Interface )
+	{
+		static TArray<UClass*> Reported;
+		if( !Reported.ContainsItem( _pActor->GetClass() ) )
 		{
-			bNoted = TRUE;
-			debugf( TEXT("DISHONORED(bringup): gddiag %s (%s): InterfaceCast<IDisInteractableInterface> %p, the C++ cast %p (%s)"), *_pActor->GetName(), *_pActor->GetClass()->GetName(),
-				Interface, Native, Interface == Native ? TEXT("same") : TEXT("DIFFERENT - the cooked PointerOffset is not this tree's layout") );
+			Reported.AddItem( _pActor->GetClass() );
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s (%s): GetInterfaceAddress( DisInteractableInterface ) %p differs from the C++ base %p - the cooked VfTable offset is not this tree's layout; the C++ base is used"),
+				*_pActor->GetName(), *_pActor->GetClass()->GetName(), Interface, Native );
+		}
+		return Native;
+	}
+	if( Interface && DisJHDiagEnabled() )
+	{
+		static TArray<UClass*> Checked;
+		if( !Checked.ContainsItem( _pActor->GetClass() ) )
+		{
+			Checked.AddItem( _pActor->GetClass() );
+			debugf( TEXT("DISHONORED(bringup): jhdiag interface %s (%s): GetInterfaceAddress %p, C++ base %s"), *_pActor->GetName(), *_pActor->GetClass()->GetName(),
+				Interface, Native ? TEXT("same") : TEXT("not checked (no native class listed)") );
 		}
 	}
-	return Native ? Native : Interface;
+	return Interface;
 }
 
 static const UDisTweaks_PlayerInput* DisGDPlayerInputTweaks( ADishonoredPlayerController* _pPC )
@@ -150,6 +174,7 @@ void ADishonoredPlayerController::SetCrosshairActor( AActor* _pActor, eCrossHair
 			OldHighlight->LoseCrosshairFocus();
 		}
 	}
+	DisJHLogFocus( m_pCrosshairActor, _pActor, (INT)_Status, _bCanInteract );
 	if( DisGDDiagEnabled() )
 	{
 		debugf( TEXT("DISHONORED(bringup): gddiag crosshair %s (%s) status %d canInteract %d (was %s status %d canInteract %d)"),

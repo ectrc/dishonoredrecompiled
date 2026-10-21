@@ -137,3 +137,59 @@ UBOOL ADishonoredNPCPawn::AttemptInteract_Derived( ADishonoredPawn* _pPawn, UBOO
 void DishonoredLinkDishonoredNPCPawnInteract()
 {
 }
+
+// DISHONORED(port): agent JH (PHASE24 JH). The NPC pawn tweaks or their class default (the pattern of every NPC tweak read in retail:
+// the tweaks interface's GetTweaks_Derived, else UDisTweaks_NPCPawn's default object).
+UDisTweaks_NPCPawn* ADishonoredNPCPawn::GetNPCPawnTweaks() const
+{
+	UDisTweaksBase* Tweaks = const_cast<ADishonoredNPCPawn*>( this )->GetTweaks_Derived();
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaksBase*)UDisTweaks_NPCPawn::StaticClass()->GetDefaultObject();
+	}
+	return (UDisTweaks_NPCPawn*)Tweaks;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x752980 (2012 0x7b1480)
+const UDisTweaks_InteractableInterface* ADishonoredNPCPawn::GetInteractableTweaks_Derived() const
+{
+	return GetNPCPawnTweaks()->m_pInteractableTweaks;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x74e870 (2012 0x7ad1c0): dying has played and the master FSM's logical state is the dead
+// state with its asleep flag
+UBOOL ADishonoredNPCPawn::IsAsleep() const
+{
+	if( !m_bPlayedDying )
+	{
+		return FALSE;
+	}
+	UStateNPCMasterDead* DeadState = Cast<UStateNPCMasterDead>( m_pNPCMasterFSM->GetLogicalState() );
+	return DeadState && DeadState->m_bIsAsleep;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x74ea80 (2012 0x7ad2d0): the line follows the crosshair status the player controller holds -
+// pick up (2), talk (4 and 5), steal (6), and on a lootable NPC (7) loot, or steal while he expects a putpocket (2013 tests the bit
+// at +184 of the interface, the NPC's m_bExpectingPutpocket; 2012 always looted). Retail reads the player's controller without a
+// test; this tree tests it.
+void ADishonoredNPCPawn::FillUIInteraction( FDisUIInteractionContext& _rContext ) const
+{
+	switch( ADishonoredPlayerPawn::s_pInstance->Controller ? ((ADishonoredPlayerController*)ADishonoredPlayerPawn::s_pInstance->Controller)->m_CrosshairStatus : 0 )
+	{
+	case 2:
+		_rContext.Add( FDisUIInteraction( DUI_Crosshair_Pickup ) );
+		break;
+	case 4:
+	case 5:
+		_rContext.Add( FDisUIInteraction( DUI_Crosshair_Talk ) );
+		break;
+	case 6:
+		_rContext.Add( FDisUIInteraction( DUI_Special_Steal ) );
+		break;
+	case 7:
+		_rContext.Add( FDisUIInteraction( m_bExpectingPutpocket ? DUI_Special_Steal : DUI_Crosshair_Loot ) );
+		break;
+	default:
+		break;
+	}
+}

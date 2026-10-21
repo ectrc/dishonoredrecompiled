@@ -582,3 +582,30 @@ void ADisPickup_Base::Steal( ADishonoredPlayerPawn* PlayerPawn )
 {
 	AttemptInteract( PlayerPawn );
 }
+
+// DISHONORED(port): agent JH (PHASE24 JH). 2013 rva 0x61d8c0 (2012 0x66c9a0): a highlight copy of the static mesh, no shadows, in the
+// highlight material, sorted after the water
+void ADisPickup_Base::ShowHighlight( UMaterialInterface* _pMaterial )
+{
+	if( !_pMaterial || !StaticMeshComponent || m_pHighlightStaticMeshComponent )
+	{
+		return;
+	}
+	m_pHighlightStaticMeshComponent = ConstructObject<UStaticMeshComponent>( UStaticMeshComponent::StaticClass(), this );
+	m_pHighlightStaticMeshComponent->bCastDynamicShadow = FALSE;
+	m_pHighlightStaticMeshComponent->CastShadow = FALSE;
+	m_pHighlightStaticMeshComponent->SetStaticMesh( StaticMeshComponent->StaticMesh );
+	m_pHighlightStaticMeshComponent->SetMaterial( 0, _pMaterial );
+	m_pHighlightStaticMeshComponent->DisTranslucencySortPriority = (EDisTranslucencySortPriority)5;
+	AttachComponent( m_pHighlightStaticMeshComponent );
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x619bc0 (2012 0x66a990)
+void ADisPickup_Base::HideHighlight()
+{
+	if( m_pHighlightStaticMeshComponent )
+	{
+		DetachComponent( m_pHighlightStaticMeshComponent );
+		m_pHighlightStaticMeshComponent = NULL;
+	}
+}

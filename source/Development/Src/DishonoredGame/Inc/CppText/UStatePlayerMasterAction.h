@@ -17,3 +17,6 @@ public:
 private:
 	void EnableCamInfluences( UBOOL bEnabled ) const;
 public:
+// ---- agent JH (PHASE24 JH): the action's interaction fill, vtable +416 (2013 rva 0x233610, `xor eax, eax; retn 4`, as the base state).
+public:
+	virtual UBOOL FillUIInteractions( struct FDisUIInteractionContext& _rContext ) const { return FALSE; }

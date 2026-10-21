@@ -276,3 +276,10 @@ public:
 public:
 	virtual void ApplyAttributes();
 	virtual void performPhysics( FLOAT DeltaSeconds );
+// agent JH (PHASE24 JH): FillUIInteractions 2012 0x7033f0 / 2013 0x6a9130, the interaction prompt's context (body in
+// dishonoredplayerpawn.cpp).
+public:
+	void FillUIInteractions( struct FDisUIInteractionContext& _rContext ) const;
+// agent JH (PHASE24 JH): HasKey 2012 0x70fef0 (body in dishonoredplayerpawn_inventory.cpp)
+public:
+	virtual UBOOL HasKey( const FString& _rKey ) const;

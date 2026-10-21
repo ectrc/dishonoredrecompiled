@@ -1024,3 +1024,14 @@ void ADishonoredNPCPawn::MAT_Detach()
 	}
 	m_bDisableCollisionForSoiree = bDisableCollisionForSoiree;
 }
+
+// DISHONORED(port): agent JH (PHASE24 JH). 2013 rva 0x753a30 (2012 0x7b1f00): an asleep NPC shows the tweaks' asleep text, any other
+// the interface's default (its interactable name)
+const FString& ADishonoredNPCPawn::GetCrosshairFocusText() const
+{
+	if( !IsAsleep() )
+	{
+		return IDisInteractableInterface::GetCrosshairFocusText();
+	}
+	return GetNPCPawnTweaks()->m_AsleepCrosshairText;
+}

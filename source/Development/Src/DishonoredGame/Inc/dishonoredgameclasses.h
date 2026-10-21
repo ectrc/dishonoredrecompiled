@@ -351,6 +351,7 @@ public:
 
     DECLARE_FUNCTION(execOnToggle_Native);
     DECLARE_CLASS(ADishonoredUsableObject,ADisSkeletalBreakable,0,DishonoredGame)
+#include "CppText/ADishonoredUsableObject.h"
 };
 
 // DishonoredGame.DisSpawnRequesterInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -513,6 +514,7 @@ public:
     //## END PROPS DisClimbable
 
     DECLARE_CLASS(ADisClimbable,ADishonoredKAsset,0,DishonoredGame)
+#include "CppText/ADisClimbable.h"
 };
 
 struct DisCrusher_eventEncroachingOn_Parms

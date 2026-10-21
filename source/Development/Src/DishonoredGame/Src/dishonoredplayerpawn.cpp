@@ -176,6 +176,7 @@
 #include "imdiag.h"
 #include "igdiag.h"
 #include "jgdiag.h"
+#include "gddiag.h"
 #include "dishonoredutilities.h"
 
 ADishonoredPlayerPawn* ADishonoredPlayerPawn::s_pInstance = NULL;
@@ -1132,4 +1133,79 @@ void ADishonoredPlayerPawn::OnExitWaterVolume( ADishonoredWaterVolume* Volume )
 		m_ExitWaterPPName = Volume->m_pWaterVolumeInfo->m_PostProcessNameExit;
 	}
 	Super::OnExitWaterVolume( Volume );
+}
+
+// DISHONORED(port): agent JH (PHASE24 JH). 2013 rva 0x6a9130 (2012 0x7033f0, 625 B / 615 B). The interaction lines of the HUD's
+// context: the master FSM's logical state first (UStatePlayerMasterBase vtable +372, or UStatePlayerMasterAction +416; a state
+// that fills ends it), the spyglass when the secondary item is zoomed, the crosshair actor's interact / alt-interact lines when the
+// player can interact with it and the use input is on, the inventory's active contexts, the lean, then the current power's or the
+// carried object's / corpse's drop and throw.
+// DISHONORED(bringup): the power branch keeps retail's flow (it ends the fill) but UDishonoredActivePowerComponent::
+// FillUIInteractions (2013 0x7f33b0, BendTime 0x7f5280, Possess 0x7f39f0) is in an unported unit (dishonoredactivepowercomponent*.cpp)
+// and adds nothing here. The crosshair actor's interface is DisGDInteractableOf's (UObject::GetInterfaceAddress, as retail).
+void ADishonoredPlayerPawn::FillUIInteractions( FDisUIInteractionContext& _rContext ) const
+{
+	const ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+	UDishonoredInventoryItem* EquippedItem = m_pInventory->GetEquippedItem( EDisEquipUsage_Secondary );
+	const UDisItemPowers* PowersItem = Cast<UDisItemPowers>( EquippedItem );
+	UBOOL bStateFilled = FALSE;
+	UDishonoredNativeState* LogicalState = m_pPlayerMasterFSM->GetLogicalState();
+	if( UStatePlayerMasterBase* MasterState = Cast<UStatePlayerMasterBase>( LogicalState ) )
+	{
+		bStateFilled = MasterState->FillUIInteractions( _rContext );
+	}
+	else if( UStatePlayerMasterAction* ActionState = Cast<UStatePlayerMasterAction>( LogicalState ) )
+	{
+		bStateFilled = ActionState->FillUIInteractions( _rContext );
+	}
+	if( bStateFilled )
+	{
+		return;
+	}
+	if( EquippedItem && EquippedItem->IsItemZoomed() )
+	{
+		static const FName NAME_Attribute_ZoomLevel2( TEXT("Attribute_ZoomLevel2") );
+		_rContext.Add( FDisUIInteraction( DUI_Context_SpyglassExit ) );
+		if( GetAttributeValue( NAME_Attribute_ZoomLevel2 ) > 0.f )
+		{
+			_rContext.Add( FDisUIInteraction( DUI_Context_SpyglassZoom ) );
+		}
+		return;
+	}
+	if( PC->m_pCrosshairActor && PC->m_bCanInteractWithCrosshairActor && PC->IsInputEnabled( 0x80 ) )
+	{
+		IDisInteractableInterface* Interactable = DisGDInteractableOf( PC->m_pCrosshairActor );
+		AActor* Actor = (AActor*)Interactable->GetUObjectInterfaceDisInteractableInterface();
+		if( !Actor->bDeleteMe && !Actor->IsPendingKill() )
+		{
+			Interactable->FillUIInteraction( _rContext );
+			if( Interactable->CanAltInteract( const_cast<ADishonoredPlayerPawn*>( this ) ) )
+			{
+				Interactable->FillUIAltInteraction( _rContext );
+			}
+		}
+	}
+	if( m_pInventory )
+	{
+		m_pInventory->FillUIInteractions( _rContext );
+	}
+	if( PC->m_bLean_UsingAnalogStick && PC->IsInputEnabled( 0x2000 ) )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Context_Lean ) );
+	}
+	if( PowersItem && PC->IsInputEnabled( 0x20 ) )
+	{
+		return;
+	}
+	if( IsHoldingMovableObject() && PC->IsInputEnabled( 0x80 ) )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Context_MovableDrop ) );
+		_rContext.Add( FDisUIInteraction( DUI_Context_MovableThrow ) );
+		return;
+	}
+	if( IsCarryingCorpse() && PC->IsInputEnabled( 0x80 ) )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Context_CorpseDrop ) );
+		_rContext.Add( FDisUIInteraction( DUI_Context_CorpseThrow ) );
+	}
 }

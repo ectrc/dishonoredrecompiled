@@ -700,6 +700,7 @@ struct FDisUIInteraction
     {
         appMemzero(this, sizeof(FDisUIInteraction));
     }
+#include "CppText/FDisUIInteraction.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerHUD.DisUIInteractionGroup: retail SDK size 36 (2012 PDB 56)
@@ -714,6 +715,7 @@ struct FDisUIInteractionGroup
     {
         appMemzero(this, sizeof(FDisUIInteractionGroup));
     }
+#include "CppText/FDisUIInteractionGroup.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerHUD.DisUIInteractionContext: retail SDK size 144 (2012 PDB 168)
@@ -727,6 +729,7 @@ struct FDisUIInteractionContext
     {
         appMemzero(this, sizeof(FDisUIInteractionContext));
     }
+#include "CppText/FDisUIInteractionContext.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerHUD.DisUIInteractionProbe: retail SDK size 12 (2012 PDB 28)
@@ -744,6 +747,7 @@ struct FDisUIInteractionProbe
     {
         appMemzero(this, sizeof(FDisUIInteractionProbe));
     }
+#include "CppText/FDisUIInteractionProbe.h"
 };
 
 // DishonoredGame.DisTweaks_GFxMoviePlayerNote.DisUIMapLegendItem: retail SDK size 16 (2012 PDB 16)

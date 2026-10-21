@@ -256,3 +256,7 @@ public:
 public:
 	virtual void Tick_Attributes( FLOAT DeltaTime, ELevelTick TickType );
 	virtual void ApplyAttributes();
+// agent JH (PHASE24 JH): HasKey, the pawn virtual the usable objects' key test calls (2012 ADishonoredPlayerPawn 0x70fef0: the key
+// ring; ADishonoredNPCPawn 0x7b44a0: its stealable key, reached only through a possessed NPC and not ported). The base answers FALSE.
+public:
+	virtual UBOOL HasKey( const FString& _rKey ) const { return FALSE; }

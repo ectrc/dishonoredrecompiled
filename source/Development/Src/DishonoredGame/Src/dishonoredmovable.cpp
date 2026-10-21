@@ -37,3 +37,48 @@
 //   0x6899a0  public: virtual void __thiscall ADishonoredMovable::OnThrow(class FVector const &, class FVector const &)
 //   0x689a40  public: virtual unsigned int __thiscall ADishonoredMovable::HasSoul(int)const
 //   0x68dc40  public: virtual unsigned int __thiscall ADishonoredMovable::IgnoreBlockingBy(class AActor const *)const
+
+// ---- agent JH (PHASE24 JH): the movable's interactable tweaks and hover glow ----
+
+#include "DishonoredGame.h"
+
+void DishonoredLinkADishonoredMovable()
+{
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x64a230 (2012 0x671760): the movable tweaks (a static breakable's) or that class's default
+const UDisTweaks_InteractableInterface* ADishonoredMovable::GetInteractableTweaks_Derived() const
+{
+	UDisTweaksBase* Tweaks = const_cast<ADishonoredMovable*>( this )->GetTweaks_Derived();
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaksBase*)UDisTweaks_StaticBreakable::StaticClass()->GetDefaultObject();
+	}
+	return ((UDisTweaks_StaticBreakable*)Tweaks)->m_pInteractableTweaks;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x645e90 (2012 0x66e720): as the pickup's - a highlight copy of the static mesh
+void ADishonoredMovable::ShowHighlight( UMaterialInterface* _pMaterial )
+{
+	if( !_pMaterial || !StaticMeshComponent || m_pHighlightStaticMeshComponent )
+	{
+		return;
+	}
+	m_pHighlightStaticMeshComponent = ConstructObject<UStaticMeshComponent>( UStaticMeshComponent::StaticClass(), this );
+	m_pHighlightStaticMeshComponent->bCastDynamicShadow = FALSE;
+	m_pHighlightStaticMeshComponent->CastShadow = FALSE;
+	m_pHighlightStaticMeshComponent->SetStaticMesh( StaticMeshComponent->StaticMesh );
+	m_pHighlightStaticMeshComponent->SetMaterial( 0, _pMaterial );
+	m_pHighlightStaticMeshComponent->DisTranslucencySortPriority = (EDisTranslucencySortPriority)5;
+	AttachComponent( m_pHighlightStaticMeshComponent );
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x6428e0 (2012 0x66b710)
+void ADishonoredMovable::HideHighlight()
+{
+	if( m_pHighlightStaticMeshComponent )
+	{
+		DetachComponent( m_pHighlightStaticMeshComponent );
+		m_pHighlightStaticMeshComponent = NULL;
+	}
+}

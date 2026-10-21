@@ -1,0 +1,65 @@
+Function,rva_2012,rva_2013,unit,status,note
+FDisUIInteraction::FDisUIInteraction(index;text),0x7f4810,0x787c90,disgfxmovieplayerhud.cpp,ported,2013 dropped the QTE bit (struct 8 bytes)
+FDisUIInteraction::FDisUIInteraction(index),0x7f6330,0x78cb00,disgfxmovieplayerhud.cpp,ported,HUD tweaks' text; gamepad text when on a gamepad and >= 1 char; adrenaline kill per BloodThirsty level
+FDisUIInteractionGroup::Add,inlined,0x787cb0,disgfxmovieplayerhud.cpp,ported,sorted insert; no bound on the 4 slots (as retail)
+FDisUIInteractionContext::Add,0x7f48b0,0x787d20,disgfxmovieplayerhud.cpp,ported,2013 ranges incl. DLC06/DLC07; 5 and 6 go to the QTE group
+FDisUIInteractionContext::HasGroupChanged,0x7f48e0,0x787da0,disgfxmovieplayerhud.cpp,ported,2013 compares text pointers (2012 and HF's helper compared indices)
+FDisUIInteractionProbe::FillUIInteractions,0x7f64a0,0x78cc60,disgfxmovieplayerhud.cpp,ported,choke line new in 2013
+FDisUIInteractionProbe::CheckMantle,0x7f6430,0x78cbf0,disgfxmovieplayerhud.cpp,ported,
+FDisUIInteractionProbe::CheckAssassinate,0x808d20,0x7a50f0,disgfxmovieplayerhud.cpp,named,item-context family unported: FALSE
+FDisUIInteractionProbe::CheckDropAssassinate,0x808e50,0x7a5420,disgfxmovieplayerhud.cpp,named,item-context family unported: FALSE
+FDisUIInteractionProbe::CheckAdrenalineKill,0x809010,0x7a5610,disgfxmovieplayerhud.cpp,named,item-context family unported: FALSE
+FDisUIInteractionProbe::CheckChoke,new,0x7a5250,disgfxmovieplayerhud.cpp,named,item-context family unported: FALSE
+FDisUIInteractionProbe::Tick,0x80c000,gone,-,not in 2013,2013 runs the five checks inline in PreAdvance (0x7b2280) every frame
+UDisGFxMoviePlayerHUD::PreAdvance (probe part),0x814ce0,0x7b2280,disgfxmovieplayerhud.cpp,ported,the five checks in retail's place
+UDisGFxMoviePlayerHUD::Tick_Interaction,0x80c450,0x7acb10,disgfxmovieplayerhud.cpp,ported,the fills and the 4 group updates added to HF's port; s_pInstance tested
+UDisGFxMoviePlayerHUD::UpdateContextInteractions,0x809a40,0x7a63c0,disgfxmovieplayerhud.cpp,ported,
+UDisGFxMoviePlayerHUD::UpdateSpecialInteractions,0x809c10,0x7a6630,disgfxmovieplayerhud.cpp,ported,
+UDisGFxMoviePlayerHUD::UpdateQTEInteractions,new,0x7a6920,disgfxmovieplayerhud.cpp,ported,
+ADishonoredPlayerPawn::FillUIInteractions,0x7033f0,0x6a9130,dishonoredplayerpawn.cpp,ported,power branch ends the fill but the power component fill is unported
+UStatePlayerMasterBase::FillUIInteractions,folded,0x233610,CppText,ported,xor eax eax / retn 4 (Walk Jump Falling Slide too)
+UStatePlayerMasterAction::FillUIInteractions,folded,0x233610,CppText,ported,as the base
+UStatePlayerMasterHolePeeking/Versus/Climb/Choke/Assassinate/Minigame::FillUIInteractions,0x692f70..0x6b6ea0,0x65ff60..0x667d50,-,boundary,states unported (excluded units)
+UDishonoredInventory::FillUIInteractions,0x852c10,0x805770,dishonoredinventory.cpp,ported,
+UDisItemContext::FillUIInteractions,folded,0x233610,CppText,ported,base FALSE; ThrowGrenade override (0x823a20) unported
+UDishonoredActivePowerComponent::FillUIInteractions (+BendTime +Possess),0x843f20,0x7f33b0,-,boundary,unit unported
+IDisInteractableInterface::FillUIInteraction,0x67d190,0x6280d0,disinteractableinterface.cpp,ported,
+IDisInteractableInterface::FillUIAltInteraction,0x67d1f0,0x628130,disinteractableinterface.cpp,ported,
+IDisInteractableInterface::LoseCrosshairFocus,0x681750,0x630810,disinteractableinterface.cpp,ported,clears highlight bit 1 (was empty)
+IDisInteractableInterface::DoHighlight (HUD setting),0x67d0b0,0x627ff0,disinteractableinterface.cpp,ported,HUD m_Settings.m_bShowHighlight (0x787e60) - the brief's 0x7bd0d0 is HandleHeldButtons_Context_PowerWheel's callee
+ADishonoredNPCPawn::GetUObjectInterfaceDisInteractableInterface,0x7c5210,-,CppText,ported,was missing: the interface default answered NULL for an NPC
+ADishonoredNPCPawn::GetCrosshairFocusText,0x7b1f00,0x753a30,dishonorednpcpawn.cpp,ported,
+ADishonoredNPCPawn::GetInteractableTweaks_Derived,0x7b1480,0x752980,dishonorednpcpawn_interact.cpp,ported,
+ADishonoredNPCPawn::IsAsleep,0x7ad1c0,0x74e870,dishonorednpcpawn_interact.cpp,ported,
+ADishonoredNPCPawn::FillUIInteraction,0x7ad2d0,0x74ea80,dishonorednpcpawn_interact.cpp,ported,2013 loot/steal on m_bExpectingPutpocket; controller tested
+ADishonoredNPCPawn::FillUIAltInteraction,0x7c25c0,0x765040,-,not ported,reached only through CanAltInteract (0x7679d0) / CanBeCarriedBy (0x764aa0 1020 B)
+ADishonoredNPCPawn::ShowHighlight/HideHighlight,-,0x1cb0c0/0x59d10,-,retail empty,an NPC never glows in 2013
+ADishonoredUsableObject::GetInteractableTweaks_Derived,0x683b90,0x64e840,dishonoredusableobject.cpp,ported,
+ADishonoredUsableObject::GetTweaks_Derived/SetTweaks_Derived,0x669bb0/0x66be30,folded,CppText,ported,m_pUsableObjTweaks
+ADishonoredUsableObject::GetCrosshairFocusText,0x683910,0x64e5c0,dishonoredusableobject.cpp,ported,
+ADishonoredUsableObject::FillUIInteraction,0x688c40,0x653b30,dishonoredusableobject.cpp,ported,possession branch named
+ADishonoredUsableObject::GetActiveStage,0x684440,0x64eec0,dishonoredusableobject.cpp,ported,
+ADishonoredUsableObject::ShowHighlight,0x66da10,0x645630,dishonoredusableobject.cpp,ported,
+ADishonoredUsableObject::HideHighlight,0x66b370,0x6422c0,dishonoredusableobject.cpp,ported,
+ADishonoredUsableObject::LoseCrosshairFocus,0x68dbf0,0x657ea0,dishonoredusableobject.cpp,partial,HandleUseStopped (0x657cc0) not called: the use path is unported
+UDisTweaks_UsableObject::GetNumUsableStages/GetUsableStage,0x679ac0/0x679ad0,vtable +320/+324,CppText,ported,
+DisUsableObjectHelperFunctions::HasKey,0x66d8f0,0x645510,dishonoredusableobject.cpp,ported,possession branch named
+ADishonoredPawn::HasKey (base),-,-,CppText,ported,FALSE
+ADishonoredPlayerPawn::HasKey,0x70fef0,-,dishonoredplayerpawn_inventory.cpp,ported,key ring tested
+ADishonoredNPCPawn::HasKey,0x7b44a0,-,-,not ported,possessed NPCs only
+UDisKeyRing::FindKey,0x708530,-,diskeyring.cpp,ported,
+UDishonoredPowersComponent::GetPowerLevel,0x707b20,0x6c8a00,dishonoredpowerscomponent.cpp,ported,
+ADisPickup_Base::ShowHighlight,0x66c9a0,0x61d8c0,dispickup_base.cpp,ported,
+ADisPickup_Base::HideHighlight,0x66a990,0x619bc0,dispickup_base.cpp,ported,
+ADishonoredMovable::GetInteractableTweaks_Derived,0x671760,0x64a230,dishonoredmovable.cpp,ported,
+ADishonoredMovable::GetTweaks_Derived/SetTweaks_Derived,0x66b670/0x66de20,-,CppText,ported,m_pMovableTweaks
+ADishonoredMovable::ShowHighlight,0x66e720,0x645e90,dishonoredmovable.cpp,ported,
+ADishonoredMovable::HideHighlight,0x66b710,0x6428e0,dishonoredmovable.cpp,ported,
+ADisClimbable::GetInteractableTweaks_Derived,0x680c70,0x62bfa0,disclimbable.cpp,ported,
+ADisClimbable::GetTweaks_Derived/SetTweaks_Derived,0x8d9800/0x88b160,folded,CppText,ported,m_pClimbableTweaks
+ADisClimbable::ShowHighlight,0x66ae20,0x61a200,disclimbable.cpp,ported,material swap
+ADisClimbable::HideHighlight,0x66ae60,0x61a240,disclimbable.cpp,ported,
+GetHighlightFlags (usable/movable/climbable),-,0x642290/0x700ad0/0x700ad0,CppText,ported,&m_HighlightFlags
+DisGDInteractableOf,-,-,dishonoredplayercontroller_use.cpp,ported,GetInterfaceAddress for every implementer; C++-base check
+ADishonoredPlayerController::FindInteractableActor (broad multi-probe),0x6f73f0,0x6b70f0,-,not ported,2013 body is 2691 B and needs the masked probe family (DisLineProbe_Interact / Multi / DisLineSegBoxIntersect)
+ADishonoredPlayerController::FindCombatTarget_Dir,0x6d6b20,0x6a2c20,-,not ported,needs the item contexts' melee info

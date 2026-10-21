@@ -14,3 +14,8 @@ protected:
 	FLOAT GetBlendInTime() const;
 	void UpdateWalkNavAnimState( class ADishonoredPlayerPawn* Pawn, UBOOL bHandleCrouch );
 public:
+// ---- agent JH (PHASE24 JH): the master FSM's interaction fill, vtable +372. Walk, Jump, Falling, Slide and the base answer
+// 2013 rva 0x233610 (`xor eax, eax; retn 4`); HolePeeking, Versus, Climb, Choke, Assassinate and Minigame override it in units that
+// are not ported.
+public:
+	virtual UBOOL FillUIInteractions( struct FDisUIInteractionContext& _rContext ) const { return FALSE; }

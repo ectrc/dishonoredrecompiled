@@ -75,6 +75,10 @@ protected:
 	void Tick_Interaction( class IDisInteractableInterface* _pInteractable );               // 2013 rva 0x7acb10
 	void UpdateCrosshairFocusText( const FString& _rText );                                  // 2013 rva 0x7984f0
 	void UpdateCrosshairInteractions( const FString& _rName, const struct FDisUIInteractionGroup& _rGroup ); // 2013 rva 0x7a6150
+	// agent JH (PHASE24 JH): the other three groups of the interaction context
+	void UpdateContextInteractions( const struct FDisUIInteractionGroup& _rGroup );                  // 2013 rva 0x7a63c0 (2012 0x809a40)
+	void UpdateSpecialInteractions( const struct FDisUIInteractionGroup& _rGroup );                  // 2013 rva 0x7a6630 (2012 0x809c10)
+	void UpdateQTEInteractions( const struct FDisUIInteractionGroup& _rGroup );                      // 2013 rva 0x7a6920 (new in 2013)
 
 // ---- agent HI (PHASE22 HI): the rest of the objective notifications. Bodies in disgfxmovieplayerhud.cpp ----
 public:

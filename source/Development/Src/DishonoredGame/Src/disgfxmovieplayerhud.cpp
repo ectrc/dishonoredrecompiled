@@ -166,6 +166,7 @@
 #include "gfxui_gfx3.h"
 #include "arkgameeventdispatcher.h"
 #include "dishudmarkers.h"
+#include "jhdiag.h"
 
 /*-----------------------------------------------------------------------------
 	Agent EK (PHASE11 EK): the in-game HUD.
@@ -1323,11 +1324,21 @@ void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime
 
 	HUD->Tick_PlayerStatus( ShowFlags );
 	HUD->Tick_PlayerState( ShowFlags );
+	// DISHONORED(port): agent JH - the interaction probe's five checks, in retail's order and place (after Tick_Stealth, unported)
+	if( ADishonoredPlayerPawn::s_pInstance )
+	{
+		FDisUIInteractionProbe& Probe = HUD->m_InteractionProbe;
+		Probe.m_bCanDropAssassinate = Probe.CheckDropAssassinate() ? 1 : 0;
+		Probe.m_bCanAdrenalineKill = Probe.CheckAdrenalineKill() ? 1 : 0;
+		Probe.m_bCanAssassinate = Probe.CheckAssassinate() ? 1 : 0;
+		Probe.m_bCanChoke = Probe.CheckChoke() ? 1 : 0;
+		Probe.m_bCanMantle = Probe.CheckMantle() ? 1 : 0;
+	}
 	// DISHONORED(bringup): retail's order (2013 0x7b2280, read by agent HF) is Tick_PlayerStatus, Tick_PlayerState,
 	// Tick_Stealth (0x796050), the interaction probe's five checks inlined (CheckDropAssassinate, CheckAdrenalineKill,
 	// 0x7a50f0, 0x7a5250, CheckMantle), Tick_GameMessages (0x78d3b0), Tick_Tutorials (0x7afa60), Tick_ObjectivePopup
-	// (0x7afe70), Tick_Markers (0x7b00c0), Tick_Subtitles (0x79fe20), Tick_Cinematic (0x7960e0). Tick_Stealth and the
-	// probe are not ported; the rest run here in that order. 0x78d3b0 is not the
+	// (0x7afe70), Tick_Markers (0x7b00c0), Tick_Subtitles (0x79fe20), Tick_Cinematic (0x7960e0). Tick_Stealth is not
+	// ported; the probe runs above (agent JH; skipped without a player pawn); the rest run here in that order. 0x78d3b0 is not the
 	// Tick_Interaction the earlier comment named: it is gameMsg_mc's _visible from show bit 0x2000. Tick_Interaction
 	// (2013 0x7acb10, 2012 0x80c450) is not ticked at all - OnCrosshairActorSet calls it.
 	HUD->Tick_GameMessages( ShowFlags );
@@ -2550,23 +2561,176 @@ void UDisSeqAct_SetTutorialMessage::PostLoad()
 	The crosshair's interaction prompt: the focus text and the interaction lines beside the crosshair. Agent HF.
 -----------------------------------------------------------------------------*/
 
-// DISHONORED(port): 2013 rva 0x787da0, new in 2013 (2012's FDisUIInteractionContext::HasGroupChanged 0x7f48e0): a group
-// changed when its count or any interaction's index differs
-static UBOOL DisHUDInteractionGroupChanged( const FDisUIInteractionContext& _rNew, const FDisUIInteractionContext& _rOld, INT _Group )
+// DISHONORED(port): agent JH. 2013 rva 0x787c90 (2012 0x7f4810; 2013 dropped the QTE bit)
+FDisUIInteraction::FDisUIInteraction( BYTE _Index, const FString* _pText )
 {
-	const FDisUIInteractionGroup& New = _rNew.m_Groups[_Group];
-	const FDisUIInteractionGroup& Old = _rOld.m_Groups[_Group];
-	if( New.m_InteractionCount != Old.m_InteractionCount )
+	m_Index = _Index;
+	m_pText = (FPointer)_pText;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x78cb00 (2012 0x7f6330): the HUD tweaks' text for the index - the gamepad one when the player
+// is on a gamepad and it is not empty; the adrenaline kill's per BloodThirsty level (1 or 2)
+FDisUIInteraction::FDisUIInteraction( BYTE _Index )
+{
+	m_Index = _Index;
+	m_pText = NULL;
+	const UDisTweaks_GFxMoviePlayerHUD* Tweaks = (const UDisTweaks_GFxMoviePlayerHUD*)DisGetGFxHUD()->m_pTweaks;
+	ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+	const UBOOL bUsingGamepad = PC && PC->PlayerInput && PC->PlayerInput->bUsingGamepad;
+	static const FName NAME_BloodThirsty( TEXT("BloodThirsty") );
+	if( _Index == DUI_Special_AdrenalineKill && ADishonoredPlayerPawn::s_pInstance )
+	{
+		const UINT Level = (UINT)( ADishonoredPlayerPawn::s_pInstance->m_pPowersComponent->GetPowerLevel( NAME_BloodThirsty ) - 1 );
+		if( Level <= 1 )
+		{
+			m_pText = (FPointer)( bUsingGamepad ? &Tweaks->m_AdrenalineKillTexts_Gamepad[Level] : &Tweaks->m_AdrenalineKillTexts[Level] );
+		}
+	}
+	if( !m_pText && bUsingGamepad && Tweaks->m_InteractionTexts_Gamepad[_Index].GetCharArray().Num() >= 2 )
+	{
+		m_pText = (FPointer)&Tweaks->m_InteractionTexts_Gamepad[_Index];
+	}
+	if( !m_pText )
+	{
+		m_pText = (FPointer)&Tweaks->m_InteractionTexts[_Index];
+	}
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x787cb0: inserted before the first entry of a greater index. No bound on the four slots,
+// as retail.
+void FDisUIInteractionGroup::Add( const FDisUIInteraction& _rInteraction )
+{
+	INT Slot = 0;
+	while( Slot < m_InteractionCount && _rInteraction.m_Index >= m_Interactions[Slot].m_Index )
+	{
+		Slot++;
+	}
+	for( INT Index = m_InteractionCount; Index > Slot; Index-- )
+	{
+		m_Interactions[Index] = m_Interactions[Index - 1];
+	}
+	m_Interactions[Slot] = _rInteraction;
+	m_InteractionCount++;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x787d20 (2012 0x7f48b0). The ranges of EDisUIInteraction: Special 0..6, of which 5 and 6 (the
+// drop assassinate and the adrenaline kill) are the QTE group; Context 7..25; Crosshair 26..33; the DLC06 block (34 its marker,
+// dropped; 35 Special; 36..39 Context; 40 Crosshair) and the DLC07 block (41 its marker, dropped; 42 Special; 43..44 Context;
+// 45 and up Crosshair).
+void FDisUIInteractionContext::Add( const FDisUIInteraction& _rInteraction )
+{
+	const BYTE Index = _rInteraction.m_Index;
+	if( Index == DUI_DLC06_BEGIN || Index == DUI_DLC07_BEGIN )
+	{
+		return;
+	}
+	INT Group = DUIG_Crosshair;
+	if( Index < DUI_Context_BEGIN )
+	{
+		Group = ( Index == DUI_Special_DropAssassinate || Index == DUI_Special_AdrenalineKill ) ? DUIG_SpecialQTE : DUIG_Special;
+	}
+	else if( Index < DUI_Crosshair_BEGIN )
+	{
+		Group = DUIG_Context;
+	}
+	else if( Index == DUI_DLC06_Special_BEGIN || Index == DUI_DLC07_Special_BEGIN )
+	{
+		Group = DUIG_Special;
+	}
+	else if( ( Index >= DUI_DLC06_Context_BEGIN && Index < DUI_DLC06_Crosshair_BEGIN ) || ( Index >= DUI_DLC07_Context_BEGIN && Index < DUI_DLC07_Crosshair_BEGIN ) )
+	{
+		Group = DUIG_Context;
+	}
+	m_Groups[Group].Add( _rInteraction );
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x787da0. 2012 (0x7f48e0) compared the indices; 2013 compares the text pointers.
+UBOOL FDisUIInteractionContext::HasGroupChanged( INT _Group, const FDisUIInteractionContext& _rOther ) const
+{
+	const FDisUIInteractionGroup& Mine = m_Groups[_Group];
+	const FDisUIInteractionGroup& Other = _rOther.m_Groups[_Group];
+	if( Mine.m_InteractionCount != Other.m_InteractionCount )
 	{
 		return TRUE;
 	}
-	for( INT Index = 0; Index < New.m_InteractionCount; Index++ )
+	for( INT Index = 0; Index < Mine.m_InteractionCount; Index++ )
 	{
-		if( New.m_Interactions[Index].m_Index != Old.m_Interactions[Index].m_Index )
+		if( Mine.m_Interactions[Index].m_pText != Other.m_Interactions[Index].m_pText )
 		{
 			return TRUE;
 		}
 	}
+	return FALSE;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x78cc60 (2012 0x7f64a0): the probe's findings as the special / QTE lines; the mantle only
+// when nothing else was offered
+UBOOL FDisUIInteractionProbe::FillUIInteractions( FDisUIInteractionContext& _rContext ) const
+{
+	UBOOL bAdded = FALSE;
+	if( m_bCanDropAssassinate )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Special_DropAssassinate ) );
+		bAdded = TRUE;
+	}
+	else if( m_bCanAssassinate )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Special_Assassinate ) );
+		bAdded = TRUE;
+	}
+	if( m_bCanAdrenalineKill )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Special_AdrenalineKill ) );
+		bAdded = TRUE;
+	}
+	if( m_bCanChoke )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Special_Choke ) );
+		bAdded = TRUE;
+	}
+	if( m_bCanMantle && !bAdded )
+	{
+		_rContext.Add( FDisUIInteraction( DUI_Special_Mantle ) );
+	}
+	return bAdded;
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x78cbf0 (2012 0x7f6430): not swimming or on a ladder, not carrying, not possessing, the
+// mantle allowed and the edge finder holding a spot
+UBOOL FDisUIInteractionProbe::CheckMantle()
+{
+	ADishonoredPlayerPawn* Player = ADishonoredPlayerPawn::s_pInstance;
+	if( Player->Physics == PHYS_Swimming || Player->Physics == PHYS_Ladder || Player->IsHoldingMovableObject() || Player->IsCarryingCorpse()
+		|| Player->DisIsPossessing() )
+	{
+		return FALSE;
+	}
+	return Player->m_bMantleAllowed && Player->m_pMantleEdgeFinder->HasValidMantleSpot();
+}
+
+// DISHONORED(bringup): agent JH. The four item-context checks (2013 rva 0x7a50f0 CheckAssassinate, 0x7a5420 CheckDropAssassinate,
+// 0x7a5610 CheckAdrenalineKill, 0x7a5250 CheckChoke, new in 2013) walk the equipped item's contexts for their slot
+// (UDishonoredInventoryItem::GetContextsForSlot, FDisItemContextIterator), fill the pawn's melee info (pawn vtable +1608,
+// UDisItemContext::SetPawnInfo_Melee), take FDisMeleeInfo::GetCombatTarget and ask the context whether it could start (context
+// vtable +304 with an FDisItemContextParam_UsePlayer). The item-context family (disitemcontext*.cpp) is unported, so each answers
+// what retail answers with no such context: FALSE.
+UBOOL FDisUIInteractionProbe::CheckAssassinate()
+{
+	return FALSE;
+}
+
+UBOOL FDisUIInteractionProbe::CheckDropAssassinate()
+{
+	return FALSE;
+}
+
+UBOOL FDisUIInteractionProbe::CheckAdrenalineKill()
+{
+	return FALSE;
+}
+
+UBOOL FDisUIInteractionProbe::CheckChoke()
+{
 	return FALSE;
 }
 
@@ -2582,6 +2746,7 @@ void UDisGFxMoviePlayerHUD::UpdateCrosshairFocusText( const FString& _rText )
 	{
 		Arg.SetNull();
 	}
+	DisJHLogInvoke( TEXT("crosshairInfosTxt_mc"), TEXT("SetText"), _rText.Len() > 0 ? _rText : FString( TEXT("null") ) );
 	DisHUDInvoke( this, DHMC_CrosshairInfo, "SetText", &Arg, 1 );
 }
 
@@ -2608,18 +2773,15 @@ void UDisGFxMoviePlayerHUD::UpdateCrosshairInteractions( const FString& _rName, 
 		Args[0].SetStringW( *_rName );
 		Args[1].SetStringW( *InteractionText );
 	}
+	DisJHLogInvoke( TEXT("interactions_window_mc"), TEXT("SetInteractions"), _rGroup.m_InteractionCount > 0 ? FString::Printf( TEXT("'%s', '%s'"), *_rName, *InteractionText ) : FString( TEXT("null, null") ) );
 	DisHUDInvoke( this, DHMC_CrosshairInteractions, "SetInteractions", Args, 2 );
 }
 
 // DISHONORED(port): 2013 rva 0x7acb10 (2012 0x80c450). With the interaction show bits (0xE00) on and an interactable under the
-// crosshair, its focus text (interface +52) and name (+56), each through its FormatText (+80); otherwise both empty. The
-// context's group counts are masked by the player's interaction settings and the show bits, and only what changed since
-// the last call is sent.
-// DISHONORED(bringup): the context is retail's ADishonoredPlayerPawn::FillUIInteractions (2013 0x6a9130, 2012 0x7033f0) plus the
-// probe's (0x78cc60). The pawn's reaches the player state machine's FillUIInteractions (vtable +372/+416) and the
-// interactable's interface slots +60/+64, none of which this tree declares, and the probe's five checks are unported; the
-// context stays empty, so the crosshair group is the focus text alone and UpdateContextInteractions (0x7a63c0),
-// UpdateSpecialInteractions (0x7a6630) and the QTE group (0x7a6920) never see a change and are not ported.
+// crosshair, its focus text (interface +52) and name (+56), each through its FormatText (+80); otherwise both empty. The context
+// is the player pawn's FillUIInteractions (2013 0x6a9130) and the probe's (0x78cc60), its four groups masked by the player's
+// interaction settings and the show bits; each group that changed since the last call goes to its clip. Agents HF and JH.
+// DISHONORED(written): retail reads ADishonoredPlayerPawn::s_pInstance without a test; this tree tests it.
 void UDisGFxMoviePlayerHUD::Tick_Interaction( IDisInteractableInterface* _pInteractable )
 {
 	const UBOOL bShowInteractions = ( m_ShowFlagsOnLastTick & 0xE00 ) != 0;
@@ -2633,25 +2795,121 @@ void UDisGFxMoviePlayerHUD::Tick_Interaction( IDisInteractableInterface* _pInter
 		_pInteractable->FormatText( FocusText );
 		_pInteractable->FormatText( Name );
 	}
-	if( bShowInteractions )
+	if( bShowInteractions && ADishonoredPlayerPawn::s_pInstance )
 	{
-		const INT ContextCount = Context.m_Groups[0].m_InteractionCount > 0 ? 0 : Context.m_Groups[1].m_InteractionCount;
-		Context.m_Groups[0].m_InteractionCount *= m_Settings.m_bShowInteractions ? 1 : 0;
-		Context.m_Groups[1].m_InteractionCount = ContextCount * ( m_Settings.m_bShowInteractions & ( m_ShowFlagsOnLastTick >> 10 ) & 1 );
-		Context.m_Groups[2].m_InteractionCount *= m_Settings.m_bShowContextualIcons & ( m_ShowFlagsOnLastTick >> 11 ) & 1;
-		Context.m_Groups[3].m_InteractionCount *= m_Settings.m_bShowContextualIcons ? 1 : 0;
+		ADishonoredPlayerPawn::s_pInstance->FillUIInteractions( Context );
+		m_InteractionProbe.FillUIInteractions( Context );
+		DisJHLogContext( Context, Name, FocusText );
+		const INT ContextCount = Context.m_Groups[DUIG_Crosshair].m_InteractionCount > 0 ? 0 : Context.m_Groups[DUIG_Context].m_InteractionCount;
+		Context.m_Groups[DUIG_Crosshair].m_InteractionCount *= m_Settings.m_bShowInteractions ? 1 : 0;
+		Context.m_Groups[DUIG_Context].m_InteractionCount = ContextCount * ( m_Settings.m_bShowInteractions & ( m_ShowFlagsOnLastTick >> 10 ) & 1 );
+		Context.m_Groups[DUIG_Special].m_InteractionCount *= m_Settings.m_bShowContextualIcons & ( m_ShowFlagsOnLastTick >> 11 ) & 1;
+		Context.m_Groups[DUIG_SpecialQTE].m_InteractionCount *= m_Settings.m_bShowContextualIcons ? 1 : 0;
 	}
 	if( FocusText != m_CrosshairFocusText )
 	{
 		UpdateCrosshairFocusText( FocusText );
 		m_CrosshairFocusText = FocusText;
 	}
-	if( Name != m_InteractableName || DisHUDInteractionGroupChanged( Context, m_InteractionContext, 0 ) )
+	if( Name != m_InteractableName || m_InteractionContext.HasGroupChanged( DUIG_Crosshair, Context ) )
 	{
-		UpdateCrosshairInteractions( Name, Context.m_Groups[0] );
+		UpdateCrosshairInteractions( Name, Context.m_Groups[DUIG_Crosshair] );
 		m_InteractableName = Name;
-		m_InteractionContext.m_Groups[0] = Context.m_Groups[0];
+		m_InteractionContext.m_Groups[DUIG_Crosshair] = Context.m_Groups[DUIG_Crosshair];
 	}
+	if( m_InteractionContext.HasGroupChanged( DUIG_Context, Context ) )
+	{
+		UpdateContextInteractions( Context.m_Groups[DUIG_Context] );
+		m_InteractionContext.m_Groups[DUIG_Context] = Context.m_Groups[DUIG_Context];
+	}
+	if( m_InteractionContext.HasGroupChanged( DUIG_Special, Context ) )
+	{
+		UpdateSpecialInteractions( Context.m_Groups[DUIG_Special] );
+		m_InteractionContext.m_Groups[DUIG_Special] = Context.m_Groups[DUIG_Special];
+	}
+	if( m_InteractionContext.HasGroupChanged( DUIG_SpecialQTE, Context ) )
+	{
+		UpdateQTEInteractions( Context.m_Groups[DUIG_SpecialQTE] );
+		m_InteractionContext.m_Groups[DUIG_SpecialQTE] = Context.m_Groups[DUIG_SpecialQTE];
+	}
+}
+
+// DISHONORED(port): agent JH. 2013 rva 0x7a63c0 (2012 0x809a40): the context lines joined by newlines through FormatInteractionText
+// (null for none) to the context clip's SetInteractions, then its _txtAttached = false and InitConvertButtonTags()
+void UDisGFxMoviePlayerHUD::UpdateContextInteractions( const FDisUIInteractionGroup& _rGroup )
+{
+	GFxValue Arg;
+	FString InteractionText;
+	if( _rGroup.m_InteractionCount <= 0 )
+	{
+		Arg.SetNull();
+	}
+	else
+	{
+		InteractionText = *(const FString*)_rGroup.m_Interactions[0].m_pText;
+		for( INT Index = 1; Index < _rGroup.m_InteractionCount; Index++ )
+		{
+			InteractionText += TEXT("\n");
+			InteractionText += *(const FString*)_rGroup.m_Interactions[Index].m_pText;
+		}
+		FormatInteractionText( InteractionText, FALSE, FALSE );
+		Arg.SetStringW( *InteractionText );
+	}
+	DisJHLogInvoke( TEXT("context"), TEXT("SetInteractions"), _rGroup.m_InteractionCount > 0 ? InteractionText : FString( TEXT("null") ) );
+	DisHUDInvoke( this, DHMC_ContextInteractions, "SetInteractions", &Arg, 1 );
+	GFxValue* Clips = DisHUDClips( this );
+	if( Clips && !Clips[DHMC_ContextInteractions].IsUndefined() && !Clips[DHMC_ContextInteractions].IsNull() )
+	{
+		GFxValue Attached;
+		Attached.SetBoolean( false );
+		Clips[DHMC_ContextInteractions].SetMember( "_txtAttached", Attached );
+	}
+	DisHUDInvoke( this, DHMC_ContextInteractions, "InitConvertButtonTags", NULL, 0 );
+}
+
+// DISHONORED(port): agent JH. The special (2013 rva 0x7a6630, 2012 0x809c10) and QTE (0x7a6920, new in 2013) groups: an array of
+// { iconIdx: the interaction's index, txt: its text through FormatInteractionText } (null for none) to the clip's SetInteractions.
+static void DisHUDUpdateIconInteractions( UDisGFxMoviePlayerHUD* HUD, INT ClipIndex, const TCHAR* ClipName, const FDisUIInteractionGroup& _rGroup )
+{
+	GFxValue Arg;
+	FString Logged;
+	GFxMovieView* View = DisHUDView( HUD );
+	if( _rGroup.m_InteractionCount <= 0 || View == NULL )
+	{
+		Arg.SetNull();
+		Logged = TEXT("null");
+	}
+	else
+	{
+		View->CreateArray( &Arg );
+		for( INT Index = 0; Index < _rGroup.m_InteractionCount; Index++ )
+		{
+			FString Text = *(const FString*)_rGroup.m_Interactions[Index].m_pText;
+			UDisGFxMoviePlayerBase::FormatInteractionText( Text, FALSE, FALSE );
+			GFxValue Entry;
+			View->CreateObject( &Entry, NULL, NULL, 0 );
+			GFxValue IconIndex;
+			IconIndex.SetNumber( (DOUBLE)_rGroup.m_Interactions[Index].m_Index );
+			GFxValue TextValue;
+			TextValue.SetStringW( *Text );
+			Entry.SetMember( "iconIdx", IconIndex );
+			Entry.SetMember( "txt", TextValue );
+			Arg.PushBack( Entry );
+			Logged += FString::Printf( TEXT("%s{%d '%s'}"), Index ? TEXT(", ") : TEXT(""), (INT)_rGroup.m_Interactions[Index].m_Index, *Text );
+		}
+	}
+	DisJHLogInvoke( ClipName, TEXT("SetInteractions"), Logged );
+	DisHUDInvoke( HUD, ClipIndex, "SetInteractions", &Arg, 1 );
+}
+
+void UDisGFxMoviePlayerHUD::UpdateSpecialInteractions( const FDisUIInteractionGroup& _rGroup )
+{
+	DisHUDUpdateIconInteractions( this, DHMC_SpecialInteractions, TEXT("special"), _rGroup );
+}
+
+void UDisGFxMoviePlayerHUD::UpdateQTEInteractions( const FDisUIInteractionGroup& _rGroup )
+{
+	DisHUDUpdateIconInteractions( this, DHMC_SpecialInteractionsQTE, TEXT("qte"), _rGroup );
 }
 
 // DISHONORED(port): 2013 rva 0x7af540 (2012 0x8117c0): the interaction prompt, then the highlight requests the settings left

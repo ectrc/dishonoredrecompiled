@@ -931,3 +931,18 @@ BYTE UDishonoredInventory::PlayerTransitionItemIn( BYTE _EquipUsage, BYTE _Actio
 	}
 	return Item->PlayerTransitionItemIn_Derived( _ActionUsage, _bFromOffscreen, _bUseFastEquip ) != eDisTransitionItemResult_NothingDone ? eDisTransitionItemResult_TransitionSuccess : eDisTransitionItemResult_TransitionFailure;
 }
+
+// DISHONORED(port): agent JH (PHASE24 JH). 2013 rva 0x805770 (2012 0x852c10): every active item context (status 2) adds its lines
+UBOOL UDishonoredInventory::FillUIInteractions( FDisUIInteractionContext& _rContext ) const
+{
+	UBOOL bFilled = FALSE;
+	for( INT Index = 0; Index < m_ActiveItemContexts.Num(); Index++ )
+	{
+		UDisItemContext* Context = m_ActiveItemContexts(Index);
+		if( Context->m_ContextStatus == 2 )
+		{
+			bFilled |= Context->FillUIInteractions( _rContext );
+		}
+	}
+	return bFilled;
+}

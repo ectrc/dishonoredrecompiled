@@ -71,3 +71,6 @@ protected:
 	void DoEquip( INT _iSlot, BYTE _EquipUsage, UBOOL _bTemporary );
 	UBOOL ShowInventoryItem( UDishonoredInventoryItem* _pItem, UBOOL _bShow, BYTE _EquipUsage );
 public:
+
+	// DISHONORED(port): agent JH (PHASE24 JH), vtable +292, 2013 rva 0x805770 (2012 0x852c10). Body in dishonoredinventory.cpp.
+	virtual UBOOL FillUIInteractions( struct FDisUIInteractionContext& _rContext ) const;

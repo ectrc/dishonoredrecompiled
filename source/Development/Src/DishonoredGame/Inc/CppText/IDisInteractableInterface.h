@@ -35,7 +35,7 @@ public:
 	virtual UBOOL AttemptCannotUseInteract_Derived( class ADishonoredPawn* Pawn, UBOOL& bOutCanBeWitnessed ) { bOutCanBeWitnessed = FALSE; return TRUE; }
 
 	virtual void GainCrosshairFocus();
-	virtual void LoseCrosshairFocus() {}
+	virtual void LoseCrosshairFocus();
 
 	const class UDisTweaks_InteractableInterface& GetInteractableTweaks() const;
 
@@ -59,3 +59,9 @@ public:
 	virtual FLOAT GetAltInteractTime() const { return 0.f; }
 	UBOOL AttemptAltInteract( class ADishonoredPawn* const Pawn );
 	void EndInteract( const struct FEndInteractParams& Params );
+
+	// DISHONORED(port): agent JH (PHASE24 JH), the interaction prompt's slots: +60 FillUIInteraction (2013 rva 0x6280d0 / 2012
+	// 0x67d190) and +64 FillUIAltInteraction (0x628130 / 0x67d1f0) - the tweaks' interact / alt-interact text as the crosshair line -
+	// and +24 LoseCrosshairFocus (0x630810 / 0x681750: clears highlight bit 1). Bodies in disinteractableinterface.cpp.
+	virtual void FillUIInteraction( struct FDisUIInteractionContext& _rContext ) const;
+	virtual void FillUIAltInteraction( struct FDisUIInteractionContext& _rContext ) const;

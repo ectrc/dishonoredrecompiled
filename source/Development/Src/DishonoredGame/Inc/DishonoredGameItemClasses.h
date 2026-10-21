@@ -254,6 +254,7 @@ public:
     }
     DECLARE_FUNCTION(execOnSleepRBPhysics_Native);
     DECLARE_CLASS(ADishonoredMovable,ADishonoredBreakable,0,DishonoredGame)
+#include "CppText/ADishonoredMovable.h"
 };
 
 struct DisWhaleOilBattery_eventDetach_Parms
@@ -873,6 +874,7 @@ public:
     //## END PROPS DisItemContext
 
     DECLARE_ABSTRACT_CLASS(UDisItemContext,UObject,0,DishonoredGame)
+#include "CppText/UDisItemContext.h"
 };
 
 // DishonoredGame.DisItemContext_AimAssistAttack: retail sizeof 196, reflected span 176..196 (2012 PDB sizeof 188)
