@@ -839,3 +839,14 @@ UBOOL UDishonoredAIBehavior::ShouldLowerAlertness() const
 	}
 	return FALSE;
 }
+
+// agent JE (PHASE24 JE), 2013 0x6e4bc0 (2012 0x7453e0, same bytes): a behaviour lets its pawn be taken by a conversation unless
+// the conversation blocks it and does not stop for the AI's notice.
+eDisDialogAvailability UDishonoredAIBehavior::GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const
+{
+	if( ( _StartDialogFlags & 2 ) && !( _StartDialogFlags & 8 ) )
+	{
+		return DDA_REJECTED_BY_AI_BEHAVIOR;
+	}
+	return DDA_AVAILABLE;
+}

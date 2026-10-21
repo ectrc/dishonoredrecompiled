@@ -32,10 +32,12 @@ public:
 	virtual BYTE GetDesiresLookAtPriority() const { return 0; }
 	virtual BYTE GetDesiresBodyIntentionPriority() const { return 0; }
 
-	/** DISHONORED(bringup): retail hands the Ark component a pointer-to-member of the asker so the component can report back
-	    (EArkCpntFaceToEvent / EArkCpntLocoEvent). FArkComponentFaceTo and FArkComponentLocomotion are not ported, so
-	    nothing calls back; the accessors stay in the vtable (slots +44 / +48) and answer NULL. */
-	virtual void* GetDesiresFaceToEventCallback() const { return NULL; }
+	/** DISHONORED(retail): retail hands the Ark component a pointer-to-member of the asker so the component can report back
+	    (EArkCpntFaceToEvent / EArkCpntLocoEvent); the three "with desires" classes override slot +44 with their own
+	    DesiresFaceToEventCallback (2012 0x727d90 and siblings), each of which is HandleFaceToEvent on itself. agent JE: the face-to
+	    accessor answers the address of one shared pointer-to-member that does exactly that for every implementer (body in
+	    disdesiresinterface.cpp); the loco one stays NULL, agent DN's trampoline carries the loco events. */
+	virtual void* GetDesiresFaceToEventCallback() const;
 	virtual void* GetDesiresLocoEventCallback() const { return NULL; }
 
 	/**

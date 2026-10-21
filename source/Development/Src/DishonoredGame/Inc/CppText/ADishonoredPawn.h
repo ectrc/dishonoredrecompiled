@@ -85,6 +85,19 @@ public:
 	virtual UBOOL MAT_RootMotionEnabled() const;
 	void MAT_StopRootMotion();
 
+// ---- agent JC (PHASE24 JC): the 2013 special root-motion extraction ----
+// MAT_BackupTransform 2013 0xb491e0 (slot 202), MAT_ClearBackupTransform 0xb49260 (203), MAT_SetSpecialRootMotionExtract 0xb493e0
+// (307), GetMatineeRootMotionTransform 0xb492e0, ProcessMatineeRootMotion 0xb5c890, MoveByMatineeRootMotion 0xb562d0; the 2013
+// MAT_SetRootMotionMode is 0xb4d440. Slots 201 / 308 (set / read m_bShouldProccessMatineeRootMotion, read m_bSpecialRootMotionExtract)
+// are the bit accesses themselves. Bodies in dishonoredpawn.cpp.
+public:
+	virtual void MAT_BackupTransform();
+	virtual void MAT_ClearBackupTransform();
+	virtual void MAT_SetSpecialRootMotionExtract( UBOOL bSpecialRootMotionExtract );
+	void GetMatineeRootMotionTransform( FVector& OutLocation, FRotator& OutRotation ) const;
+	void ProcessMatineeRootMotion();
+	void MoveByMatineeRootMotion( const FVector& NewLocation, const FRotator& NewRotation );
+
 // ---- agent FR (PHASE17 FR): the IDisConvSpeakerInterface half every Dishonored pawn carries ----
 // DISHONORED(port): GetUObjectInterfaceDisConvSpeakerInterface 2013 rva 0x6befb0 (7 B), GetSpeakerLocInfo 2012 0x7b9880
 // (73 B: one entry at the pawn's location, the pawn's mesh as the FaceFX component, the pawn as the Ak event owner),
@@ -260,3 +273,6 @@ public:
 // ring; ADishonoredNPCPawn 0x7b44a0: its stealable key, reached only through a possessed NPC and not ported). The base answers FALSE.
 public:
 	virtual UBOOL HasKey( const FString& _rKey ) const { return FALSE; }
+// agent JE (PHASE24 JE): the Kismet teleport, 2012 0x799d60 / 2013 0x756e40 (exec 2012 0x633400 / 2013 0x5ec880). Body in dishonoredpawn_body.cpp.
+public:
+	virtual UBOOL OnTeleport_Native( class USeqAct_Teleport* _pAction );

@@ -128,6 +128,19 @@ public:
 	virtual void StartRootMotionMode( BYTE _RootMotionMode, BYTE _RootRotationMode );
 	virtual void StopRootMotionMode();
 
+// ---- agent JC (PHASE24 JC): the special root-motion backup and the AIControl track's requests ----
+// MAT_BackupTransform 2013 0xb4b180 (96 B, slot 202), MAT_ClearBackupTransform 0xb4b1e0 (106 B, slot 203): the pawn's half, then the
+// locomotion off / on and PHYS_None / PHYS_Walking. MAT_SendBodyIntentionRequest 2013 0xb59e70 (550 B; 2012 0x7c0a10),
+// MAT_SendAimRequest 0xb4ee40 (0x7ad790), MAT_SendAimStopRequest 0xb4eec0 (0x7ad810), MAT_SendFireRequest 0xb53470 (0x7ad840): retail
+// NPC vtable slots 318-321, virtual with no other override, plain members here. Bodies in dishonorednpcpawn.cpp.
+public:
+	virtual void MAT_BackupTransform();
+	virtual void MAT_ClearBackupTransform();
+	void MAT_SendBodyIntentionRequest( const class UInterpTrackAIControlBodyIntentionKeyProperties* KeyProperties );
+	void MAT_SendAimRequest( const class UInterpTrackAIControlNPCAimKeyProperties* KeyProperties, AActor* Target );
+	void MAT_SendAimStopRequest();
+	void MAT_SendFireRequest( const class UInterpTrackAIControlNPCFireKeyProperties* KeyProperties, AActor* Target );
+
 // ---- agent FR (PHASE17 FR): the NPC's speaker overrides, dishonorednpcpawn_conversation.cpp ----
 // DISHONORED(port): 2012 rvas GetConversationComponent_Derived 0x7ac040, FireDialogHook 0x7ac070, SupportsDialogHook
 // 0x7ac090, IsAvailableForDialog 0x7c17c0 (2013 0x774280, 188 B), StartDialog 0x7c1880 (300 B), EndDialog 0x7c19b0 (247 B).
@@ -232,3 +245,6 @@ public:
 	virtual const class UDisTweaks_InteractableInterface* GetInteractableTweaks_Derived() const;
 	virtual UBOOL IsAsleep() const;
 	class UDisTweaks_NPCPawn* GetNPCPawnTweaks() const;
+// agent JE (PHASE24 JE): the NPC's teleport, 2012 0x7c1200 / 2013 0x77f640. Body in dishonorednpcpawn_body.cpp.
+public:
+	virtual UBOOL OnTeleport_Native( class USeqAct_Teleport* _pAction );

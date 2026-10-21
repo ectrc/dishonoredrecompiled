@@ -7,12 +7,13 @@
 // EndDialog 0x706600 (2013 0x6ad0f0).
 // The player's dialog state is UStatePlayerMasterInDialog on the master FSM (StartDialog requests it with
 // FStatePlayerMasterInDialog_Param, EndDialog asks the logical state to exit, IsAvailableForDialog asks the FSM whether the
-// transition is allowed) - agent FK's FSM package (agentFO.md section 9.4). The state class is excluded here, so the FSM
-// has no such state: a blocking-player conversation finds the player unavailable, which -frdiag reports.
+// transition is allowed). agent JE (PHASE24 JE): the three are retail's 2013 bodies, the state is ported.
 // PostBeginPlay_Dialog spawns the dummy at the pawn's location; the tweaks' camera bone and the 100-unit offset are the
 // audio-log package's.
 #include "DishonoredGame.h"
 #include "frdialogdiag.h"
+#include "stateplayermasterparams.h"
+#include "jediag.h"
 
 IDisConvSpeakerInterface* ADishonoredPlayerPawn::GetAudioLogSpeaker() const
 {
@@ -73,30 +74,48 @@ FDisHookParameters* ADishonoredPlayerPawn::GetHookParameters_Derived()
 	return Speaker ? Speaker->GetHookParameters() : NULL;
 }
 
+// 2013 0x6ad070 (127 B, 2012 0x706580 the same): only a conversation that blocks the player asks; already in a dialog of at
+// least that priority with flag 4 (not started yet) is "in a higher-priority conversation", otherwise the master FSM decides.
 eDisDialogAvailability ADishonoredPlayerPawn::IsAvailableForDialog( eDisConvPriority _Priority, INT _StartDialogFlags ) const
 {
 	if( ( _StartDialogFlags & 2 ) == 0 )
 	{
 		return DDA_IGNORED;
 	}
-	if( m_pPlayerMasterFSM && m_pPlayerMasterFSM->CanTransitionTo( UStatePlayerMasterInDialog::StaticClass(), NULL ) )
+	UStatePlayerMasterInDialog* InDialog = Cast<UStatePlayerMasterInDialog>( m_pPlayerMasterFSM->GetLogicalState() );
+	if( InDialog )
 	{
-		return DDA_AVAILABLE;
+		const FDisDialogRunningInstance* Instance = (const FDisDialogRunningInstance*)InDialog->m_pDialogRunningInst;
+		const INT CurPriority = Instance ? Instance->m_CurPriority : NOT_IN_A_CONV;
+		if( _Priority <= CurPriority && ( _StartDialogFlags & 4 ) )
+		{
+			return DDA_IN_HIGHER_PRIORITY_CONVO;
+		}
 	}
-	FRDIAG( "bind player %s: the master FSM cannot enter UStatePlayerMasterInDialog (unported state), so the player is rejected for a blocking conversation", *GetName() );
-	return DDA_REJECTED_BY_PAWN_STATE;
+	return m_pPlayerMasterFSM->CanTransitionTo( UStatePlayerMasterInDialog::StaticClass(), NULL ) ? DDA_AVAILABLE : DDA_REJECTED_BY_PAWN_STATE;
 }
 
+// 2013 0x6a2460 (93 B; 2012 0x6fb550, 47 B): a conversation that has not started yet first breaks the audio log out of whatever it
+// plays (skip-whole, every fire group), then the master FSM is asked for the dialog state with the running instance and the
+// carry-body flag (2013 bit 0x10).
 void ADishonoredPlayerPawn::StartDialog( FDisDialogRunningInstance* _pDialogRunningInst, UBOOL _bBlocking, INT _StartDialogFlags, INT _FiringHookIndex )
 {
-	static UBOOL bWarnedOnce = FALSE;
-	if( !bWarnedOnce )
+	if( m_pAudioLogConvActor && ( _StartDialogFlags & 4 ) )
 	{
-		bWarnedOnce = TRUE;
-		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredPlayerPawn::StartDialog: UStatePlayerMasterInDialog is not ported (agent FK's FSM package); the player does not enter its dialog state") );
+		( (IDisConvSpeakerInterface*)m_pAudioLogConvActor )->BreakOutOfConversation( DisConvoEndReason_PlayerSkipWhole, eDisDialogHookFireGroup_MAX );
 	}
+	FStatePlayerMasterInDialog_Param MasterParam( _pDialogRunningInst, ( _StartDialogFlags & 0x10 ) != 0 );
+	const UBOOL bAccepted = m_pPlayerMasterFSM->RequestStateChange( MasterParam, NULL, FALSE );
+	JEDIAG( "player StartDialog blocking %d flags 0x%x hook %d: dialog state %s", _bBlocking ? 1 : 0, _StartDialogFlags, _FiringHookIndex, bAccepted ? TEXT("requested") : TEXT("refused") );
 }
 
+// 2013 0x6ad0f0 (34 B, 2012 0x706600 the same): the dialog state, if that is where the player is, is asked to exit
 void ADishonoredPlayerPawn::EndDialog( FDisDialogRunningInstance* _pDialogRunningInst, DisConvoEndReasonEnum _ConvoEndReason )
 {
+	UStatePlayerMasterInDialog* InDialog = Cast<UStatePlayerMasterInDialog>( m_pPlayerMasterFSM->GetLogicalState() );
+	JEDIAG( "player EndDialog reason %d: dialog state %s", (INT)_ConvoEndReason, InDialog ? TEXT("asked to exit") : TEXT("not current") );
+	if( InDialog )
+	{
+		InDialog->RequestStateExit();
+	}
 }

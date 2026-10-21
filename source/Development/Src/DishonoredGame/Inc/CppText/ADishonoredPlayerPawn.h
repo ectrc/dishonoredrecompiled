@@ -283,3 +283,6 @@ public:
 // agent JH (PHASE24 JH): HasKey 2012 0x70fef0 (body in dishonoredplayerpawn_inventory.cpp)
 public:
 	virtual UBOOL HasKey( const FString& _rKey ) const;
+// agent JE (PHASE24 JE): the player's teleport, 2012 0x6fb0c0 / 2013 0x6a2000. Body in dishonoredplayerpawn_body.cpp.
+public:
+	virtual UBOOL OnTeleport_Native( class USeqAct_Teleport* _pAction );

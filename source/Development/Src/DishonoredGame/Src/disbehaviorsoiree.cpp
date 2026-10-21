@@ -433,3 +433,19 @@ UBOOL UDisBehaviorSoiree::GetResumingBodyIntentionDesire( const FDisBodyIntentio
 {
 	return DisContinuePreviousBodyIntention( m_pOwningBrain->m_pOwningPawn, _rPreviousBodyIntention, _rResumingBodyIntention );
 }
+
+// agent JE (PHASE24 JE), 2013 0x6fb2c0 (2012 0x742170): a soiree refuses a blocking conversation that carries flag 1 only at the
+// high soiree priority (m_SoireePriority 0).
+eDisDialogAvailability UDisBehaviorSoiree::GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const
+{
+	if( !( _StartDialogFlags & 2 ) || !( _StartDialogFlags & 1 ) )
+	{
+		return DDA_AVAILABLE;
+	}
+	const UDisTweaks_AIBehavior_Soiree* Tweaks = Cast<UDisTweaks_AIBehavior_Soiree>( const_cast<UDisBehaviorSoiree*>( this )->GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = (const UDisTweaks_AIBehavior_Soiree*)UDisTweaks_AIBehavior_Soiree::StaticClass()->GetDefaultObject();
+	}
+	return Tweaks->m_SoireePriority != 0 ? DDA_AVAILABLE : DDA_REJECTED_BY_AI_BEHAVIOR;
+}

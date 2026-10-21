@@ -28,6 +28,7 @@
 //   0x655f20  public: static class UClass * __cdecl ADishonoredHUD::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "jediag.h"
 #include "dishonoredutilities.h"
 
 // DISHONORED(written): 2013 rva 0x605f10 (2012 0x64b610). The first call is GEngine->RenderDebugMenu(Canvas) (UEngine vtable +388),
@@ -156,12 +157,20 @@ void ADishonoredHUD::PostBeginPlay()
 void ADishonoredHUD::EnableHUDElements( BYTE _MaskLevel, INT _Elements )
 {
 	m_ShowFlags[_MaskLevel] |= _Elements;
+	if( _Elements & 0x10 )
+	{
+		JEDIAG( "HUD letterbox bit ON at level %d (elements 0x%x): levels %x/%x/%x/%x/%x/%x", (INT)_MaskLevel, _Elements, m_ShowFlags[0], m_ShowFlags[1], m_ShowFlags[2], m_ShowFlags[3], m_ShowFlags[4], m_ShowFlags[5] );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x5ea0c0 (2012 0x62fd00)
 void ADishonoredHUD::DisableHUDElements( BYTE _MaskLevel, INT _Elements )
 {
 	m_ShowFlags[_MaskLevel] &= ~_Elements;
+	if( _Elements & 0x10 )
+	{
+		JEDIAG( "HUD letterbox bit OFF at level %d (elements 0x%x): levels %x/%x/%x/%x/%x/%x", (INT)_MaskLevel, _Elements, m_ShowFlags[0], m_ShowFlags[1], m_ShowFlags[2], m_ShowFlags[3], m_ShowFlags[4], m_ShowFlags[5] );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x5ea0e0 (2012 0x62fd20)

@@ -88,3 +88,8 @@ enum ESoireeAIPriority
 /** DISHONORED(port): 2012 rva 0x827500 (131 B) / 2013 0xbbf7a0: a behaviour resuming after a matinee takes the body intention
     the pawn had, unless the matinee forces the inventory, then the matinee's (empty hands). */
 UBOOL DisContinuePreviousBodyIntention( class ADishonoredNPCPawn* _pOwningPawn, const struct FDisBodyIntention& _rPreviousBodyIntention, struct FDisBodyIntention& _rResumingBodyIntention );
+
+// ---- agent JE (PHASE24 JE) ----
+/** DISHONORED(port): 2012 rva 0x832a50 (228 B, retail unit dishonoredutilities_npc.cpp; unmatched in 2013): an NPC whose secondary
+    weapon carries a teleport spell blinks toward the focus actor / target location. TRUE when the spell was cast. */
+UBOOL AttemptTeleportSpell( class ADishonoredNPCPawn* _pOwningNPCPawn, class AActor* _pFocusActor, BYTE _TeleportIntention, FVector _TargetLocation );

@@ -406,6 +406,7 @@ void ADishonoredNPCPawn::ShutPawnDown_Derived()
 #include "fkmatineediag.h"
 #include "icdiag.h"
 #include "aistimstruct.h"
+#include "jcdiag.h"
 
 // 2012 rva 0x7bac70 (554 B): SlotNodes emptied and re-collected from the mesh's tree - every
 // UArkAnimNodeStack whose CanBeUsedByMatinee is set, an unnamed one taking the editor ini's
@@ -694,6 +695,10 @@ void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
 	UInterpGroupAI* AIGroup = ( GroupInst != NULL ) ? GroupInst->AIGroup : NULL;
 	USeqAct_Interp* Seq = ( GroupInst != NULL ) ? Cast<USeqAct_Interp>( GroupInst->GetOuter() ) : NULL;
 
+	// DISHONORED(port): agent JC. 2013 0xb650b0: the pawn is controlled by a matinee (its mesh's tick end places it on a special
+	// root-motion key, ADishonoredPawn::ProcessMatineeRootMotion) until MAT_FinishAIGroup.
+	m_bIsControlledByAMatinee = 1;
+
 	// agent GA: retail snaps the mesh offset here when the LOD manager reports it off (FDisComponentLODManager::
 	// MeshOffestEnabled); with no LOD manager in this tree the started component is snapped whenever there is one -
 	// Tick( 0 ) on an enabled offset is the same snap.
@@ -801,6 +806,9 @@ void ADishonoredNPCPawn::MAT_FinishAIGroup( UInterpGroupInstAI* GroupInst )
 		DisSendSoireeStim( this, Seq->m_MatineeGUID, ESE_Stop, ESAP_MAX, FALSE );
 		MatineeControllerRemove( Seq, Seq->m_AIBehaviorPriority );
 	}
+	// DISHONORED(port): agent JC. 2013 0xb65520 / 0xb6553b: the soiree collision flag and the matinee control end here.
+	m_bDisableCollisionForSoiree = 0;
+	m_bIsControlledByAMatinee = 0;
 	if( AIGroup != NULL && AIGroup->bDisableJiggleBones && Mesh != NULL )
 	{
 		Mesh->m_bDontUpdateKinematic = 0;
@@ -843,10 +851,176 @@ void ADishonoredNPCPawn::MAT_SetCollision( UBOOL bDisableCollisionForSoiree, UBO
 			setPhysics( PHYS_Interpolating );
 		}
 	}
-	else if( Physics != PHYS_RigidBody )
+	else if( Physics != PHYS_RigidBody && Physics != PHYS_Walking && Physics != PHYS_Falling )
 	{
+		// DISHONORED(port): agent JC. 2013 0xb4b2a0 leaves a walking or falling pawn alone (2012 0x7ab7a0 reset it to walking).
 		setPhysics( PHYS_Walking );
 	}
+}
+
+// DISHONORED(port): agent JC. 2013 0xb4b180 (96 B): the transform backup, the locomotion off, no physics while the key places the
+// pawn. -jcoldrm: the backup alone (the pre-JC tree made neither call).
+void ADishonoredNPCPawn::MAT_BackupTransform()
+{
+	ADishonoredPawn::MAT_BackupTransform();
+	if( DisJCOldRootMotion() )
+	{
+		return;
+	}
+	FArkComponentLocomotion* Locomotion = FArkComponentLocomotion::GetLocomotionComponent( this );
+	if( Locomotion != NULL )
+	{
+		Locomotion->Disable();
+	}
+	setPhysics( PHYS_None );
+}
+
+// DISHONORED(port): agent JC. 2013 0xb4b1e0 (106 B): the backup cleared, the locomotion on, walking again, the soiree collision
+// flag (MAT_SetCollision's) cleared. -jcoldrm: the clear alone.
+void ADishonoredNPCPawn::MAT_ClearBackupTransform()
+{
+	ADishonoredPawn::MAT_ClearBackupTransform();
+	if( DisJCOldRootMotion() )
+	{
+		return;
+	}
+	FArkComponentLocomotion* Locomotion = FArkComponentLocomotion::GetLocomotionComponent( this );
+	if( Locomotion != NULL )
+	{
+		Locomotion->Enable();
+	}
+	setPhysics( PHYS_Walking );
+	m_bDisableCollisionForSoiree = 0;
+}
+
+// DISHONORED(port): agent JC. 2013 0xb59e70 (550 B; 2012 0x7c0a10, 528 B): the key's stance and items become a body intention at
+// the soiree priority, the suspicion level and the locomotion modifier follow. 2013 against 2012: the brain is read only when the
+// pawn is not officially dead and its brain is initialized; a melee primary is the brain tweaks' suspecting primary class when
+// there is a brain; m_bHackForbidEquipState sets m_fHackForbidEquipStateDuration to 0.5 s.
+void ADishonoredNPCPawn::MAT_SendBodyIntentionRequest( const UInterpTrackAIControlBodyIntentionKeyProperties* KeyProperties )
+{
+	UDishonoredInventoryItem* PrimaryEquipped = m_pInventory->GetEquippedItem( EDisEquipUsage_Primary );
+	UDishonoredInventoryItem* SecondaryEquipped = m_pInventory->GetEquippedItem( EDisEquipUsage_Secondary );
+	UClass* PrimaryItemClass = ( PrimaryEquipped != NULL ) ? PrimaryEquipped->GetClass() : NULL;
+	UClass* SecondaryItemClass = ( SecondaryEquipped != NULL ) ? SecondaryEquipped->GetClass() : NULL;
+	BYTE BodyStance = eDisNPCBodyStance_None;
+	switch( KeyProperties->m_DesiredBodyStance )
+	{
+	case 1:
+		BodyStance = IsAFighter() ? eDisNPCBodyStance_Relaxed : eDisNPCBodyStance_None;
+		break;
+	case 2:
+		BodyStance = eDisNPCBodyStance_Search;
+		break;
+	case 3:
+		BodyStance = eDisNPCBodyStance_Equipped;
+		break;
+	}
+	UDishonoredAIBrain* Brain = NULL;
+	ADishonoredNPCController* NPCController = Cast<ADishonoredNPCController>( Controller );
+	if( !m_bIsOfficiallyDead && NPCController != NULL && NPCController->m_pAIBrain != NULL && NPCController->m_pAIBrain->IsBrainInitialized() )
+	{
+		Brain = NPCController->m_pAIBrain;
+	}
+	if( KeyProperties->m_DesiredPrimaryItem == 2 )
+	{
+		PrimaryItemClass = UDishonoredItemEmpty::StaticClass();
+	}
+	else if( KeyProperties->m_DesiredPrimaryItem == 1 )
+	{
+		if( Brain != NULL )
+		{
+			UDisTweaks_AIBrain* BrainTweaks = Cast<UDisTweaks_AIBrain>( Brain->GetTweaks_Derived() );
+			if( BrainTweaks == NULL )
+			{
+				BrainTweaks = (UDisTweaks_AIBrain*)UDisTweaks_AIBrain::StaticClass()->GetDefaultObject();
+			}
+			PrimaryItemClass = BrainTweaks->m_SuspectingEquippedPrimaryItemClass;
+		}
+		else
+		{
+			PrimaryItemClass = UDisWepMelee::StaticClass();
+		}
+	}
+	if( KeyProperties->m_DesiredSecondaryItem == 2 )
+	{
+		SecondaryItemClass = UDishonoredItemEmpty::StaticClass();
+	}
+	else if( KeyProperties->m_DesiredSecondaryItem == 1 )
+	{
+		UDishonoredInventoryItem* Ranged = m_pInventory->FindEquippableItem( UDishonoredWeapon_Ranged::StaticClass(), EDisEquipUsage_Secondary );
+		if( Ranged == NULL )
+		{
+			Ranged = m_pInventory->FindEquippableItem( UDisWepWhiskeyBottle::StaticClass(), EDisEquipUsage_Secondary );
+		}
+		if( Ranged != NULL )
+		{
+			if( Ranged->IsA( UDishonoredWepPistol::StaticClass() ) )
+			{
+				BodyStance = eDisNPCBodyStance_Aiming;
+			}
+			SecondaryItemClass = Ranged->GetClass();
+		}
+	}
+	SetBodyIntention( DisBodyIntentionPriority_Soiree, BodyStance, PrimaryItemClass, SecondaryItemClass );
+	if( Brain != NULL )
+	{
+		if( KeyProperties->m_SuspicionLevel == 1 )
+		{
+			Brain->SetSuspicionLevel( DAISL_Suspecting );
+		}
+		else if( KeyProperties->m_SuspicionLevel == 2 )
+		{
+			Brain->SetSuspicionLevel( DAISL_Unsuspecting );
+		}
+	}
+	GetComponentLocomotion()->SetModifier( KeyProperties->m_DesiredLocoModifier == 1 ? 5 : 0 );
+	if( KeyProperties->m_bHackForbidEquipState )
+	{
+		m_fHackForbidEquipStateDuration = 0.5f;
+	}
+	if( DisJCDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): jcdiag aicontrol %s bodyintention stance %d primary %s secondary %s suspicion %d loco %d world %.2f"), *GetName(),
+			BodyStance, ( PrimaryItemClass != NULL ) ? *PrimaryItemClass->GetName() : TEXT("none"), ( SecondaryItemClass != NULL ) ? *SecondaryItemClass->GetName() : TEXT("none"),
+			KeyProperties->m_SuspicionLevel, KeyProperties->m_DesiredLocoModifier, GWorld->GetTimeSeconds() );
+	}
+}
+
+// DISHONORED(port): agent JC. 2013 0xb4ee40 / 2012 0x7ad790 (122 B both): the aim state, then a torso aim at the target at
+// priority 17 for the matinee. DISHONORED(bringup): the NPC master FSM's aim state request (RequestNPCMasterAimState, a virtual
+// of the master FSM) is not ported; only the look-at half runs.
+void ADishonoredNPCPawn::MAT_SendAimRequest( const UInterpTrackAIControlNPCAimKeyProperties* KeyProperties, AActor* Target )
+{
+	if( DisJCDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): jcdiag aicontrol %s aim at %s (RequestNPCMasterAimState unported) world %.2f"), *GetName(),
+			( Target != NULL ) ? *Target->GetName() : TEXT("none"), GWorld->GetTimeSeconds() );
+	}
+	FArkComponentLookat* Lookat = GetComponentLookat();
+	if( Target != NULL && Target != this && Lookat != NULL )
+	{
+		m_iMatineeLookAtRequestID = Lookat->StartAimAtActor( this, GetFName(), 17, Target, FDisLookAtInfluence::Torso, -1.f );
+	}
+}
+
+// DISHONORED(port): agent JC. 2013 0xb4eec0 / 2012 0x7ad810 (33 B).
+void ADishonoredNPCPawn::MAT_SendAimStopRequest()
+{
+	FArkComponentLookat* Lookat = GetComponentLookat();
+	if( Lookat != NULL )
+	{
+		Lookat->StopLookAt( m_iMatineeLookAtRequestID );
+	}
+	m_iMatineeLookAtRequestID = -1;
+}
+
+// DISHONORED(bringup): agent JC. 2013 0xb53470 / 2012 0x7ad840 (133 B): the secondary weapon's AttemptUse_AIAttackAutoSelect
+// (m_WeaponType 1) or AttemptUse_DirectUse with UDisItemContext_NPCFireGun (0); neither use path is ported, so the key is logged.
+void ADishonoredNPCPawn::MAT_SendFireRequest( const UInterpTrackAIControlNPCFireKeyProperties* KeyProperties, AActor* Target )
+{
+	debugf( TEXT("DISHONORED(bringup): jcdiag aicontrol %s fire type %d at %s: the item use path is not ported"), *GetName(),
+		KeyProperties->m_WeaponType, ( Target != NULL ) ? *Target->GetName() : TEXT("none") );
 }
 
 // 2012 rva 0x7ab6e0 (46 B) and 0x7ab720 (33 B): both yield to the retargeting component, which owns the mesh translation

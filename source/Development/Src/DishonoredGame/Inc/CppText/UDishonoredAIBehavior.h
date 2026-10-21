@@ -145,3 +145,11 @@ public:
 	virtual UBOOL CanBeSurprised() const { return FALSE; }
 	virtual class IDisAttentionTargetInterface* GetAllyReactionTarget( BYTE& _rAttentionChangeReason ) const { return NULL; }
 	UBOOL ShouldLowerAlertness() const;
+// agent JE (PHASE24 JE): the behaviour's say in whether its pawn can join a conversation (ADishonoredNPCPawn::IsAvailableForDialog).
+// CallGetDialogAvailability 2012 0x1a8dc0 / 2013 0x6e4af0 (the call through vtable +396), GetDialogAvailability 2012 0x7453e0 /
+// 2013 0x6e4bc0 (same bytes). Body in dishonoredaibehavior.cpp.
+public:
+	eDisDialogAvailability CallGetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const { return GetDialogAvailability( _Priority, _StartDialogFlags ); }
+protected:
+	virtual eDisDialogAvailability GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const;
+public:

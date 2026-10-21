@@ -151,6 +151,22 @@ struct FStatePlayerMasterMantle_Param : public FStatePlayerMasterAction_Param
 	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterMantle_Param); }
 };
 
+/**
+ * agent JE (PHASE24 JE). The dialog request ADishonoredPlayerPawn::StartDialog builds (2013 ctor 0x6715a0: the running instance and,
+ * new in 2013, the carry-body flag; 2012 0x6c3e40 had the instance only) and its OnPending (2013 0x6693a0 / 2012 0x6b8ab0): the pawn,
+ * a running view track stopped, the instance and the flag stored, no track, the soiree blend-out back to 0.4 s. Body in
+ * Src/stateplayermasterindialog.cpp.
+ */
+struct FStatePlayerMasterInDialog_Param : public FStatePlayerMasterBase_Param
+{
+	struct FDisDialogRunningInstance* m_pDialogRunningInst;
+	UBOOL m_bAllowPlayerToCarryBody;
+
+	FStatePlayerMasterInDialog_Param( struct FDisDialogRunningInstance* DialogRunningInst, UBOOL bAllowPlayerToCarryBody );
+	virtual void OnPending( class UDishonoredNativeState* PendingState, UObject* ManagedObject );
+	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterInDialog_Param); }
+};
+
 /** The flag word MAT_BeginPlayerGroup builds and FDisSoireeControlState keeps in m_Flags (2013 bits; 2012 had the first three). */
 enum EDisSoireeControlFlags
 {

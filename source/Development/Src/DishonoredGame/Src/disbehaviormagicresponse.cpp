@@ -43,3 +43,14 @@ void UDisBehaviorMagicResponse::RequestStateExitCallback_GenericAction( UDishono
 {
 	m_bMagicResponseFinished = TRUE;
 }
+
+// agent JE (PHASE24 JE), 2013 0x6e4080 (2012 0x7238a0, attributed to this unit): a stolen pawn refuses a blocking conversation
+// that carries flag 1.
+eDisDialogAvailability UDisBehaviorStolen::GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const
+{
+	if( ( _StartDialogFlags & 2 ) && ( _StartDialogFlags & 1 ) )
+	{
+		return DDA_REJECTED_BY_AI_BEHAVIOR;
+	}
+	return DDA_AVAILABLE;
+}

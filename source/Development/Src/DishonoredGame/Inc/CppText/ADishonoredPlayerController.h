@@ -133,6 +133,9 @@ public:
 // StartTrackingFixedAngles 2012 0x6f8b90 / 2013 0x6af6f0, StopTrackingTarget 0x6d1690 / 0x6a0ec0, FetchTrackedTargetRot 0x6d16e0 /
 // 0x6a0f10, TickCameraTracking 0x6f9ce0 / 0x6b4e60.
 public:
+	// agent JE (PHASE24 JE): StartTrackingActor 2012 0x6f8960 (554 B), StartTrackingPawn_ByRegion 0x6f9c60 (118 B)
+	INT StartTrackingActor( class AActor* _pTarget, class USkeletalMeshComponent* _pMesh, FName _LookBone, const FVector& _rLookBoneOffset, FLOAT _fBlendTime, INT _Flags, const struct FDisPlayerViewTracking_ExtraParams* _pParams );
+	INT StartTrackingPawn_ByRegion( class ADishonoredPawn* _pTarget, BYTE _LookRegion, BYTE _FocusType, FLOAT _fBlendTime, INT _Flags, const struct FDisPlayerViewTracking_ExtraParams* _pParams );
 	INT StartTrackingFixedAngles( INT _PitchFixed, INT _YawFixed, FLOAT _fBlendTime, INT _Flags, const struct FDisPlayerViewTracking_ExtraParams* _pParams );
 	void StopTrackingTarget( INT _TrackID );
 protected:
@@ -159,3 +162,6 @@ protected:
 	void HandleHeldButtons_Movement_Gamepad( class UDishonoredPlayerInput* Input );
 	void HandleHeldButtons_Movement_Movable( class ADishonoredPawn* InPawn );
 public:
+// agent JE (PHASE24 JE): the controller's teleport, 2012 0x6e1d50 / 2013 0x6a5f40 (exec 2012 0x634230 / 2013 0x5edc30). Body in dishonoredplayercontroller.cpp.
+public:
+	virtual void OnTeleport_Native( class USeqAct_Teleport* _pAction );

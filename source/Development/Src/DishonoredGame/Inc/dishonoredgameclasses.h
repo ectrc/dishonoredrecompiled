@@ -10219,6 +10219,7 @@ public:
 
     DECLARE_FUNCTION(execNoMoreTargetCallback_Follow);
     DECLARE_CLASS(UDisBehaviorFollow,UDishonoredAIBehavior,0,DishonoredGame)
+#include "CppText/UDisBehaviorFollow.h"
 };
 
 // DishonoredGame.DisBehaviorGoHome: retail sizeof 392, reflected span 160..392 (2012 PDB sizeof 392)
@@ -10245,6 +10246,7 @@ public:
     DECLARE_FUNCTION(execRefreshCallback_TakePosition);
     DECLARE_FUNCTION(execOnEnterCallback_TakePosition);
     DECLARE_CLASS(UDisBehaviorGoHome,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorGoHome.h"
 };
 
 // DishonoredGame.DisBehaviorGoTo_Base: retail sizeof 384, reflected span 160..384 (2012 PDB sizeof 384)
@@ -10352,6 +10354,7 @@ public:
     DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
     DECLARE_FUNCTION(execOnEnterCallback_TakePosition);
     DECLARE_CLASS(UDisBehaviorInteract,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorInteract.h"
 };
 
 // DishonoredGame.DisBehaviorMagicResponse: retail sizeof 192, reflected span 160..192 (2012 PDB sizeof 192)
@@ -10483,6 +10486,7 @@ public:
     DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
     DECLARE_FUNCTION(execOnEnterCallback_GenericAction);
     DECLARE_CLASS(UDisBehaviorReact,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorReact.h"
 };
 
 // DishonoredGame.DisBehaviorReturnTravel: retail sizeof 176, reflected span 160..176 (2012 PDB sizeof 176)
@@ -10522,6 +10526,7 @@ public:
     //## END PROPS DisBehaviorStolen
 
     DECLARE_CLASS(UDisBehaviorStolen,UDishonoredAIBehavior,0,DishonoredGame)
+#include "CppText/UDisBehaviorStolen.h"
 };
 
 // DishonoredGame.DisBehaviorWeep: retail sizeof 204, reflected span 160..204 (2012 PDB sizeof 204)
@@ -11256,6 +11261,7 @@ public:
 
     DECLARE_CLASS(UStateNPCMasterAction,UStateSharedActionBase,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+#include "CppText/UStateNPCMasterAction.h"
 };
 
 // DishonoredGame.StateNPCMasterPlayAnim: retail sizeof 116, reflected span 100..116 (2012 PDB sizeof 116)
@@ -17383,6 +17389,7 @@ public:
     //## END PROPS StatePlayerMasterChoice_Base
 
     DECLARE_ABSTRACT_CLASS(UStatePlayerMasterChoice_Base,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterChoice_Base.h"
 };
 
 // DishonoredGame.StatePlayerMasterChoke: retail sizeof 132, reflected span 116..132 (2012 PDB sizeof 132)

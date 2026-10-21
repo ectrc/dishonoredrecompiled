@@ -19,6 +19,8 @@
 #include "disdesirestructs.h"
 #include "arkcomponentlocomotion.h"
 #include "arkcomponentlookat.h"
+#include "arkcomponentfaceto.h"
+#include "jediag.h"
 #include "disaisubstate.h"
 #include "dishonoredutilities_ai.h"
 
@@ -595,11 +597,14 @@ void FDisFaceToRequest::ClearParams()
 	m_fRotationSpeed = -100.f;
 }
 
-// DISHONORED(port): retail inlines this at eight call sites: a request the component has already finished is forgotten
-// before anything else is decided.
+// DISHONORED(port): retail inlines this at eight call sites (2012 0x901f50 / 0x902100: `m_RequestID != -1 &&
+// !m_pFaceToComponent->m_bStarted`): a request whose component has stopped is forgotten before anything else is decided.
+// DISHONORED(retail): retail reads the component unchecked; a pawn without one keeps agent DF's synthetic contract.
 void FDisFaceToRequest::SyncRequest()
 {
-	if( m_RequestID != INDEX_NONE && !DisDesireStructs::IsComponentRequestStarted( m_pFaceToComponent ) )
+	const FArkComponentFaceTo* FaceTo = (const FArkComponentFaceTo*)m_pFaceToComponent;
+	const UBOOL bStarted = FaceTo ? FaceTo->m_bStarted : DisDesireStructs::IsComponentRequestStarted( m_pFaceToComponent );
+	if( m_RequestID != INDEX_NONE && !bStarted )
 	{
 		m_RequestID = INDEX_NONE;
 		ClearTarget();
@@ -747,14 +752,25 @@ void FDisFaceToRequest::PauseRequest()
 // DISHONORED(port): 2013 rva 0x8a7e80 (2012 0x8f8ea0)
 void FDisFaceToRequest::StopRequest()
 {
-	DisDesireStructs::ReleaseRequest( DisDesireStructs::DDK_FaceTo, TEXT("FArkComponentFaceTo::StopFaceTo") );
+	if( FArkComponentFaceTo* FaceTo = (FArkComponentFaceTo*)m_pFaceToComponent )
+	{
+		GDisDesireStops[DisDesireStructs::DDK_FaceTo]++;
+		JEDIAG( "faceto stop %s req %d", m_pAsker ? *m_pAsker->GetName() : TEXT("?"), m_RequestID );
+		FaceTo->StopFaceTo( m_RequestID );
+	}
+	else
+	{
+		DisDesireStructs::ReleaseRequest( DisDesireStructs::DDK_FaceTo, TEXT("FArkComponentFaceTo::StopFaceTo (no component on this pawn)") );
+	}
 	m_RequestID = INDEX_NONE;
 	m_DebugLastFaceToEvent = 0;
 }
 
-// DISHONORED(port): 2013 rva 0x8a9b30 (2012 0x8f9f20): three component entry points, chosen by which target kind is set -
-// actor, then location, then yaw.
-// DISHONORED(bringup): FArkComponentFaceTo is not ported, so each branch builds nothing and counts the order instead.
+// DISHONORED(port): 2013 rva 0x8a9b30 (592 B, 2012 0x8f9f20 the same): three component entry points, chosen by which target
+// kind is set - actor, then location, then yaw. Each builds the request's properties with the asker as the callback owner and
+// the asker's callback (the pointer-to-member Initialize was handed), overwrites the exact-rotation flag, and either updates
+// the live request or replaces it with a new one at the asker's priority.
+// DISHONORED(retail): a pawn without a face-to component (retail always has one) keeps agent DF's counted stand-in.
 void FDisFaceToRequest::DoRequest( EDisDesireRequestStatus _Status )
 {
 	if( _Status == DTDRS_Unchanged )
@@ -766,37 +782,91 @@ void FDisFaceToRequest::DoRequest( EDisDesireRequestStatus _Status )
 		StopRequest();
 		return;
 	}
-
-	const TCHAR* EntryPoint = NULL;
-	if( m_pActorTarget )
-	{
-		EntryPoint = ( _Status == DTDRS_UpdateRequestNeeded ) ? TEXT("FArkComponentFaceTo::UpdateFaceToActor") : TEXT("FArkComponentFaceTo::StartFaceToActor");
-	}
-	else if( m_bUsingLocation )
-	{
-		EntryPoint = ( _Status == DTDRS_UpdateRequestNeeded ) ? TEXT("FArkComponentFaceTo::UpdateFaceToLocation") : TEXT("FArkComponentFaceTo::StartFaceToLocation");
-	}
-	else if( m_bUsingYaw )
-	{
-		EntryPoint = ( _Status == DTDRS_UpdateRequestNeeded ) ? TEXT("FArkComponentFaceTo::UpdateFaceToYaw") : TEXT("FArkComponentFaceTo::StartFaceToYaw");
-	}
-	else
+	if( _Status > DTDRS_NewRequestNeeded )
 	{
 		return;
 	}
-
-	if( _Status == DTDRS_UpdateRequestNeeded )
+	FArkComponentFaceTo* FaceTo = (FArkComponentFaceTo*)m_pFaceToComponent;
+	if( !FaceTo )
 	{
-		DisDesireStructs::UpdateRequest( DisDesireStructs::DDK_FaceTo, EntryPoint );
+		if( !m_pActorTarget && !m_bUsingLocation && !m_bUsingYaw )
+		{
+			return;
+		}
+		if( _Status == DTDRS_UpdateRequestNeeded )
+		{
+			DisDesireStructs::UpdateRequest( DisDesireStructs::DDK_FaceTo, TEXT("FArkComponentFaceTo::UpdateFaceTo* (no component on this pawn)") );
+		}
+		else
+		{
+			if( m_RequestID != INDEX_NONE )
+			{
+				StopRequest();
+			}
+			m_RequestID = DisDesireStructs::AcceptRequest( DisDesireStructs::DDK_FaceTo, TEXT("FArkComponentFaceTo::StartFaceTo* (no component on this pawn)") );
+		}
+		return;
+	}
+	const FArkCpntFaceToEventCallback Callback = m_pCallback ? *(const FArkCpntFaceToEventCallback*)m_pCallback : NULL;
+	const UBOOL bUpdate = _Status == DTDRS_UpdateRequestNeeded;
+	if( bUpdate )
+	{
+		GDisDesireUpdates[DisDesireStructs::DDK_FaceTo]++;
 	}
 	else
 	{
-		if( m_RequestID != INDEX_NONE )
+		GDisDesireRequests[DisDesireStructs::DDK_FaceTo]++;
+		if( m_RequestID != INDEX_NONE && ( m_pActorTarget || m_bUsingLocation || m_bUsingYaw ) )
 		{
 			StopRequest();
 		}
-		m_RequestID = DisDesireStructs::AcceptRequest( DisDesireStructs::DDK_FaceTo, EntryPoint );
 	}
+	if( m_pActorTarget )
+	{
+		FArkCpntFaceToActorProp Prop;
+		Prop.InitAllByDefaultExcept( FaceTo, m_pActorTarget, m_fRotationSpeed, m_pAsker, Callback );
+		Prop.OverwriteExactRotation( m_bExactRotation );
+		if( bUpdate )
+		{
+			FaceTo->UpdateFaceToActor( m_RequestID, Prop );
+		}
+		else
+		{
+			m_RequestID = FaceTo->StartFaceToActor( m_pAsker, m_pAsker->GetFName(), m_Priority, Prop );
+		}
+	}
+	else if( m_bUsingLocation )
+	{
+		FArkCpntFaceToLocationProp Prop;
+		Prop.InitAllByDefaultExcept( m_LocationTarget, m_fRotationSpeed, m_pAsker, Callback );
+		Prop.OverwriteExactRotation( m_bExactRotation );
+		if( bUpdate )
+		{
+			FaceTo->UpdateFaceToLocation( m_RequestID, Prop );
+		}
+		else
+		{
+			m_RequestID = FaceTo->StartFaceToLocation( m_pAsker, m_pAsker->GetFName(), m_Priority, Prop );
+		}
+	}
+	else if( m_bUsingYaw )
+	{
+		FArkCpntFaceToYawProp Prop;
+		Prop.InitAllByDefaultExcept( m_YawTarget, m_fRotationSpeed, m_pAsker, Callback );
+		Prop.OverwriteExactRotation( m_bExactRotation );
+		if( bUpdate )
+		{
+			FaceTo->UpdateFaceToYaw( m_RequestID, Prop );
+		}
+		else
+		{
+			m_RequestID = FaceTo->StartFaceToYaw( m_pAsker, m_pAsker->GetFName(), m_Priority, Prop );
+		}
+	}
+	JEDIAG( "faceto %s %s req %d prio %d %s speed %.1f exact %d callback %d", m_pAsker ? *m_pAsker->GetName() : TEXT("?"),
+		bUpdate ? TEXT("update") : TEXT("start"), m_RequestID, (INT)m_Priority,
+		m_pActorTarget ? *FString::Printf( TEXT("actor %s"), *m_pActorTarget->GetName() ) : m_bUsingLocation ? *FString::Printf( TEXT("location %s"), *m_LocationTarget.ToString() ) : *FString::Printf( TEXT("yaw %d"), m_YawTarget ),
+		m_fRotationSpeed, (INT)m_bExactRotation, Callback ? 1 : 0 );
 }
 
 /*-----------------------------------------------------------------------------

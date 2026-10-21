@@ -17,6 +17,31 @@
 #include "DishonoredGame.h"
 #include "disdesirestructs.h"
 #include "aistimstruct.h"
+#include "arkcomponentfaceto.h"
+
+/*-----------------------------------------------------------------------------
+	The face-to callback (agent JE)
+-----------------------------------------------------------------------------*/
+
+/** The member the component calls on the asker: the asker's own HandleFaceToEvent, which is what each of retail's three
+    DesiresFaceToEventCallback bodies is. Never instantiated; it only names a UObject member with that signature. */
+class FDisFaceToEventThunk : public UObject
+{
+public:
+	void Dispatch( EArkCpntFaceToEvent _FaceToEvent )
+	{
+		if( IDisDesiresInterface* Desires = InterfaceCast<IDisDesiresInterface>( (UObject*)this ) )
+		{
+			Desires->HandleFaceToEvent( (BYTE)_FaceToEvent );
+		}
+	}
+};
+
+void* IDisDesiresInterface::GetDesiresFaceToEventCallback() const
+{
+	static const FArkCpntFaceToEventCallback Callback = static_cast<FArkCpntFaceToEventCallback>( &FDisFaceToEventThunk::Dispatch );
+	return (void*)&Callback;
+}
 
 /*-----------------------------------------------------------------------------
 	The life cycle

@@ -1,0 +1,17 @@
+item,state,evidence
+step 0 (bars writer / teleport destination / go-to stages),done,JE0 head vs JE2: writer = UStatePlayerMasterChoice_Base via the dialog state; TargetPoint_72 on navmesh 1; head go-to stalls at stage 0 (stuck 14426/21641)
+ADishonoredPawn / NPC / player / PC OnTeleport_Native + execs,ported,JE2 164.63 Emily teleported to TargetPoint_72; unported_natives 0
+FDisFaceToRequest::DoRequest real + callback,ported,5/5 aligned go-tos reach RotationReached (52.66 83.71 164.47 170.94 230.44)
+Start_TurningToFace bring-up skip,removed,JE2 go-to stage 1 -> 2 by the stim
+AttemptTeleportSpell,ported (item-context half named),Emily has no secondary weapon -> refused as retail
+dialog state (UStatePlayerMasterInDialog + Choice_Base enter/exit/bend-time),ported,JE2 enter 160.89 / exit 185.04; bars on/off
+player StartDialog / EndDialog / IsAvailableForDialog,ported (2013),JE2 player StartDialog 160.89 EndDialog 185.01
+look-at nodes PlayerLookAtActor / Speaker,ported,JE2 look-at InterpActor_27 track 1
+NPC IsAvailableForDialog / StartDialog / EndDialog stims,ported,boat and Empress NPCs BlockingDialogRequest/End; ride stop stim 150.64
+behaviour GetDialogAvailability incl. ICF-folded overrides,ported,build 1 regression (base reject) found and fixed via vtable slot 98
+MAT_IsAllowed,not ported,needs an APawn virtual + the matinee bind call in UnInterpolation.cpp (JC's file)
+Emily_GoToGazebo_Success -> Gate_37 -> Switch_8,met,JE2 171.00; Switch_8 #2 176.99 -> next scene
+Emily run-in > 200 u/s for 2 s,met,357-408 u/s 166.3-169.4
+five Empress/Regent lines,met,161.1-173.9
+gate d3d9+inputtest+newgame,23 ok 0 failed,build/agentJE/gate.txt
+captures 160-240 every 2 s,done,build/agentJE/shots/je2 (control je0)

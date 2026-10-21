@@ -54,6 +54,8 @@
 
 #include "DishonoredGame.h"
 #include "jcdiag.h"
+#include "jediag.h"
+#include "arknavmeshbuildutils.h"
 
 // ---- agent BF ports (PHASE8 BF): the fall-damage native ----
 
@@ -370,4 +372,54 @@ void UDisSkeletalMeshComponent::UpdateChildForTickEnd()
 			Child->UpdateChildForTickEnd();
 		}
 	}
+}
+
+// ---- agent JE (PHASE24 JE): the Kismet teleport ----
+
+// DISHONORED(port): 2013 0x5ec880 (2012 0x633400)
+void ADishonoredPawn::execOnTeleport_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( USeqAct_Teleport, _pAction );
+	P_FINISH;
+	*(UBOOL*)Result = OnTeleport_Native( _pAction );
+}
+
+/**
+ * DISHONORED(port): 2013 0x756e40 (532 B; 2012 0x799d60, 546 B, the same control flow). The first object linked to
+ * 'Destination' that is an actor - a controller's pawn in its place - receives the pawn at its location raised by the
+ * cylinder's half height; with bUpdateRotation the pawn faces the destination's rotation plus the action's relative one at
+ * once and its controller is turned with it.
+ */
+UBOOL ADishonoredPawn::OnTeleport_Native( USeqAct_Teleport* _pAction )
+{
+	UBOOL bTeleported = FALSE;
+	TArray<UObject**> ObjVars;
+	_pAction->GetObjectVars( ObjVars, TEXT("Destination") );
+	AActor* Destination = NULL;
+	for( INT Index = 0; Index < ObjVars.Num() && !Destination; Index++ )
+	{
+		Destination = Cast<AActor>( *ObjVars(Index) );
+		AController* DestinationController = Cast<AController>( Destination );
+		if( DestinationController && DestinationController->Pawn )
+		{
+			Destination = DestinationController->Pawn;
+		}
+	}
+	if( Destination && SetLocation( Destination->Location + FVector( 0.f, 0.f, CylinderComponent->CollisionHeight ) ) )
+	{
+		bTeleported = TRUE;
+		if( _pAction->bUpdateRotation )
+		{
+			FaceRotation( Destination->Rotation + _pAction->RelativeRotation, 0.f );
+			if( Controller )
+			{
+				Controller->SetRotation( Rotation );
+			}
+		}
+	}
+	JEDIAG( "teleport %s by %s -> %s at %s on navmesh %d: %s, now at %s yaw %d", *GetName(), *_pAction->GetName(),
+		Destination ? *Destination->GetName() : TEXT("none"), Destination ? *Destination->Location.ToString() : TEXT("-"),
+		Destination ? (INT)ArkIsPointOnNavMesh( Destination->Location ) : -1, bTeleported ? TEXT("teleported") : TEXT("refused"),
+		*Location.ToString(), Rotation.Yaw );
+	return bTeleported;
 }

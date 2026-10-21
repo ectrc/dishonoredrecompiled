@@ -33,3 +33,18 @@ void UDisBehaviorFollow::execNoMoreTargetCallback_Follow( FFrame& Stack, RESULT_
 	P_FINISH;
 	m_bIsFinished = TRUE;
 }
+
+// agent JE (PHASE24 JE), 2013 0x6f1ce0 (2012 0x73cff0): a follower joins a blocking conversation only from a designated slot below 17.
+eDisDialogAvailability UDisBehaviorFollow::GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const
+{
+	if( !( _StartDialogFlags & 2 ) )
+	{
+		return DDA_AVAILABLE;
+	}
+	const UDisTweaks_AIBehavior_Follow* Tweaks = Cast<UDisTweaks_AIBehavior_Follow>( const_cast<UDisBehaviorFollow*>( this )->GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = (const UDisTweaks_AIBehavior_Follow*)UDisTweaks_AIBehavior_Follow::StaticClass()->GetDefaultObject();
+	}
+	return Tweaks->m_DesignatedSlot < 17 ? DDA_AVAILABLE : DDA_REJECTED_BY_AI_BEHAVIOR;
+}

@@ -32,8 +32,9 @@
 	Agent IA (PHASE23 IA) added ProcessViewRotation 0x6e3e00 / 0x6afb50 and FDisPlayerViewTarget::ApplyPlayerControlDelta 0x6d7420 /
 	0x6a34d0 (deviations at the function: the input dilation is the world's, the ranged dispersion is reported, not applied) and the
 	2013 doubled zoom blend speed in TickCameraTracking.
-	Not ported: the actor/pawn starts (StartTrackingActor, StartTrackingPawn_ByRegion, the actor SetTarget), the Limit*FromCurrent /
-	StopLimiting* setters and the sensitivity getters.
+	Agent JE (PHASE24 JE) added the actor starts the dialog state's look-ats use: StartTrackingActor 2012 0x6f8960, StartTrackingPawn_ByRegion
+	0x6f9c60 (through the actor start; the pawn hit-region table is not ported) and the actor SetTarget 0x6d14c0.
+	Not ported: the Limit*FromCurrent / StopLimiting* setters and the sensitivity getters.
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
@@ -60,6 +61,43 @@ void FDisPlayerViewTarget::SetTarget( INT _TargetFixedAngle, FLOAT _fBlendTime, 
 	m_CurPlayerControlledDelta_Blended = 0;
 	m_SoftenType = 0;
 	m_TrackType = 2;
+	m_fZoomFOVOverride = _fZoomFOVOverride;
+	if( _Flags & 0x20 )
+	{
+		m_fBlendSpeed = _fBlendTime;
+		m_fCurWeight = 0.f;
+	}
+	else if( _fBlendTime <= 0.0001f )
+	{
+		m_fCurWeight = 1.f;
+		m_fBlendSpeed = 0.f;
+	}
+	else
+	{
+		m_fCurWeight = 0.f;
+		m_fBlendSpeed = 1.f / _fBlendTime;
+	}
+	m_StartRot = _StartRot;
+}
+
+// DISHONORED(port): agent JE (PHASE24 JE), 2012 0x6d14c0 (227 B): an actor target, its look bone (none: the collision bounds)
+// and the bone-space offset; the cached bone position is dropped. The blend rules are the fixed SetTarget's.
+void FDisPlayerViewTarget::SetTarget( AActor* _pTarget, USkeletalMeshComponent* _pMesh, FName _LookBone, const FVector& _rLookBoneOffset, FLOAT _fBlendTime, INT _Flags, INT _StartRot, FLOAT _fMaxRadius, FLOAT _fMinRadius, INT _MaxPlayerControlledDelta, INT _PlayerControlledDelta_SoftenThreshold, FLOAT _fZoomFOVOverride )
+{
+	m_pTarget = _pTarget;
+	m_pMesh = _pMesh;
+	m_LookBone = _LookBone;
+	m_LookBoneOffset = _rLookBoneOffset;
+	m_bHasCachedBonePos = FALSE;
+	m_MaxPlayerControlledDelta = _MaxPlayerControlledDelta;
+	m_fLimitRadius_Max = _fMaxRadius;
+	m_PlayerControlledDelta_SoftenThreshold = _PlayerControlledDelta_SoftenThreshold;
+	m_fLimitRadius_Min = _fMinRadius;
+	m_Flags = _Flags;
+	m_CurPlayerControlledDelta = 0;
+	m_CurPlayerControlledDelta_Blended = 0;
+	m_SoftenType = 0;
+	m_TrackType = 1;
 	m_fZoomFOVOverride = _fZoomFOVOverride;
 	if( _Flags & 0x20 )
 	{
@@ -173,6 +211,69 @@ INT ADishonoredPlayerController::StartTrackingFixedAngles( INT _PitchFixed, INT 
 		Min( MaxSoftenAngle, appTrunc( (FLOAT)MaxDelta * SoftenPercent ) ), Params->m_fZoomFOVOverride );
 	PitchTarget.m_TrackID = TrackID;
 	return TrackID;
+}
+
+/**
+ * DISHONORED(port): agent JE (PHASE24 JE), 2012 0x6f8960 (554 B). StartTrackingFixedAngles' rules with an actor target: flag 2 the
+ * yaw, flag 1 the pitch, a held target already running refuses unless flag 0x80; the soften threshold is the tweaks' percent of the
+ * params' delta, at most m_fMaxLookSoftenAngle.
+ */
+INT ADishonoredPlayerController::StartTrackingActor( AActor* _pTarget, USkeletalMeshComponent* _pMesh, FName _LookBone, const FVector& _rLookBoneOffset, FLOAT _fBlendTime, INT _Flags, const FDisPlayerViewTracking_ExtraParams* _pParams )
+{
+	FDisPlayerViewTarget& YawTarget = m_ViewTracking.m_ViewYawTarget;
+	FDisPlayerViewTarget& PitchTarget = m_ViewTracking.m_ViewPitchTarget;
+	UBOOL bYawFree = FALSE;
+	if( _Flags & 2 )
+	{
+		bYawFree = !YawTarget.IsTracking() || !( YawTarget.m_Flags & 4 ) || ( _Flags & 0x80 );
+	}
+	if( _Flags & 1 )
+	{
+		if( PitchTarget.IsTracking() && ( PitchTarget.m_Flags & 4 ) && !( _Flags & 0x80 ) )
+		{
+			return -1;
+		}
+	}
+	else if( !bYawFree )
+	{
+		return -1;
+	}
+	FDisPlayerViewTracking_ExtraParams DefaultParams( EC_EventParm );
+	const FDisPlayerViewTracking_ExtraParams* Params = _pParams ? _pParams : &DefaultParams;
+	const INT TrackID = ++m_ViewTracking.m_CurTrackID;
+	const UDisTweaks_PlayerInput* Tweaks = DisGetPlayerInputTweaks();
+	const INT MaxSoftenAngle = appTrunc( ( Tweaks ? Tweaks->m_fMaxLookSoftenAngle : 0.f ) * DisDegreesToUnrealUnits );
+	const FLOAT SoftenPercent = Tweaks ? Tweaks->m_fLookSoftenPercent : 0.f;
+	if( _Flags & 2 )
+	{
+		const INT MaxDelta = appTrunc( Params->m_fMaxPlayerControlledDelta_Yaw * DisDegreesToUnrealUnits );
+		YawTarget.SetTarget( _pTarget, _pMesh, _LookBone, _rLookBoneOffset, _fBlendTime, _Flags, Rotation.Yaw, Params->m_fMaxRadius, Params->m_fMinRadius, MaxDelta,
+			Min( MaxSoftenAngle, appTrunc( (FLOAT)MaxDelta * SoftenPercent ) ), Params->m_fZoomFOVOverride );
+		YawTarget.m_TrackID = TrackID;
+	}
+	if( _Flags & 1 )
+	{
+		const INT MaxDelta = appTrunc( Params->m_fMaxPlayerControlledDelta_Pitch * DisDegreesToUnrealUnits );
+		PitchTarget.SetTarget( _pTarget, _pMesh, _LookBone, _rLookBoneOffset, _fBlendTime, _Flags, Rotation.Pitch, Params->m_fMaxRadius, Params->m_fMinRadius, MaxDelta,
+			Min( MaxSoftenAngle, appTrunc( (FLOAT)MaxDelta * SoftenPercent ) ), Params->m_fZoomFOVOverride );
+		PitchTarget.m_TrackID = TrackID;
+	}
+	return TrackID;
+}
+
+/**
+ * DISHONORED(port): agent JE (PHASE24 JE), 2012 0x6f9c60 (118 B): the pawn's region's focus bone for the focus type (the region's
+ * first focus entry when that type names no bone) is tracked as an actor target with the bone's offset; no region, no track.
+ * DISHONORED(bringup): the pawn's hit-region table (ADishonoredPawn::GetHitRegionInfo 2012 0x79ef60, filled by SetupHitRegions) is
+ * not ported, so the pawn is tracked with no look bone - FetchTrackedTargetRot then aims at its collision bounds' centre.
+ */
+INT ADishonoredPlayerController::StartTrackingPawn_ByRegion( ADishonoredPawn* _pTarget, BYTE _LookRegion, BYTE _FocusType, FLOAT _fBlendTime, INT _Flags, const FDisPlayerViewTracking_ExtraParams* _pParams )
+{
+	if( !_pTarget )
+	{
+		return -1;
+	}
+	return StartTrackingActor( _pTarget, NULL, NAME_None, FVector( 0.f, 0.f, 0.f ), _fBlendTime, _Flags, _pParams );
 }
 
 // DISHONORED(port): 2012 0x6d1690 / 2013 0x6a0ec0

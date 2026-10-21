@@ -366,10 +366,6 @@ void ADishonoredPawn::execOnAddInventoryItem( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnAddInventoryItem);
 }
-void ADishonoredPawn::execOnTeleport_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnTeleport_Native);
-}
 void ADishonoredPawn::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execTakeDamage_Native);
@@ -553,10 +549,6 @@ void ADishonoredPlayerController::execDis_Wheel_Close( FFrame& Stack, RESULT_DEC
 void ADishonoredPlayerController::execDis_Wheel_Open( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_Wheel_Open);
-}
-void ADishonoredPlayerController::execOnTeleport_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execOnTeleport_Native);
 }
 void ADishonoredPlayerController::execHandleWalking( FFrame& Stack, RESULT_DECL )
 {

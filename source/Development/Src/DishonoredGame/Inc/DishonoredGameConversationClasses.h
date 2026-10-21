@@ -1641,6 +1641,7 @@ public:
     //## END PROPS DisConv_PlayerLookAtActor
 
     DECLARE_CLASS(UDisConv_PlayerLookAtActor,UDisConv_Action,0,DishonoredGame)
+#include "CppText/UDisConv_PlayerLookAtActor.h"
 };
 
 // DishonoredGame.DisConv_PlayerLookAtSpeaker: retail sizeof 180, reflected span 136..177 (2012 PDB sizeof 172)
@@ -1656,6 +1657,7 @@ public:
     //## END PROPS DisConv_PlayerLookAtSpeaker
 
     DECLARE_CLASS(UDisConv_PlayerLookAtSpeaker,UDisConv_Action,0,DishonoredGame)
+#include "CppText/UDisConv_PlayerLookAtSpeaker.h"
 };
 
 // DishonoredGame.DisConv_PlayerStopLookAt: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)

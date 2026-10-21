@@ -241,21 +241,13 @@ UBOOL UDisAISubStateTakePosition::FilterRotationReached( const FAIStimStruct_Rot
 	return bMine;
 }
 
-// DISHONORED(port): 2012 rva 0x771130.
-// DISHONORED(bringup): an NPC that cannot path to its destination tries to teleport there instead - retail calls the free
-// function AttemptTeleportSpell (2012 rva 0x832a50, 228 bytes), which belongs to the powers package and is not ported. It
-// is what makes an assassin appear behind you when the nav mesh will not take it. Nothing else happens on a pathing
-// failure, so this sub-state simply keeps waiting; its behaviour's RefreshCallback is what gives up.
+// DISHONORED(port): 2012 rva 0x771130 (69 B): the slot is unreachable, so the NPC tries its teleport spell to it
+// (AttemptTeleportSpell, agent JE); never consumed, and nothing else happens here - the behaviour's RefreshCallback gives up.
 UBOOL UDisAISubStateTakePosition::FilterPathingFail( const FAIStimStruct_PathingFail& _rStim )
 {
 	if( _rStim.m_pRequestOriginator == this )
 	{
-		static UBOOL bNoted = FALSE;
-		if( !bNoted )
-		{
-			bNoted = TRUE;
-			debugf( NAME_Warning, TEXT("DISHONORED(bringup): AttemptTeleportSpell is not ported; an NPC that cannot path to its position does not teleport") );
-		}
+		AttemptTeleportSpell( m_pOwningBrain->m_pOwningPawn, m_pOwningBrain->m_pOwningPawn, EDisTeleportIntention_Exact, m_lrDestination.m_Loc );
 	}
 	return FALSE;
 }

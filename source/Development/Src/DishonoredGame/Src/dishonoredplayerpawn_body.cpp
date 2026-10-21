@@ -51,3 +51,21 @@ BYTE ADishonoredPlayerPawn::GetSwimmingState() const
 	UStatePlayerMasterSwim* Swim = Cast<UStatePlayerMasterSwim>( m_pPlayerMasterFSM->GetCurrentlyActiveState() );
 	return Swim ? 2 - Swim->IsOnSurface() : 0;
 }
+
+// ---- agent JE (PHASE24 JE): the player's teleport ----
+
+/**
+ * DISHONORED(port): 2013 0x6a2000 (80 B, 2012 0x6fb0c0 the same). The pawn's teleport when there is an action.
+ * DISHONORED(bringup), named and not called: the virtual RefreshSearchProxy, UDishonoredVisibilityComponent::ResetVisibility on
+ * m_pVisibilityComponent and, after a teleport, the hideout FDisAIMonitorPawnReachability::GetActualHideoutThePlayerIsIn reports
+ * being told the player left (its vtable +328) - none of the three is ported.
+ */
+UBOOL ADishonoredPlayerPawn::OnTeleport_Native( USeqAct_Teleport* _pAction )
+{
+	UBOOL bTeleported = FALSE;
+	if( _pAction )
+	{
+		bTeleported = ADishonoredPawn::OnTeleport_Native( _pAction );
+	}
+	return bTeleported;
+}

@@ -52,3 +52,23 @@ UBOOL UDisBehaviorBlockingDialog::IsReadyToSpeak() const
 	}
 	return TRUE;
 }
+
+// agent JE (PHASE24 JE), 2013 0x6d2390 (2012 0x73c9c0): a blocking-dialog behaviour hands its pawn over unless the new blocking
+// conversation carries flag 1 and the tweaks do not stop blocking for the AI's notice.
+eDisDialogAvailability UDisBehaviorBlockingDialog::GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const
+{
+	if( !( _StartDialogFlags & 2 ) )
+	{
+		return DDA_AVAILABLE;
+	}
+	const UDisTweaks_AIBehavior_BlockingDialog* Tweaks = Cast<UDisTweaks_AIBehavior_BlockingDialog>( const_cast<UDisBehaviorBlockingDialog*>( this )->GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = (const UDisTweaks_AIBehavior_BlockingDialog*)UDisTweaks_AIBehavior_BlockingDialog::StaticClass()->GetDefaultObject();
+	}
+	if( !( _StartDialogFlags & 1 ) )
+	{
+		return DDA_AVAILABLE;
+	}
+	return Tweaks->m_bStopBlockingForAINotice ? DDA_AVAILABLE : DDA_REJECTED_BY_AI_BEHAVIOR;
+}

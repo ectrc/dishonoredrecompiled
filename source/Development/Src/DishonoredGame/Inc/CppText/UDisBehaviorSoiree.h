@@ -37,3 +37,7 @@ private:
 	UBOOL FilterReactionRequest( const struct FAIStimStruct_ReactionRequest& _rStim );
 	UBOOL FilterTopAttnProxyUpdated( const struct FAIStimStruct_TopAttnProxyUpdated& _rStim );
 	UBOOL FilterWitnessMagic( const struct FAIStimStruct_WitnessMagic& _rStim );
+// agent JE (PHASE24 JE): GetDialogAvailability 2013 0x6fb2c0 (2012 0x742170, same bytes; agent IC's missing slot).
+protected:
+	virtual eDisDialogAvailability GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const;
+public:

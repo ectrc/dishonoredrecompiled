@@ -36,3 +36,7 @@ private:
 	UBOOL FilterTouchedNeutral( const struct FAIStimStruct_TouchedNeutral& _rStim );
 	UBOOL FilterTouchedEnemy( const struct FAIStimStruct_TouchedEnemy& _rStim );
 	void TakeDestinationFromAction( const struct FAIStimStruct_GoToRequest& _rStim );
+// agent JE (PHASE24 JE): GetDialogAvailability 2013 0x6e4c50 (2012 0x745480, same bytes), now reached through CallGetDialogAvailability.
+protected:
+	virtual eDisDialogAvailability GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const;
+public:

@@ -21,3 +21,33 @@
 //   0x6bf7e0  public: static class UClass * __cdecl UStateNPCMasterAction::StaticClassNoInline(void)
 //   0x6c2520  public: __thiscall FStateNPCMasterAction_Param::FStateNPCMasterAction_Param(void)
 //   0x6c4700  public: virtual unsigned int __thiscall UStateNPCMasterAction::AllowDodgeToInterrupt(void)const
+
+/*-----------------------------------------------------------------------------
+	agent JE (PHASE24 JE): what the NPC's master action state adds to ADishonoredNPCPawn::IsAvailableForDialog.
+-----------------------------------------------------------------------------*/
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkJE_UStateNPCMasterAction()
+{
+}
+
+// 2013 0x661190 (2012 0x6b02c0, same bytes): the action's m_DialogAvailability - 0 never, 1 only a high-priority conversation,
+// 2 anything but a non-interruptable one, 3 anything that does not block, other values always.
+eDisDialogAvailability UStateNPCMasterAction::GetDialogAvailability_Action( eDisConvPriority _Priority, INT _StartDialogFlags ) const
+{
+	switch( m_DialogAvailability )
+	{
+	case 0:
+		return DDA_REJECTED_BY_PAWN_STATE;
+	case 1:
+		return _Priority < HIGH_PRIORITY_CONV ? DDA_REJECTED_BY_PAWN_STATE : DDA_AVAILABLE;
+	case 2:
+		return _Priority == NOT_INTERRUPTABLE_CONV ? DDA_REJECTED_BY_PAWN_STATE : DDA_AVAILABLE;
+	case 3:
+		return ( _StartDialogFlags & 2 ) ? DDA_REJECTED_BY_PAWN_STATE : DDA_AVAILABLE;
+	default:
+		return DDA_AVAILABLE;
+	}
+}

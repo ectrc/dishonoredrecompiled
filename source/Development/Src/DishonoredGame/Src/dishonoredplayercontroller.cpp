@@ -120,6 +120,7 @@
 #include "dispowercensus.h"
 #include "fkmatineediag.h"
 #include "indiag.h"
+#include "jediag.h"
 #include "fwdiag.h"
 #include "irdiag.h"
 #include "ifdiag.h"
@@ -3041,6 +3042,7 @@ void ADishonoredPlayerController::SetCinematicMode_Native( UBOOL bInCinematicMod
 	{
 		return;
 	}
+	JEDIAG( "bars writer SetCinematicMode_Native: in %d was %d hideLetterbox %d", bInCinematicMode ? 1 : 0, bWasInCinematicMode ? 1 : 0, bHideLetterbox ? 1 : 0 );
 	if( bInCinematicMode )
 	{
 		HUD->DisableHUDElements( eDisHUDMaskLevel_Cinematic, DIS_HUD_ELEMENTS_NOTINCINEMATIC );
@@ -3507,4 +3509,31 @@ void ADishonoredPlayerController::execCalcPlayerSwimAccelRate( FFrame& Stack, RE
 {
 	P_FINISH;
 	*(FLOAT*)Result = CalcPlayerSwimAccelRate();
+}
+
+// ---- agent JE (PHASE24 JE): the controller's teleport ----
+
+/**
+ * DISHONORED(port): 2013 0x6a5f40 (75 B, 2012 0x6e1d50 the same): the Dishonored camera hears the teleport (its influences
+ * reset), and the player's one-second-old location is the new one so nothing reads the jump as a movement.
+ * DISHONORED(retail): retail writes ADishonoredPlayerPawn::s_pInstance unchecked; the write is skipped without a player pawn.
+ */
+void ADishonoredPlayerController::OnTeleport_Native( USeqAct_Teleport* _pAction )
+{
+	if( ADishonoredPlayerCamera* Camera = Cast<ADishonoredPlayerCamera>( PlayerCamera ) )
+	{
+		Camera->OnTeleport( _pAction );
+	}
+	if( ADishonoredPlayerPawn::s_pInstance )
+	{
+		ADishonoredPlayerPawn::s_pInstance->m_LastSecondLocation = ADishonoredPlayerPawn::s_pInstance->Location;
+	}
+}
+
+// DISHONORED(port): 2013 0x5edc30 (2012 0x634230)
+void ADishonoredPlayerController::execOnTeleport_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( USeqAct_Teleport, _pAction );
+	P_FINISH;
+	OnTeleport_Native( _pAction );
 }

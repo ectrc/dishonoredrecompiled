@@ -811,3 +811,58 @@ void ADishonoredNPCPawn::Tick_SpineBending_Apply( FLOAT _fDeltaTime )
 	}
 	m_pSpineBender->SetBendPitchTarget( -( Body->m_fMaxSlopeBendForward * Scale ), bSetInstantly, &Body->m_fSlopeBendPitchBlendSpeed );
 }
+
+// ---- agent JE (PHASE24 JE): the NPC's teleport ----
+
+#include "aistimstruct.h"
+#include "arkcomponentlocomotion.h"
+#include "jediag.h"
+
+/**
+ * DISHONORED(port): 2013 0x77f640 (604 B; 2012 0x7c1200, 670 B). After the pawn's own teleport: the body tick is due again,
+ * the brain's home becomes the destination (the first actor linked to 'Destination'), the brain hears Teleported, the
+ * locomotion drops its path, and the time and the height of the teleport are kept. 2013 also keeps the height as the fall
+ * start (m_fLastFallingStartHeight).
+ * DISHONORED(bringup), named and not called: the master-state LOD request FDisComponentLODManager::StartLOD( eLRP_MasterState,
+ * Spawning / Auto / MAX, 0.5 s ), FDisComponentVision::ResetLineOfSight and FDisComponentObservable::ResetLOS - the three
+ * components are not ported.
+ */
+UBOOL ADishonoredNPCPawn::OnTeleport_Native( USeqAct_Teleport* _pAction )
+{
+	const UBOOL bTeleported = ADishonoredPawn::OnTeleport_Native( _pAction );
+	if( !bTeleported )
+	{
+		return bTeleported;
+	}
+	m_bTickedNPCBody = FALSE;
+	UDishonoredAIBrain* Brain = GetAIBrain();
+	if( Brain )
+	{
+		TArray<UObject**> ObjVars;
+		_pAction->GetObjectVars( ObjVars, TEXT("Destination") );
+		for( INT Index = 0; Index < ObjVars.Num(); Index++ )
+		{
+			AActor* Destination = ObjVars(Index) ? Cast<AActor>( *ObjVars(Index) ) : NULL;
+			if( Destination )
+			{
+				Brain->m_Home.m_Loc = Destination->Location;
+				Brain->m_Home.m_Rot = Destination->Rotation;
+				break;
+			}
+		}
+		DisHandleAIStim( Brain, DisMakeStim<FAIStimStruct_Teleported>( EAIStimID_Teleported ), this );
+	}
+	if( FArkComponentLocomotion* Locomotion = GetComponentLocomotion() )
+	{
+		Locomotion->HandleTeleport();
+	}
+	if( IsRagdoll() )
+	{
+		Mesh->UpdateRBBonesFromSpaceBases( Mesh->LocalToWorld, TRUE, TRUE );
+	}
+	m_fLastFallingStartHeight = Location.Z;
+	m_fLastTeleportTime = GWorld ? GWorld->GetTimeSeconds() : 0.f;
+	JEDIAG( "teleport %s: home %s, brain %s, locomotion %s", *GetName(), Brain ? *Brain->m_Home.m_Loc.ToString() : TEXT("-"),
+		Brain ? TEXT("told") : TEXT("none"), GetComponentLocomotion() ? TEXT("reset") : TEXT("none") );
+	return bTeleported;
+}

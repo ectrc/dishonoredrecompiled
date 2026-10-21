@@ -1,0 +1,2 @@
+ADishonoredPawn::execOnTeleport_Native
+ADishonoredPlayerController::execOnTeleport_Native

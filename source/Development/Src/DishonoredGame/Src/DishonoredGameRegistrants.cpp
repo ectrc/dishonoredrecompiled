@@ -2439,6 +2439,10 @@ extern void DishonoredLinkIP_DishonoredAnimNodeBlendBySpeed();
 extern void DishonoredLinkIP_DishonoredCameraBumpSmoother();
 extern void DishonoredLinkIS_DisAnimNodeBlendDirectional();
 extern void DishonoredLinkJC_InterpTrackAIControl();
+extern void DishonoredLinkJE_UDisConv_PlayerLookAtActor();
+extern void DishonoredLinkJE_UDisConv_PlayerLookAtSpeaker();
+extern void DishonoredLinkJE_UStateNPCMasterAction();
+extern void DishonoredLinkJE_UStatePlayerMasterChoice_Base();
 extern void DishonoredLinkJG_Diag();
 extern void DishonoredLinkJG_DishonoredCameraPhysicalReact();
 extern void DishonoredLinkUDisAIBrainProcessAttention();
@@ -2566,6 +2570,10 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkIP_DishonoredCameraBumpSmoother,
 	&DishonoredLinkIS_DisAnimNodeBlendDirectional,
 	&DishonoredLinkJC_InterpTrackAIControl,
+	&DishonoredLinkJE_UDisConv_PlayerLookAtActor,
+	&DishonoredLinkJE_UDisConv_PlayerLookAtSpeaker,
+	&DishonoredLinkJE_UStateNPCMasterAction,
+	&DishonoredLinkJE_UStatePlayerMasterChoice_Base,
 	&DishonoredLinkJG_Diag,
 	&DishonoredLinkJG_DishonoredCameraPhysicalReact,
 	&DishonoredLinkUDisAIBrainProcessAttention,

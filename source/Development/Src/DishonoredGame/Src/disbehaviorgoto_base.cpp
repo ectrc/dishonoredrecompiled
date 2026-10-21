@@ -36,13 +36,9 @@
 	    pops the behaviour, and OnBehaviorStop tells the Kismet action Success - or Interrupted when the brain popped it
 	    for another reason first. A pathing failure tries retail's teleport spell and otherwise reports Failed.
 
-	What is NOT here, each with what it costs:
-	  * AttemptTeleportSpell (2012 0x832a50): an NPC that cannot path to its mark reports Failed to Kismet at once
-	    instead of blinking there first.
-	  * FArkComponentFaceTo. The component has no body in this tree (Engine/Src/arkcomponentfaceto.cpp is a skeleton),
-	    so a face-to desire never produces EAIStimID_RotationReached; Start_TurningToFace therefore does not wait on it
-	    when the pawn has no face-to component and goes to stage 2 directly, named once. With the component in, the
-	    retail wait is the path taken.
+	agent JE (PHASE24 JE): the face-to desire is a real FArkComponentFaceTo request (agent IC's component, FDisFaceToRequest::DoRequest),
+	whose ORIENTATION_REACHED comes back as EAIStimID_RotationReached, so Start_TurningToFace waits for it as retail; the bring-up
+	skip of the wait is gone. FilterPathingFail tries AttemptTeleportSpell first as retail.
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
@@ -53,6 +49,9 @@
 #include "fvdiag.h"
 #include "ibdiag.h"
 #include "arkcomponentlocomotion.h"
+#include "dishonoredutilities_ai.h"
+#include "jediag.h"
+#include "arkcomponentfaceto.h"
 
 // DISHONORED(port): 2013 rva 0x6e4d50 (2012 0x745550): a fresh go-to is neither finished nor a success.
 void UDisBehaviorGoTo_Base::OnBehaviorStart()
@@ -120,24 +119,14 @@ void UDisBehaviorGoTo_Base::Start_TurningToFace()
 		const INT Yaw = m_pDestinationActor ? m_pDestinationActor->Rotation.Yaw : m_DestinationRotation.Yaw;
 		SetFaceToYawDesire( Yaw, -100.f, m_bExactRotation );
 		m_GoToStage = 1;
-		// DISHONORED(bringup): see the unit's head - no FArkComponentFaceTo, no EAIStimID_RotationReached, so the wait
-		// would never end. The pawn keeps the yaw it arrived with and the go-to completes.
-		ADishonoredNPCPawn* Pawn = m_pOwningBrain ? m_pOwningBrain->m_pOwningPawn : NULL;
-		if( !Pawn || !Pawn->m_pCpntFaceTo )
-		{
-			static UBOOL bNoted = FALSE;
-			if( !bNoted )
-			{
-				bNoted = TRUE;
-				debugf( TEXT("DISHONORED(bringup): UDisBehaviorGoTo_Base::Start_TurningToFace: %s has no FArkComponentFaceTo (Engine/Src/arkcomponentfaceto.cpp is not ported), so the rotation alignment the go-to asked for is skipped and the go-to completes on arrival"), Pawn ? *Pawn->GetName() : TEXT("?") );
-			}
-			m_GoToStage = 2;
-		}
 	}
 	else
 	{
 		m_GoToStage = 2;
 	}
+	JEDIAG( "goto %s arrived: stage %d align %d exact %d yaw %d (pawn yaw %d), face-to req %d", m_pOwningBrain && m_pOwningBrain->m_pOwningPawn ? *m_pOwningBrain->m_pOwningPawn->GetName() : TEXT("?"),
+		(INT)m_GoToStage, (INT)m_bDoRotationAlign, (INT)m_bExactRotation, m_pDestinationActor ? m_pDestinationActor->Rotation.Yaw : m_DestinationRotation.Yaw,
+		m_pOwningBrain && m_pOwningBrain->m_pOwningPawn ? m_pOwningBrain->m_pOwningPawn->Rotation.Yaw : 0, m_FaceToRequest.m_RequestID );
 }
 
 // DISHONORED(port): 2013 rva 0x6edc00 (2012 0x74c8c0, 54 B): the three-stage completion described at the head.
@@ -165,6 +154,23 @@ void UDisBehaviorGoTo_Base::TickBehavior( FLOAT _fDeltaSeconds )
 				Loco ? (INT)Loco->IsStuckInAWall() : 0 );
 		}
 	}
+	if( DisJEDiagEnabled() && m_pOwningBrain && m_pOwningBrain->m_pOwningPawn )
+	{
+		static TMap<UObject*, FLOAT> s_NextJEReportByBehavior;
+		const FLOAT Now = DisJEDiagNow();
+		FLOAT* pNext = s_NextJEReportByBehavior.Find( this );
+		if( !pNext || Now >= *pNext )
+		{
+			s_NextJEReportByBehavior.Set( this, Now + 0.5f );
+			ADishonoredNPCPawn* Pawn = m_pOwningBrain->m_pOwningPawn;
+			const FArkComponentFaceTo* FaceTo = (const FArkComponentFaceTo*)m_FaceToRequest.m_pFaceToComponent;
+			JEDIAG( "goto path %s stage %d at %s speed %.0f yaw %d -> %s dist %.0f | face-to req %d paused %d event %d component %s requests %d",
+				*Pawn->GetName(), (INT)m_GoToStage, *Pawn->Location.ToString(), Pawn->Velocity.Size2D(), Pawn->Rotation.Yaw,
+				m_pDestinationActor ? *m_pDestinationActor->GetName() : TEXT("(fixed)"), ( Pawn->Location - ( m_pDestinationActor ? m_pDestinationActor->Location : m_DestinationLocation ) ).Size2D(),
+				m_FaceToRequest.m_RequestID, (INT)m_FaceToRequest.m_bPaused, (INT)m_FaceToRequest.m_DebugLastFaceToEvent,
+				FaceTo ? ( FaceTo->m_bStarted ? TEXT("started") : TEXT("stopped") ) : TEXT("none"), FaceTo ? FaceTo->GetRequestsCount() : -1 );
+		}
+	}
 	if( m_GoToStage == 0 )
 	{
 		if( m_bHasReachedDestination )
@@ -178,6 +184,7 @@ void UDisBehaviorGoTo_Base::TickBehavior( FLOAT _fDeltaSeconds )
 		m_bSuccess = TRUE;
 		m_GoToStage = 3;
 		FVDIAG( "goto finished %s", m_pOwningBrain && m_pOwningBrain->m_pOwningPawn ? *m_pOwningBrain->m_pOwningPawn->GetName() : TEXT("?") );
+		JEDIAG( "goto %s finished: Success", m_pOwningBrain && m_pOwningBrain->m_pOwningPawn ? *m_pOwningBrain->m_pOwningPawn->GetName() : TEXT("?") );
 	}
 }
 
@@ -197,6 +204,7 @@ UBOOL UDisBehaviorGoTo_Base::FilterDestinationReached( const FAIStimStruct_Desti
 UBOOL UDisBehaviorGoTo_Base::FilterRotationReached( const FAIStimStruct_RotationReached& _rStim )
 {
 	const UBOOL bMine = _rStim.m_pRequestOriginator == this;
+	JEDIAG( "goto %s rotation reached (mine %d) at stage %d", m_pOwningBrain && m_pOwningBrain->m_pOwningPawn ? *m_pOwningBrain->m_pOwningPawn->GetName() : TEXT("?"), (INT)bMine, (INT)m_GoToStage );
 	if( bMine )
 	{
 		m_GoToStage = 2;
@@ -204,23 +212,18 @@ UBOOL UDisBehaviorGoTo_Base::FilterRotationReached( const FAIStimStruct_Rotation
 	return bMine;
 }
 
-// DISHONORED(port): 2013 rva 0x6e8600 (2012 0x746db0, 134 B): the mark is unreachable. Retail tries AttemptTeleportSpell(
-// pawn, pawn, EDisTeleportIntention_Exact, destination ) and reports Failed to Kismet only when the blink is refused too;
-// the spell (2012 0x832a50) is not ported, so Failed is reported at once. Never consumed (returns FALSE), so the
-// sub-states see the same stim.
+// DISHONORED(port): 2013 rva 0x6e8600 (2012 0x746db0, 134 B): the mark is unreachable. The NPC tries its teleport spell to
+// the destination (the actor's location when following one) and Kismet hears Failed only when the blink is refused too.
+// Never consumed (returns FALSE), so the sub-states see the same stim.
 UBOOL UDisBehaviorGoTo_Base::FilterPathingFail( const FAIStimStruct_PathingFail& _rStim )
 {
 	if( _rStim.m_pRequestOriginator == this )
 	{
-		static UBOOL bNoted = FALSE;
-		if( !bNoted )
-		{
-			bNoted = TRUE;
-			debugf( NAME_Warning, TEXT("DISHONORED(bringup): UDisBehaviorGoTo_Base::FilterPathingFail: AttemptTeleportSpell (2012 rva 0x832a50) is not ported; the go-to reports Failed without the blink") );
-		}
-		FVDIAG( "goto pathing failed %s", m_pOwningBrain && m_pOwningBrain->m_pOwningPawn ? *m_pOwningBrain->m_pOwningPawn->GetName() : TEXT("?") );
-		DisIBDiagNoteGoTo( m_pOwningBrain ? m_pOwningBrain->m_pOwningPawn : NULL, m_GoToStage, TRUE );
-		if( m_pAssociatedKismetGoToAction && m_pOwningBrain && m_pOwningBrain->m_pOwningController )
+		ADishonoredNPCPawn* Pawn = m_pOwningBrain->m_pOwningPawn;
+		const UBOOL bBlinked = AttemptTeleportSpell( Pawn, Pawn, EDisTeleportIntention_Exact, m_pDestinationActor ? m_pDestinationActor->Location : m_DestinationLocation );
+		FVDIAG( "goto pathing failed %s, teleport spell %s", Pawn ? *Pawn->GetName() : TEXT("?"), bBlinked ? TEXT("cast") : TEXT("refused") );
+		DisIBDiagNoteGoTo( Pawn, m_GoToStage, TRUE );
+		if( !bBlinked && m_pAssociatedKismetGoToAction )
 		{
 			m_pOwningBrain->m_pOwningController->SetGoToActionStatus( AIGoToActorOutput_Failed, m_pAssociatedKismetGoToAction );
 		}

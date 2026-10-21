@@ -404,3 +404,14 @@ UBOOL UDisBehaviorGoTo::GetResumingBodyIntentionDesire( const FDisBodyIntention&
 void DishonoredLinkDisBehaviorGoTo()
 {
 }
+
+// agent JE (PHASE24 JE), 2013 0x6e4c50 (2012 0x745480): a Kismet go-to gives its pawn to a blocking conversation only when it is
+// interruptable.
+eDisDialogAvailability UDisBehaviorGoTo::GetDialogAvailability( eDisConvPriority _Priority, INT _StartDialogFlags ) const
+{
+	if( ( _StartDialogFlags & 2 ) && !m_bInterruptable )
+	{
+		return DDA_REJECTED_BY_AI_BEHAVIOR;
+	}
+	return DDA_AVAILABLE;
+}
