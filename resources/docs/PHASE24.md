@@ -1,6 +1,6 @@
 # Wave 27 — the second hand play on `2127b56` (`PHASE24.md`)
 
-**Status: planned and approved 2026-10-20, NOT started. The user: "even if I accept the plan wait for my go ahead". Start only on the user's explicit word.**
+**Status: started 2026-10-21 on the user's "Okay execute"; launch 1 = JA, JB, JC, JD, JE, JG.**
 
 ## Context
 
