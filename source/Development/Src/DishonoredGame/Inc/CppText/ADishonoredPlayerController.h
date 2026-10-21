@@ -138,6 +138,8 @@ public:
 	INT StartTrackingPawn_ByRegion( class ADishonoredPawn* _pTarget, BYTE _LookRegion, BYTE _FocusType, FLOAT _fBlendTime, INT _Flags, const struct FDisPlayerViewTracking_ExtraParams* _pParams );
 	INT StartTrackingFixedAngles( INT _PitchFixed, INT _YawFixed, FLOAT _fBlendTime, INT _Flags, const struct FDisPlayerViewTracking_ExtraParams* _pParams );
 	void StopTrackingTarget( INT _TrackID );
+	// agent JF (PHASE24 JF): 2013 0x6a7750 (279 B, unnamed, new in 2013)
+	UBOOL IsTrackingTarget( INT _TrackID, UBOOL* _pbBlending ) const;
 protected:
 	INT FetchTrackedTargetRot( struct FDisPlayerViewTarget& _rTarget, UBOOL _bIsPitch, const FVector& _rCurCamPos );
 	void TickCameraTracking( FLOAT _fDeltaTime, const FVector& _rCurCamPos );

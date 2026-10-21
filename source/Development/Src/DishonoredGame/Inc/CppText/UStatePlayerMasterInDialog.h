@@ -5,7 +5,8 @@
 // 0xa73720 - 0x400000, OnExitState 0x6b8d30 / 0x6739f0, TickState 0x6c94c0 / 0x679280, RequestStateExit_Derived 0x6b8ea0,
 // TrackPawnForDialog 0x6b8ec0 / 0x669480, TrackActorForDialog 0x6b8ff0 / 0x6695a0, StopTrackingForDialog 0x6b4160 / 0x663d90,
 // CalcZoomFOVBasedOnRadius 0x6b40d0 / 0x663cc0, PlayerRequestSkip_Derived 0x6afa30 / 0x660970, IsSkippable_Derived 0x6afa50 /
-// 0x660990. SetActivePlayerChoice, GetNumChoices and GetChoiceInfo are the choice half (agent JF). Bodies in
+// 0x660990. agent JF (PHASE24 JF), the choice half: SetActivePlayerChoice 0x6b8e30 / 0x669410, GetNumChoices 0x6af980 / 0x6608c0,
+// GetChoiceInfo 0x6b4190 / 0x663dc0, IsDialogViewTrackBlending 2013 0x663d50 (unnamed, new in 2013). Bodies in
 // Src/stateplayermasterindialog.cpp.
 public:
 	void StartSoireeControl( class USeqAct_Interp* Matinee, FLOAT BlendInTime, INT Flags );
@@ -17,7 +18,11 @@ public:
 	void TrackPawnForDialog( class ADishonoredPawn* _pPawn, FLOAT _fBlendTime, BYTE _FocusHitRegion, const struct FDisConvLookAtConstraints* _pConstraints );
 	void TrackActorForDialog( class AActor* _pActor, FLOAT _fBlendTime, const struct FDisConvLookAtConstraints* _pConstraints );
 	void StopTrackingForDialog();
+	void SetActivePlayerChoice( const class UDisConv_PlayerChoice* _pPlayerChoice );
+	UBOOL IsDialogViewTrackBlending() const;
 protected:
+	virtual INT GetNumChoices();
+	virtual void GetChoiceInfo( INT _iIndex, struct FDisPlayerChoiceInfo& _rChoiceInfo );
 	virtual void RequestStateExit_Derived();
 	virtual void PlayerRequestSkip_Derived();
 	virtual UBOOL IsSkippable_Derived() const;

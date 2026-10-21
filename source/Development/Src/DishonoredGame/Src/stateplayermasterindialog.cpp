@@ -12,11 +12,14 @@
 	DISHONORED(bringup), named and not called (OnEnterState): the 2013 carried-corpse drop when the conversation does not allow
 	carrying a body (the carried corpse / UDisCarriable path), and the deactivation of every usable active power but Possess
 	(UDishonoredActivePowerComponent vtable +352 / +368, not declared in this tree).
-	The choice half (SetActivePlayerChoice 0x6b8e30, GetNumChoices 0x6af980, GetChoiceInfo 0x6b4190) is agent JF's.
+	agent JF (PHASE24 JF): the choice half - the choice node hands itself over (SetActivePlayerChoice: every master input off, the
+	choice up, the bend time paused), the list is its static choices then the optional ones whose story flag holds, and a 2013 test
+	that the dialog's view track has finished blending in before the node is handed over.
 =============================================================================*/
 #include "DishonoredGame.h"
 #include "stateplayermasterparams.h"
 #include "jediag.h"
+#include "jfdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkFZ_UStatePlayerMasterInDialog()
@@ -281,4 +284,62 @@ void UStatePlayerMasterInDialog::TrackActorForDialog( AActor* _pActor, FLOAT _fB
 			m_bUseConstraints = FALSE;
 		}
 	}
+}
+
+// 2013 0x669410 (102 B; 2012 0x6b8e30): the node is the state's choice, the list starts at its first entry, every master input is
+// taken away and the bend time is paused (the list shows once it has stopped the player, TickState)
+void UStatePlayerMasterInDialog::SetActivePlayerChoice( const UDisConv_PlayerChoice* _pPlayerChoice )
+{
+	m_pActivePlayerChoice = const_cast<UDisConv_PlayerChoice*>( _pPlayerChoice );
+	m_iCurChoice = 0;
+	m_DialogState = 1;
+	m_pPlayerPawn->EnableControllerInput( 0x7FFFF, FALSE, DisInputMaskLevel_MasterAction );
+	PauseBendTime();
+	JFDIAG( "dialog state: active player choice %s, bend time paused", _pPlayerChoice ? *_pPlayerChoice->GetName() : TEXT("none") );
+}
+
+// 2013 0x6608c0 (162 B; 2012 0x6af980): the static choices and the optional ones whose story flag holds on the player
+INT UStatePlayerMasterInDialog::GetNumChoices()
+{
+	const INT NumStatic = m_pActivePlayerChoice->GetNumChoices();
+	INT NumOptional = 0;
+	const INT NumOptionalChoices = m_pActivePlayerChoice->GetNumOptionalChoices();
+	for( INT OptionalIndex = 0; OptionalIndex < NumOptionalChoices; OptionalIndex++ )
+	{
+		const FDisPlayerChoice_Optional& Optional = m_pActivePlayerChoice->GetOptionalChoice( OptionalIndex );
+		const FGuid& Flag = Optional.m_StoryFlag;
+		if( Optional.m_pStoryFlagSet && ( Flag.A | Flag.B | Flag.C | Flag.D ) && m_pPlayerPawn->CheckStoryFlag( Optional.m_pStoryFlagSet, Flag ) == !Optional.m_bStoryFlagMustBeFalse )
+		{
+			NumOptional++;
+		}
+	}
+	return NumOptional + NumStatic;
+}
+
+// 2013 0x663dc0 (96 B; 2012 0x6b4190): a static choice's text, or the shown optional choice at that index
+void UStatePlayerMasterInDialog::GetChoiceInfo( INT _iIndex, FDisPlayerChoiceInfo& _rChoiceInfo )
+{
+	if( m_pActivePlayerChoice->IsValidChoice( _iIndex ) )
+	{
+		_rChoiceInfo.m_ChoiceText = m_pActivePlayerChoice->GetChoice( _iIndex ).GetChoiceText();
+		return;
+	}
+	INT OutputIndex = _iIndex;
+	_rChoiceInfo.m_ChoiceText = m_pActivePlayerChoice->GetOptionalChoiceForIndex( _iIndex, OutputIndex )->GetChoiceText();
+}
+
+// 2013 0x663d50 (55 B, unnamed, new in 2013): the dialog's view track is still blending in (or still zooming)
+UBOOL UStatePlayerMasterInDialog::IsDialogViewTrackBlending() const
+{
+	ADishonoredPlayerController* PC = (ADishonoredPlayerController*)m_pPlayerPawn->Controller;
+	if( !PC )
+	{
+		return FALSE;
+	}
+	UBOOL bBlending = FALSE;
+	if( !PC->IsTrackingTarget( m_ViewTrackID, &bBlending ) )
+	{
+		return FALSE;
+	}
+	return bBlending;
 }

@@ -25,15 +25,18 @@
 	HUD's Tick_Cinematic turns into SetBlackStripes. Leaving reverses it. 2013 bodies (the 2013 OnEnterState inlines the master base's
 	enter and drops the 2012 0x810 for 0x6010; OnExitState hides the choice through its own helper, 2013 0xa69340, which also raises
 	0x6000 again).
-	Not here (agent JF): ShowChoiceSelection, MakePlayerChoice, ReadyToMakeChoice and the choice getters; TickState names the
-	ShowChoiceSelection call it leaves to that package.
-	DISHONORED(bringup), named and not called: ADishonoredGameInfo::BendTime (2012 0x63fcf0, unported) in the two bend-time
-	functions, which therefore only move the out-of-bend-time flags; UDisGFxMoviePlayerHUD::HideChoiceSelection (2013 0x78d260, JF).
+	agent JF (PHASE24 JF): the choice half. A derived state that has a choice to offer sets m_DialogState 1 and pauses the bend time
+	(channel 3 to a stop over the tweaks' blend time); once the channel's player dilation is under 0.1 and the HUD shows no list yet,
+	TickState builds the list from the derived state's GetNumChoices / GetChoiceInfo / GetTitleText and gives it to the GFx HUD, and
+	the subtitle / choice elements (0x6000) are lowered. The HUD's confirm (UDisGFxMoviePlayerHUD::OnPlayerChoiceConfirm) hides the
+	list and makes the choice: the index is kept in m_iCurChoice, m_DialogState drops to 0, look input is given back and the bend
+	time is released; the derived state hears it through MakePlayerChoice_Derived. 2013 bodies.
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "jediag.h"
+#include "jfdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkJE_UStatePlayerMasterChoice_Base()
@@ -85,12 +88,7 @@ void UStatePlayerMasterChoice_Base::HideChoiceSelection()
 	ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( m_pPlayerPawn->Controller );
 	if( GFxHUD )
 	{
-		static UBOOL bNoted = FALSE;
-		if( !bNoted )
-		{
-			bNoted = TRUE;
-			debugf( TEXT("DISHONORED(bringup): UStatePlayerMasterChoice_Base: UDisGFxMoviePlayerHUD::HideChoiceSelection (2013 0x78d260) is agent JF's and not ported here") );
-		}
+		GFxHUD->HideChoiceSelection();
 	}
 	ADishonoredHUD* HUD = PC ? Cast<ADishonoredHUD>( PC->myHUD ) : NULL;
 	if( HUD )
@@ -99,18 +97,86 @@ void UStatePlayerMasterChoice_Base::HideChoiceSelection()
 	}
 }
 
-// 2013 0x679230 (77 B): the choice list once the bend time has stopped (agent JF), the walk/nav anim state, and a pending game
-// over held for as long as the choice state lasts.
+/**
+ * 2013 0x676a10 (525 B, unnamed; 2012 0x6c7450, 414 B): the derived state's title and choices go to the GFx HUD as one list, and the
+ * subtitle / choice elements (0x6000) are lowered at the PlayerState level.
+ * DISHONORED(deviation): the list is a heap TArray where retail builds a TMemStackArray on GMainThreadMemStack under an FMemMark.
+ */
+void UStatePlayerMasterChoice_Base::ShowChoiceSelection()
+{
+	UDisGFxMoviePlayerHUD* GFxHUD = DisGetGFxHUD();
+	ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( m_pPlayerPawn->Controller );
+	if( GFxHUD )
+	{
+		FString Title;
+		const INT NumChoices = GetNumChoices();
+		TArray<FDisPlayerChoiceInfo> Choices;
+		GetTitleText( Title );
+		for( INT ChoiceIndex = 0; ChoiceIndex < NumChoices; ChoiceIndex++ )
+		{
+			FDisPlayerChoiceInfo* Info = new(Choices) FDisPlayerChoiceInfo(EC_EventParm);
+			GetChoiceInfo( ChoiceIndex, *Info );
+		}
+		JFDIAG( "%s ShowChoiceSelection: title '%s', %d choice(s)%s%s%s%s", *GetClass()->GetName(), *Title, Choices.Num(),
+			Choices.Num() > 0 ? TEXT(" '") : TEXT(""), Choices.Num() > 0 ? *Choices(0).m_ChoiceText : TEXT(""),
+			Choices.Num() > 1 ? TEXT("' / '") : TEXT(""), Choices.Num() > 1 ? *Choices(1).m_ChoiceText : TEXT("") );
+		GFxHUD->ShowChoiceSelection( Title, Choices );
+	}
+	ADishonoredHUD* HUD = PC ? Cast<ADishonoredHUD>( PC->myHUD ) : NULL;
+	if( HUD )
+	{
+		HUD->DisableHUDElements( eDisHUDMaskLevel_PlayerState, 0x6000 );
+	}
+}
+
+// 2013 0x660850 (67 B, 2012 0x6af930 the same bytes): the master-action channel has bent the player to (almost) a stop
+UBOOL UStatePlayerMasterChoice_Base::ReadyToMakeChoice() const
+{
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	if( !GameInfo )
+	{
+		return FALSE;
+	}
+	FLOAT WorldDilation, PlayerDilation, InputDilation;
+	GameInfo->GetBendTime( BTC_PlayerMasterAction, WorldDilation, PlayerDilation, InputDilation );
+	return PlayerDilation < 0.1f;
+}
+
+/**
+ * 2013 0x669240 (241 B; 2012 0x6b8820, 186 B): the subtitle / choice elements are raised whatever happens; a choice is taken only
+ * while one is offered and the bend time has stopped the player. Then the index is kept, the state leaves the choice, look input
+ * comes back, the bend time is released and the derived state is told.
+ */
+UBOOL UStatePlayerMasterChoice_Base::MakePlayerChoice( INT _iChoice )
+{
+	ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( m_pPlayerPawn->Controller );
+	ADishonoredHUD* HUD = PC ? Cast<ADishonoredHUD>( PC->myHUD ) : NULL;
+	if( HUD )
+	{
+		HUD->EnableHUDElements( eDisHUDMaskLevel_PlayerState, 0x6000 );
+	}
+	if( m_DialogState != 1 || !ReadyToMakeChoice() )
+	{
+		JFDIAG( "%s MakePlayerChoice(%d) refused: dialog state %d, ready %d", *GetClass()->GetName(), _iChoice, (INT)m_DialogState, ReadyToMakeChoice() );
+		return FALSE;
+	}
+	m_iCurChoice = _iChoice;
+	m_DialogState = 0;
+	m_pPlayerPawn->EnableControllerInput( 2, TRUE, DisInputMaskLevel_MasterAction );
+	UnpauseBendTime();
+	JFDIAG( "%s MakePlayerChoice(%d) taken", *GetClass()->GetName(), _iChoice );
+	MakePlayerChoice_Derived();
+	return TRUE;
+}
+
+// 2013 0x679230 (77 B; 2012 0x6c9470): the choice list once the bend time has stopped the player and the HUD shows none yet, the
+// walk/nav anim state, and a pending game over held for as long as the choice state lasts.
 void UStatePlayerMasterChoice_Base::TickState( FLOAT DeltaSeconds )
 {
-	if( m_DialogState == 1 )
+	UDisGFxMoviePlayerHUD* GFxHUD = DisGetGFxHUD();
+	if( m_DialogState == 1 && GFxHUD && !GFxHUD->m_bChoiceSelection && ReadyToMakeChoice() )
 	{
-		static UBOOL bNoted = FALSE;
-		if( !bNoted )
-		{
-			bNoted = TRUE;
-			debugf( TEXT("DISHONORED(bringup): UStatePlayerMasterChoice_Base::TickState: ShowChoiceSelection (2012 0x6c7450) is agent JF's and not ported here") );
-		}
+		ShowChoiceSelection();
 	}
 	UpdateWalkNavAnimState( m_pPlayerPawn, TRUE );
 	if( ADishonoredGameInfo* GameInfo = DisGetGameInfo() )
@@ -137,10 +203,16 @@ UBOOL UStatePlayerMasterChoice_Base::IsSkippable() const
 }
 
 // 2013 0x6690a0 (205 B): the pawn, its controller and the camera go into the bend time (their out-of-bend-time flags drop), and
-// the master-action channel would be bent to a stop over the tweaks' m_fDialogChoiceBendTime_BlendTime.
+// the master-action channel is bent to a stop over the tweaks' m_fDialogChoiceBendTime_BlendTime.
 void UStatePlayerMasterChoice_Base::PauseBendTime()
 {
-	if( !DisGetGameInfo() )
+	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( m_pPlayerPawn->GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+	}
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	if( !GameInfo )
 	{
 		return;
 	}
@@ -156,18 +228,19 @@ void UStatePlayerMasterChoice_Base::PauseBendTime()
 			Camera->m_bOutOfBendTime = FALSE;
 		}
 	}
-	static UBOOL bNoted = FALSE;
-	if( !bNoted )
-	{
-		bNoted = TRUE;
-		debugf( TEXT("DISHONORED(bringup): UStatePlayerMasterChoice_Base::PauseBendTime: ADishonoredGameInfo::BendTime( BTC_PlayerMasterAction, 0, 0, 0, m_fDialogChoiceBendTime_BlendTime ) is not ported") );
-	}
+	GameInfo->BendTime( BTC_PlayerMasterAction, 0.f, 0.f, 0.f, Tweaks->m_fDialogChoiceBendTime_BlendTime, 0 );
 }
 
 // 2013 0x669170 (198 B): the reverse - out of the bend time again, the channel back to 1 over m_fDialogChoiceBendTime_BlendOutTime.
 void UStatePlayerMasterChoice_Base::UnpauseBendTime()
 {
-	if( !DisGetGameInfo() )
+	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( m_pPlayerPawn->GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+	}
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	if( !GameInfo )
 	{
 		return;
 	}
@@ -183,4 +256,5 @@ void UStatePlayerMasterChoice_Base::UnpauseBendTime()
 			Camera->m_bOutOfBendTime = TRUE;
 		}
 	}
+	GameInfo->BendTime( BTC_PlayerMasterAction, 1.f, 1.f, 1.f, Tweaks->m_fDialogChoiceBendTime_BlendOutTime, 0 );
 }

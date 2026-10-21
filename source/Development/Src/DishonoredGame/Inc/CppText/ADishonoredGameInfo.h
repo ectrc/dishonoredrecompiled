@@ -54,3 +54,11 @@ public:
 public:
 	// DISHONORED(port): 2012 0x6484a0, 2013 0x601dc0 (28 bytes both). Body in dishonoredgameinfo.cpp.
 	void AddToPendingDestroyList( AActor* _pActor );
+
+// ---- agent JF (PHASE24 JF): the bend-time channels the player's dialog choice pauses ----
+public:
+	// DISHONORED(port): BendTime 2012 0x63fcf0 / 2013 0x5fa0d0, GetBendTime 0x62fa60 / 0x5e9e30, TickBendTime 0x642db0 / 0x5fcbc0
+	// (partial, named in the body). Bodies in dishonoredgameinfo.cpp.
+	void BendTime( BYTE _Channel, FLOAT _fWorldTimeDilation, FLOAT _fPlayerTimeDilation, FLOAT _fPlayerTimeDilation_Input, FLOAT _fTransitionDuration, BYTE _Effect );
+	void GetBendTime( BYTE _Channel, FLOAT& _rfWorldTimeDilation, FLOAT& _rfPlayerTimeDilation, FLOAT& _rfPlayerTimeDilation_Input ) const;
+	void TickBendTime( FLOAT _fDeltaSeconds );

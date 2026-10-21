@@ -161,6 +161,7 @@
 //   0x821da0  public: static class UClass * __cdecl UDisGFxMoviePlayerHUDFX::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "jfdiag.h"
 #include "iddiag.h"
 #include "dishonoredutilities.h"
 #include "gfxui_gfx3.h"
@@ -2987,3 +2988,113 @@ static struct FDisHUDPreRenderSeam
 		GDisPlayerPreRenderHook = &DisPlayerControllerPreRender;
 	}
 } GDisHUDPreRenderSeam;
+
+/**
+ * DISHONORED(port): agent JF. 2013 rva 0x79f390 (2012 0x803620): a list already up is closed first; the choices go to playerChoice_mc's
+ * SetMenu as an array of { txt } with the title (null when empty); the HUD movie then takes focus - input it held is flushed when it
+ * did not allow focus yet - so the movie's own list answers the keys and the mouse, and the UI manager recomputes the movie stack.
+ * DISHONORED(deviation): the choices arrive as a TArray (retail: a TMemStackArray on the main-thread mem stack).
+ */
+void UDisGFxMoviePlayerHUD::ShowChoiceSelection( const FString& _rTitle, const TArray<FDisPlayerChoiceInfo>& _rChoices )
+{
+	GFxMovieView* View = DisHUDView( this );
+	if( View == NULL )
+	{
+		return;
+	}
+	if( m_bChoiceSelection )
+	{
+		HideChoiceSelection();
+	}
+	GFxValue Args[2];
+	View->CreateArray( &Args[0] );
+	for( INT ChoiceIndex = 0; ChoiceIndex < _rChoices.Num(); ChoiceIndex++ )
+	{
+		GFxValue Entry;
+		View->CreateObject( &Entry, NULL, NULL, 0 );
+		GFxValue Text;
+		Text.SetStringW( *_rChoices(ChoiceIndex).m_ChoiceText );
+		Entry.SetMember( "txt", Text );
+		Args[0].PushBack( Entry );
+	}
+	if( _rTitle.Len() > 0 )
+	{
+		Args[1].SetStringW( *_rTitle );
+	}
+	else
+	{
+		Args[1].SetNull();
+	}
+	const UBOOL bInvoked = DisHUDInvoke( this, DHMC_Choice, "SetMenu", Args, 2 );
+	m_bChoiceSelection = TRUE;
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( bMovieIsOpen && !bAllowFocus )
+	{
+		FlushPlayerInput( FALSE );
+	}
+	bAllowFocus = TRUE;
+	SetMovieCanReceiveFocus( TRUE );
+	if( bMovieIsOpen && FGFxEngine::GetEngine() )
+	{
+		FGFxEngine::GetEngine()->ReevaluateFocus();
+	}
+	if( UIManager )
+	{
+		UIManager->OnMovieAttributesChanged( this );
+	}
+	JFDIAG( "HUD ShowChoiceSelection: playerChoice_mc.SetMenu(%d choice(s), title '%s') invoked %d, focus allowed, movie open %d", _rChoices.Num(), *_rTitle, bInvoked, (INT)bMovieIsOpen );
+}
+
+// DISHONORED(port): agent JF. 2013 rva 0x78d260 (2012 0x7f68c0): the list closes and the HUD movie gives the focus back.
+void UDisGFxMoviePlayerHUD::HideChoiceSelection()
+{
+	if( !m_bChoiceSelection )
+	{
+		return;
+	}
+	DisHUDInvoke( this, DHMC_Choice, "Close", NULL, 0 );
+	m_bChoiceSelection = FALSE;
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	bAllowFocus = FALSE;
+	SetMovieCanReceiveFocus( FALSE );
+	if( bMovieIsOpen && FGFxEngine::GetEngine() )
+	{
+		FGFxEngine::GetEngine()->ReevaluateFocus();
+	}
+	if( UIManager )
+	{
+		UIManager->OnMovieAttributesChanged( this );
+	}
+	JFDIAG( "HUD HideChoiceSelection: playerChoice_mc.Close, focus released" );
+}
+
+/**
+ * DISHONORED(port): agent JF. 2013 rva 0x78d360 (2012 0x7f6990, a virtual there): the movie's confirm of list entry _iChoice - unless a
+ * game over is pending, the list closes and the player's current master state makes the choice.
+ * DISHONORED(deviation): retail calls MakePlayerChoice on the current state without a test; a state that is not a choice state is
+ * skipped here.
+ */
+void UDisGFxMoviePlayerHUD::OnPlayerChoiceConfirm( INT _iChoice )
+{
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	if( GameInfo && GameInfo->m_bGameOverPending )
+	{
+		return;
+	}
+	ADishonoredPlayerPawn* Player = ADishonoredPlayerPawn::s_pInstance;
+	UStatePlayerMasterChoice_Base* ChoiceState = Player ? Cast<UStatePlayerMasterChoice_Base>( Player->m_pPlayerMasterFSM->GetCurrentlyActiveState() ) : NULL;
+	JFDIAG( "HUD OnPlayerChoiceConfirm(%d): current state %s", _iChoice, ChoiceState ? *ChoiceState->GetClass()->GetName() : TEXT("not a choice state") );
+	HideChoiceSelection();
+	if( ChoiceState )
+	{
+		ChoiceState->MakePlayerChoice( _iChoice );
+	}
+}
+
+// DISHONORED(port): agent JF. The script native (2012 GRegisterNative initializer 0xba4150): one int, then the confirm.
+void UDisGFxMoviePlayerHUD::execOnPlayerChoiceConfirm( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_iChoice);
+	P_FINISH;
+	OnPlayerChoiceConfirm( _iChoice );
+}

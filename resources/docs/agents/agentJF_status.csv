@@ -1,0 +1,31 @@
+item,state,evidence
+step 0 (node or Kismet action at the choice point),done,JF0b head: played DisConv_PlayerChoice_0 -> output 0 at 174.43; JF0a: no DisSeqAct_DialogScriptedChoice op in the level; route -fwteleport=TriggerVolume_1@155
+UDisConv_PlayerChoice PlayNode_Derived 0x8dd8e0 / 0x89c570,ported,JF1-JF8 PlayNode waits (dialog state active 0 -> retried in TickNode)
+UDisConv_PlayerChoice TickNode 0x8dd950 / 0x89c610,ported,JF7 output 1 / JF8 output 0 after the confirm
+UDisConv_PlayerChoice InitNode / MatchChoicesToOutputLinks 0x8ea740 / 0x89ac90 and 0x8e8070 / 0x8999f0,ported,2 static choices = 2 links
+UDisConv_PlayerChoice GetClassVars_Derived / GetOptionalChoiceForIndex / IsValidChoice / GetChoice / GetOptionalChoice,ported,0x8d9860 / 0x88aff0; 0x8daa00 / 0x88b810; 0x8daac0 / 0x88b8d0; 0x8de030 / 0x88cc20; 0x8ddf90 / 0x88cbd0 and 0x8ddfe0 / 0x88cb80
+FDisPlayerChoice_Static / _Optional GetChoiceText 0x8dde30 / 0x8934c0 and 0x8ddcd0 / 0x893360,ported,'Okay; go on...' / 'I'm sorry; Emily; but I have to go see your mother.'
+UStatePlayerMasterInDialog SetActivePlayerChoice / GetNumChoices / GetChoiceInfo,ported,0x6b8e30 / 0x669410; 0x6af980 / 0x6608c0; 0x6b4190 / 0x663dc0
+UStatePlayerMasterInDialog IsDialogViewTrackBlending (2013 0x663d50 new),ported,view track blending 0 on the route
+UStatePlayerMasterChoice_Base ShowChoiceSelection 0x6c7450 / 0x676a10,ported,shown 174.62-175.31 in every run
+UStatePlayerMasterChoice_Base MakePlayerChoice 0x6b8820 / 0x669240 + ReadyToMakeChoice 0x6af930 / 0x660850,ported,MakePlayerChoice(1) / (0) taken
+UStatePlayerMasterChoice_Base TickState / HideChoiceSelection / Pause- UnpauseBendTime (choice calls),ported,channel 3 to 0.05 over 0.5 s and back
+UDisGFxMoviePlayerHUD ShowChoiceSelection 0x803620 / 0x79f390,ported,playerChoice_mc.SetMenu invoked 1; capture shots/jf1/w190_crop.png
+UDisGFxMoviePlayerHUD HideChoiceSelection 0x7f68c0 / 0x78d260,ported,Close on confirm; list gone shots/jf7/w182.png
+UDisGFxMoviePlayerHUD OnPlayerChoiceConfirm 0x7f6990 / 0x78d360 + exec,ported,OnPlayerChoiceConfirm(1) JF7; (0) JF8
+UDishonoredPlayerInput Dis_PlayerChoice_RequestSkip / _Released + execs,ported,JF6 held 2.60 s of 1.00 -> PlayerRequestSkip
+ADishonoredGameInfo BendTime 0x63fcf0 / 0x5fa0d0 + GetBendTime 0x62fa60 / 0x5e9e30,ported,BendTime channel 3 lines (jfdiag)
+ADishonoredGameInfo TickBendTime 0x642db0 / 0x5fcbc0,partial,no WorldInfo TimeDilation write / particles / post-process / events (named)
+ADishonoredPlayerController IsTrackingTarget (2013 0x6a7750) + FDisPlayerViewTarget IsBlending (0x6a0e80),ported,new in 2013
+ADishonoredPlayerCamera GetFOVTargets (2013 0x6c9fa0) + IsAtTargetFOV (0x6ca050),ported,TickFOV calls GetFOVTargets
+UDisSeqAct_DialogScriptedChoice (Activated 0x78b250 / UpdateOp 0x790bc0 / DeActivated 0x790d10),not ported,absent from the level; UpdateOp 333 B > 300 B
+UStatePlayerMasterInScriptedChoice (12 functions),not ported,only the Kismet action uses it
+USeqAct_Interp::OnSkipRequest (the matinee skip),open,JF6: InterruptTickingNode reached; the greeting keeps playing
+acceptance: choice shown with two texts,met,shots/jf1; shots/jf7/sel_crop.png
+acceptance: index 1 -> output 1,met,JF7 'Refuse Hide and Seek game' 182.98 -> PlayerWin
+acceptance: index 0 -> output 0,met,JF8 'Start Hide and Seek game' 182.09 -> Emily_GoToHideAndSeek
+acceptance: nothing fires before input,met,JF1 / JF6 list up 174.6 -> quit with no follow-up
+acceptance: Empress scene still plays,met,JF5 Emily_GoToGazebo_Success 171.01; Switch_8 177.01; bars 160.89-185.07
+gate d3d9+inputtest+newgame,23 ok,criticals 0; unported_natives 0; probe_natives 3; build/agentJF/gate.txt
+generator byte identity / bitfield_audit,ok,79/79 identical (build/agentJF/regen); mismatches 0
+builds,2 of 2,both 0 errors 0 C4263/C4264

@@ -31,6 +31,9 @@ public:
 	class UDishonoredCamera_AnimDriven* GetCamera_AnimDriven() const { return m_pAnimDrive_Influence; }
 	class UDishonoredCamera_DisableArmFollow* GetCamera_DisableArmFollow( BYTE Usage ) const { return Usage == EDisEquipUsage_Secondary ? m_pDisableArmFollow_Secondary_Influence : m_pDisableArmFollow_Primary_Influence; }
 	FLOAT GetCurFOV() const { return m_fCurFOV; }
+	// agent JF (PHASE24 JF): 2013 0x6c9fa0 (173 B) and 0x6ca050 (67 B), both unnamed and new in 2013 (2013's TickFOV calls the first)
+	void GetFOVTargets( FLOAT& _rfFOVTarget, FLOAT& _rfFOVTarget_Arms, FLOAT& _rfBlendSpeed ) const;
+	UBOOL IsAtTargetFOV() const;
 private:
 	void TickFOV( FLOAT DeltaTime );
 	class UDishonoredCameraInfluence* GetCamera_Influence( UClass* InfluenceType ) const;

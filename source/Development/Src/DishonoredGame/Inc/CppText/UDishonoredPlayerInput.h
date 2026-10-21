@@ -7,6 +7,9 @@ public:
 	// DISHONORED(port): agent IF. 2013 rva 0x6aff70 (2012 0x6f9170); body in dishonoredplayerinput.cpp
 	virtual void Dis_SneakOrSlide( UBOOL bForGamepad );
 	virtual void Dis_Jump_ButtonDown();
+	// agent JF (PHASE24 JF): 2012 0x6e41a0 / 2013 0x6b00e0 and 0x6f92e0 / 0x6b0140. Bodies in dishonoredplayerinput.cpp.
+	virtual void Dis_PlayerChoice_RequestSkip();
+	virtual void Dis_PlayerChoice_RequestSkip_Released();
 	virtual void PlayerInput( FLOAT DeltaTime );
 	void OnInit( ADishonoredPlayerController* Owner );
 	// DISHONORED(written): the binding half of ApplyGameSettings (2013 rva 0x6bd610): AddBindingSet 0x6b84f0

@@ -108,3 +108,11 @@ protected:
 	void Tick_Subtitles( INT _ShowFlags );                                                              // 2013 rva 0x79fe20
 	void SplitSubtitleText( const TCHAR* _pText, TArray<FString>& _rPartsOut, TArray<FLOAT>& _rRatiosOut ); // 2013 rva 0x7adf80
 	void ShowSubtitleText( const TCHAR* _pText, INT _SubtitleType );                                    // 2013 rva 0x799690
+
+// ---- agent JF (PHASE24 JF): the player's choice list (playerChoice_mc) ----
+// 2012 / 2013 rvas: ShowChoiceSelection 0x803620 / 0x79f390, HideChoiceSelection 0x7f68c0 / 0x78d260, OnPlayerChoiceConfirm 0x7f6990 /
+// 0x78d360 (the movie's confirm, through the script native). Bodies in disgfxmovieplayerhud.cpp.
+public:
+	void ShowChoiceSelection( const FString& _rTitle, const TArray<struct FDisPlayerChoiceInfo>& _rChoices );
+	void HideChoiceSelection();
+	void OnPlayerChoiceConfirm( INT _iChoice );

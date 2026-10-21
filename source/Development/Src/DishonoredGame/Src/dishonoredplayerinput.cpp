@@ -31,6 +31,7 @@
 //   0x6fa8b0  public: static class UClass * __cdecl UDishonoredPlayerInput::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "jfdiag.h"
 #include "ifdiag.h"
 
 // DISHONORED(written): 2013 rva 0x6afeb0 (2012 0x6f90b0). 2013 reads UDishonoredEngine::m_bUsingGamepad at its 2013 bit (0x400).
@@ -416,4 +417,64 @@ void UDishonoredPlayerInput::ApplyGameSettings( const ArkSettingsParameters* Par
 	m_fMouseFrictionStrengthSettings = (FLOAT)Parameters->m_MouseFrictionStrength * 0.01f;
 	m_bMouseUseAutoAimSettings = Parameters->m_bMouseAutoAim ? TRUE : FALSE;
 	bEnableMouseSmoothing = Parameters->m_bMouseSmoothing ? TRUE : FALSE;
+}
+
+// DISHONORED(port): agent JF. 2013 rva 0x6b00e0 (2012 0x6e41a0, 88 B both), retail vtable +364: the skip button goes down - the press
+// time is kept (real time) when the player is in a dialog with no choice up, else cleared.
+void UDishonoredPlayerInput::Dis_PlayerChoice_RequestSkip()
+{
+	m_fSkipPressedTime = 0.f;
+	ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( m_pPlayerController->Pawn );
+	if( !PlayerPawn )
+	{
+		return;
+	}
+	UStatePlayerMasterInDialog* InDialog = Cast<UStatePlayerMasterInDialog>( PlayerPawn->m_pPlayerMasterFSM->GetCurrentlyActiveState() );
+	if( InDialog && InDialog->m_DialogState == 0 )
+	{
+		m_fSkipPressedTime = GWorld->GetRealTimeSeconds();
+	}
+	JFDIAG( "input Dis_PlayerChoice_RequestSkip: in dialog %d, choice up %d, press time %.2f", InDialog != NULL, InDialog ? (INT)InDialog->m_DialogState : 0, m_fSkipPressedTime );
+}
+
+// DISHONORED(port): agent JF. 2013 rva 0x6b0140 (2012 0x6f92e0, 159 B both), retail vtable +368: released after being held longer
+// than the tweaks' m_fSkipMatineeButtonTime while still in a dialog with no choice up, the dialog is asked to skip.
+// DISHONORED(deviation): retail reads the tweaks through its IDisTweaksInterface (GetTweaks<UDisTweaks_PlayerInput>); this tree's
+// UDishonoredPlayerInput does not override that slot (it answers NULL, measured JF4), so m_pTweaks - the object OnInit loads - is
+// read, as GetFOVScale and PlayerInput here do.
+void UDishonoredPlayerInput::Dis_PlayerChoice_RequestSkip_Released()
+{
+	ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( m_pPlayerController->Pawn );
+	if( !PlayerPawn || m_fSkipPressedTime <= 0.f )
+	{
+		return;
+	}
+	const FLOAT Now = GWorld->GetRealTimeSeconds();
+	UStatePlayerMasterInDialog* InDialog = Cast<UStatePlayerMasterInDialog>( PlayerPawn->m_pPlayerMasterFSM->GetCurrentlyActiveState() );
+	if( InDialog && InDialog->m_DialogState == 0 )
+	{
+		const UDisTweaks_PlayerInput* Tweaks = m_pTweaks;
+		const UBOOL bHeldLongEnough = Tweaks && Now - m_fSkipPressedTime > Tweaks->m_fSkipMatineeButtonTime;
+		JFDIAG( "input Dis_PlayerChoice_RequestSkip_Released: held %.2f s of %.2f -> %s", Now - m_fSkipPressedTime, Tweaks ? Tweaks->m_fSkipMatineeButtonTime : -1.f,
+			bHeldLongEnough ? TEXT("PlayerRequestSkip") : TEXT("no skip") );
+		if( bHeldLongEnough )
+		{
+			InDialog->PlayerRequestSkip();
+		}
+	}
+	m_fSkipPressedTime = 0.f;
+}
+
+// DISHONORED(port): agent JF. 2012 rva 0x1f0190 (53 B): no parameters, then the virtual
+void UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	Dis_PlayerChoice_RequestSkip();
+}
+
+// DISHONORED(port): agent JF. 2012 rva 0x63a950 (53 B)
+void UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip_Released( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	Dis_PlayerChoice_RequestSkip_Released();
 }

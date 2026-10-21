@@ -10,3 +10,5 @@
 	// DISHONORED(port): agent IA (PHASE23 IA), 2012 0x6d7420 / 2013 0x6a34d0 (same bytes)
 	void ApplyPlayerControlDelta( INT _Delta );
 	UBOOL IsTracking() const { return m_TrackType != 0 && ( m_TrackType != 1 || m_pTarget != NULL ); }
+	// agent JF (PHASE24 JF): 2013 0x6a0e80 (55 B, unnamed, new in 2013): tracking and not yet at full weight
+	UBOOL IsBlending() const;

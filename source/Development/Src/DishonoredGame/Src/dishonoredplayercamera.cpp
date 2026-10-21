@@ -210,26 +210,42 @@ UBOOL ADishonoredPlayerCamera::Tick( FLOAT DeltaTime, ELevelTick TickType )
  */
 void ADishonoredPlayerCamera::TickFOV( FLOAT DeltaTime )
 {
-	FLOAT FOVTarget = DefaultFOV;
-	FLOAT FOVTarget_Arms = DefaultFOV;
-	FLOAT BlendSpeed = m_fDefaultFOVBlendSpeed;
+	FLOAT FOVTarget, FOVTarget_Arms, BlendSpeed;
+	GetFOVTargets( FOVTarget, FOVTarget_Arms, BlendSpeed );
+	m_fCurFOV = DisInterpolateBySpeedWithDif( m_fCurFOV, FOVTarget, BlendSpeed, 0.1f, DeltaTime );
+	m_fCurFOV_Arms = DisInterpolateBySpeedWithDif( m_fCurFOV_Arms, FOVTarget_Arms, BlendSpeed, 0.1f, DeltaTime );
+	DisIAReportFOV( this );
+}
+
+// DISHONORED(port): agent JF. 2013 0x6c9fa0 (173 B, unnamed; inlined in 2012's TickFOV 0x709a80): the highest-priority set FOV
+// target (the default FOV and blend speed without one); the arms follow it unless it locks them.
+void ADishonoredPlayerCamera::GetFOVTargets( FLOAT& _rfFOVTarget, FLOAT& _rfFOVTarget_Arms, FLOAT& _rfBlendSpeed ) const
+{
+	_rfFOVTarget = DefaultFOV;
+	_rfFOVTarget_Arms = DefaultFOV;
+	_rfBlendSpeed = m_fDefaultFOVBlendSpeed;
 	for( INT Index = m_FOVTargets.Num() - 1; Index >= 0; Index-- )
 	{
 		const FDisCamFOVTarget& Target = m_FOVTargets(Index);
 		if( Target.m_fTarget > 0.0001f )
 		{
-			FOVTarget = Target.m_fTarget;
-			BlendSpeed = Target.m_fBlendSpeed;
+			_rfFOVTarget = Target.m_fTarget;
+			_rfBlendSpeed = Target.m_fBlendSpeed;
 			if( !Target.m_bLockArms )
 			{
-				FOVTarget_Arms = Target.m_fTarget;
+				_rfFOVTarget_Arms = Target.m_fTarget;
 			}
-			break;
+			return;
 		}
 	}
-	m_fCurFOV = DisInterpolateBySpeedWithDif( m_fCurFOV, FOVTarget, BlendSpeed, 0.1f, DeltaTime );
-	m_fCurFOV_Arms = DisInterpolateBySpeedWithDif( m_fCurFOV_Arms, FOVTarget_Arms, BlendSpeed, 0.1f, DeltaTime );
-	DisIAReportFOV( this );
+}
+
+// DISHONORED(port): agent JF. 2013 0x6ca050 (67 B, unnamed, new in 2013): the view's FOV is within 0.1 of its target
+UBOOL ADishonoredPlayerCamera::IsAtTargetFOV() const
+{
+	FLOAT FOVTarget, FOVTarget_Arms, BlendSpeed;
+	GetFOVTargets( FOVTarget, FOVTarget_Arms, BlendSpeed );
+	return Abs( m_fCurFOV - FOVTarget ) < 0.1f;
 }
 
 // DISHONORED(port): 2012 0x709f40: the slot of the given priority (eDisCamFOVPriority indexes m_FOVTargets)

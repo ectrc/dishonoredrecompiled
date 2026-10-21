@@ -1,0 +1,3 @@
+UDisGFxMoviePlayerHUD::execOnPlayerChoiceConfirm
+UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip
+UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip_Released

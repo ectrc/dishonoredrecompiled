@@ -777,6 +777,7 @@ struct FDisPlayerChoice_Optional
     {
         appMemzero(this, sizeof(FDisPlayerChoice_Optional));
     }
+#include "CppText/FDisPlayerChoice_Optional.h"
 };
 
 // DishonoredGame.DisConv_PlayerChoice.DisPlayerChoice_Static: retail SDK size 24 (2012 PDB 24)
@@ -791,6 +792,7 @@ struct FDisPlayerChoice_Static
     {
         appMemzero(this, sizeof(FDisPlayerChoice_Static));
     }
+#include "CppText/FDisPlayerChoice_Static.h"
 };
 
 // DishonoredGame.DisConv_Hook_PlayerLookAt.DisPlayerLookAtTarget: retail SDK size 12 (2012 PDB 12)

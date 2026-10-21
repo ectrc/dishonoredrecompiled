@@ -72,6 +72,7 @@
 
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
+#include "jfdiag.h"
 
 // DISHONORED(port): agent HG. 2013 rva 0x5fd320 (2012 0x6432d0): the map info's chapter list entry tagged m_CurrentChapterTag
 const UDisTweaks_ChapterInfo* ADishonoredGameInfo::GetCurrentChapter() const
@@ -419,5 +420,198 @@ UBOOL ADishonoredGameInfo::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	{
 		m_pGlobalMusicManager->Tick_GlobalMusic( DeltaTime );
 	}
+	// DISHONORED(deviation): agent JF. Retail ticks the bend-time channels from the engine's world tick through an AGameInfo
+	// virtual with the real frame time; this tree's world tick has no such call. TickBendTime does not write the world's
+	// TimeDilation here (see its banner), so the game info's own delta is that real time.
+	TickBendTime( DeltaTime );
 	return bResult;
+}
+
+// DISHONORED(port): agent JF. 2013 rva 0x5e9e30 (2012 0x62fa60, 48 B both): a channel's current world / player / input dilation.
+void ADishonoredGameInfo::GetBendTime( BYTE _Channel, FLOAT& _rfWorldTimeDilation, FLOAT& _rfPlayerTimeDilation, FLOAT& _rfPlayerTimeDilation_Input ) const
+{
+	const FBendTimeChannelInfo& Channel = m_BendTimeInfo[_Channel];
+	_rfWorldTimeDilation = Channel.m_fCurrentWorldTimeDilation;
+	_rfPlayerTimeDilation = Channel.m_fCurrentPlayerTimeDilation;
+	_rfPlayerTimeDilation_Input = Channel.m_fCurrentPlayerTimeDilation_Input;
+}
+
+/**
+ * DISHONORED(port): agent JF. 2013 rva 0x5fa0d0 (2012 0x63fcf0, 310 B both). A channel's targets: the player dilation clamped to
+ * the channel's maximum (TIME_DILATION_THRESHOLD, 0.05, below 0.05), the input dilation to [0.05, 1], the world dilation to the
+ * clamped player one (0 stays 0); the effect's intensity goes to 1 unless the world is at 1. A zero transition reaches the targets
+ * on the next tick (FLT_MAX velocity), any other one linearly over the duration.
+ */
+void ADishonoredGameInfo::BendTime( BYTE _Channel, FLOAT _fWorldTimeDilation, FLOAT _fPlayerTimeDilation, FLOAT _fPlayerTimeDilation_Input, FLOAT _fTransitionDuration, BYTE _Effect )
+{
+	const FLOAT TimeDilationThreshold = 0.05f;
+	FBendTimeChannelInfo& Channel = m_BendTimeInfo[_Channel];
+	Channel.m_EffectType = _Effect;
+	Channel.m_fTargetEffectIntensity = Abs( _fWorldTimeDilation - 1.f ) >= 0.0001f ? 1.f : 0.f;
+	FLOAT PlayerDilation = Channel.m_fMaxDilation;
+	if( _fPlayerTimeDilation < 0.05f )
+	{
+		PlayerDilation = TimeDilationThreshold;
+	}
+	else if( PlayerDilation > _fPlayerTimeDilation )
+	{
+		PlayerDilation = _fPlayerTimeDilation;
+	}
+	Channel.m_fTargetPlayerTimeDilation = PlayerDilation;
+	FLOAT InputDilation = _fPlayerTimeDilation_Input;
+	if( _fPlayerTimeDilation_Input < 0.05f )
+	{
+		InputDilation = TimeDilationThreshold;
+	}
+	else if( _fPlayerTimeDilation_Input >= 1.f )
+	{
+		InputDilation = 1.f;
+	}
+	Channel.m_fTargetPlayerTimeDilation_Input = InputDilation;
+	FLOAT WorldDilation = TimeDilationThreshold;
+	if( _fWorldTimeDilation == 0.f )
+	{
+		WorldDilation = 0.f;
+	}
+	else if( _fWorldTimeDilation >= 0.05f )
+	{
+		WorldDilation = PlayerDilation <= _fWorldTimeDilation ? PlayerDilation : _fWorldTimeDilation;
+	}
+	Channel.m_fTargetWorldTimeDilation = WorldDilation;
+	if( Abs( _fTransitionDuration ) < 1e-8f || _fTransitionDuration == 0.f )
+	{
+		Channel.m_fPlayerTimeDilationVelocity = 3.4028235e38f;
+		Channel.m_fPlayerTimeDilationVelocity_Input = 3.4028235e38f;
+		Channel.m_fWorldTimeDilationVelocity = 3.4028235e38f;
+		Channel.m_fEffectIntensityVelocity = 3.4028235e38f;
+	}
+	else
+	{
+		const FLOAT InvDuration = 1.f / _fTransitionDuration;
+		Channel.m_fWorldTimeDilationVelocity = ( WorldDilation - Channel.m_fCurrentWorldTimeDilation ) * InvDuration;
+		Channel.m_fPlayerTimeDilationVelocity = ( PlayerDilation - Channel.m_fCurrentPlayerTimeDilation ) * InvDuration;
+		Channel.m_fPlayerTimeDilationVelocity_Input = ( InputDilation - Channel.m_fCurrentPlayerTimeDilation_Input ) * InvDuration;
+		Channel.m_fEffectIntensityVelocity = ( Channel.m_fTargetEffectIntensity - Channel.m_fCurrentEffectIntensity ) * InvDuration;
+	}
+	JFDIAG( "BendTime channel %d world %.3f player %.3f input %.3f over %.2f s effect %d -> targets world %.3f player %.3f input %.3f (current %.3f/%.3f/%.3f, max %.3f)",
+		(INT)_Channel, _fWorldTimeDilation, _fPlayerTimeDilation, _fPlayerTimeDilation_Input, _fTransitionDuration, (INT)_Effect, WorldDilation, PlayerDilation, InputDilation,
+		Channel.m_fCurrentWorldTimeDilation, Channel.m_fCurrentPlayerTimeDilation, Channel.m_fCurrentPlayerTimeDilation_Input, Channel.m_fMaxDilation );
+}
+
+// one channel value moved by its velocity and stopped on its target (FLT_MAX: on it at once)
+static void DisStepBendTimeValue( FLOAT& _rfCurrent, FLOAT _fTarget, FLOAT& _rfVelocity, FLOAT _fDeltaSeconds )
+{
+	if( _rfVelocity == 3.4028235e38f )
+	{
+		_rfCurrent = _fTarget;
+		return;
+	}
+	const FLOAT Previous = _rfCurrent;
+	_rfCurrent = _rfVelocity * _fDeltaSeconds + Previous;
+	if( ( _fTarget - _rfCurrent ) * ( _fTarget - Previous ) <= 0.f )
+	{
+		_rfCurrent = _fTarget;
+		_rfVelocity = 3.4028235e38f;
+	}
+}
+
+/**
+ * DISHONORED(port, partial): agent JF. 2013 rva 0x5fcbc0 (2012 0x642db0, 1304 B both). Every channel's four values move toward
+ * their targets; the highest intensity per effect type is kept; the channels then combine by product into the player, input and
+ * world dilations - a channel that always affects the player / the world multiplies in regardless, the first exclusive channel
+ * (m_bExclusive) multiplies in on its own and silences every plain channel, plain channels multiply in otherwise. The result is the
+ * game info's current dilations, recorded in the 120-entry track, and the bend-time power's real seconds advance by its share.
+ * DISHONORED(deviation), named: the world's TimeDilation is NOT set to the player dilation - this tree's engine has no
+ * out-of-bend-time tick for what retail keeps at real time (m_bAlwaysOutOfBendTime: the game info itself, the HUD, the conversation
+ * manager), so a 0.05 world here would also freeze the unbend that ends the choice. Kismet (USequence::ExecuteActiveOps) and the
+ * audio time-dilation RTPC read the current dilations as retail. Not ported: TickBendTimeParticleEffects (2012 0x642c90), the
+ * Epp_BendTime start / stop on UDisPostProcessManager, and the bend-time power start / stop game events (types 11 / 12, which need
+ * the unported IsBendTimeOn virtual).
+ */
+void ADishonoredGameInfo::TickBendTime( FLOAT _fDeltaSeconds )
+{
+	static UBOOL bChannelsLogged = FALSE;
+	if( DisJFDiagEnabled() && !bChannelsLogged )
+	{
+		bChannelsLogged = TRUE;
+		for( INT ChannelIndex = 0; ChannelIndex < BTC_MAX; ChannelIndex++ )
+		{
+			const FBendTimeChannelInfo& Channel = m_BendTimeInfo[ChannelIndex];
+			JFDIAG( "bend channel %d: world %.3f->%.3f v %g, player %.3f->%.3f v %g, input %.3f->%.3f, max %.3f, exclusive %d always world %d player %d power %d",
+				ChannelIndex, Channel.m_fCurrentWorldTimeDilation, Channel.m_fTargetWorldTimeDilation, Channel.m_fWorldTimeDilationVelocity, Channel.m_fCurrentPlayerTimeDilation,
+				Channel.m_fTargetPlayerTimeDilation, Channel.m_fPlayerTimeDilationVelocity, Channel.m_fCurrentPlayerTimeDilation_Input, Channel.m_fTargetPlayerTimeDilation_Input,
+				Channel.m_fMaxDilation, (INT)Channel.m_bExclusive, (INT)Channel.m_bAlwaysAffectWorld, (INT)Channel.m_bAlwaysAffectPlayer, (INT)Channel.m_bAffectsBendTimePower );
+		}
+	}
+	m_fPreviousPlayerTimeDilation = m_fCurrentPlayerTimeDilation;
+	m_fPreviousWorldTimeDilation = m_fCurrentWorldTimeDilation;
+	m_fBendTimeEffectIntensity[0] = 0.f;
+	m_fBendTimeEffectIntensity[1] = 0.f;
+	m_fBendTimeEffectIntensity[2] = 0.f;
+	FLOAT PlayerAlways = 1.f, PlayerAlways_Input = 1.f, WorldAlways = 1.f, PowerDeltaAlways = 1.f;
+	FLOAT PlayerExclusive = 1.f, PlayerExclusive_Input = 1.f, WorldExclusive = 1.f, PowerDeltaExclusive = 1.f;
+	FLOAT PlayerPlain = 1.f, PlayerPlain_Input = 1.f, WorldPlain = 1.f, PowerDeltaPlain = 1.f;
+	UBOOL bExclusiveFound = FALSE;
+	for( INT ChannelIndex = 0; ChannelIndex < BTC_MAX; ChannelIndex++ )
+	{
+		FBendTimeChannelInfo& Channel = m_BendTimeInfo[ChannelIndex];
+		DisStepBendTimeValue( Channel.m_fCurrentPlayerTimeDilation, Channel.m_fTargetPlayerTimeDilation, Channel.m_fPlayerTimeDilationVelocity, _fDeltaSeconds );
+		DisStepBendTimeValue( Channel.m_fCurrentPlayerTimeDilation_Input, Channel.m_fTargetPlayerTimeDilation_Input, Channel.m_fPlayerTimeDilationVelocity_Input, _fDeltaSeconds );
+		DisStepBendTimeValue( Channel.m_fCurrentWorldTimeDilation, Channel.m_fTargetWorldTimeDilation, Channel.m_fWorldTimeDilationVelocity, _fDeltaSeconds );
+		DisStepBendTimeValue( Channel.m_fCurrentEffectIntensity, Channel.m_fTargetEffectIntensity, Channel.m_fEffectIntensityVelocity, _fDeltaSeconds );
+		FLOAT& Intensity = m_fBendTimeEffectIntensity[Channel.m_EffectType];
+		Intensity = Max( Intensity, Channel.m_fCurrentEffectIntensity );
+		const UBOOL bExclusiveHere = Channel.m_bExclusive && !bExclusiveFound;
+		UBOOL bTookExclusive = FALSE;
+		if( Channel.m_bAlwaysAffectPlayer )
+		{
+			PlayerAlways *= Channel.m_fCurrentPlayerTimeDilation;
+			PlayerAlways_Input *= Channel.m_fCurrentPlayerTimeDilation_Input;
+		}
+		else if( bExclusiveHere )
+		{
+			PlayerExclusive *= Channel.m_fCurrentPlayerTimeDilation;
+			PlayerExclusive_Input *= Channel.m_fCurrentPlayerTimeDilation_Input;
+			bTookExclusive = TRUE;
+		}
+		else
+		{
+			PlayerPlain *= Channel.m_fCurrentPlayerTimeDilation;
+			PlayerPlain_Input *= Channel.m_fCurrentPlayerTimeDilation_Input;
+		}
+		FLOAT& World = Channel.m_bAlwaysAffectWorld ? WorldAlways : ( bExclusiveHere ? WorldExclusive : WorldPlain );
+		FLOAT& PowerDelta = Channel.m_bAlwaysAffectWorld ? PowerDeltaAlways : ( bExclusiveHere ? PowerDeltaExclusive : PowerDeltaPlain );
+		World *= Channel.m_fCurrentWorldTimeDilation;
+		if( Channel.m_bAffectsBendTimePower )
+		{
+			PowerDelta *= Channel.m_fCurrentWorldTimeDilation;
+		}
+		if( bTookExclusive )
+		{
+			bExclusiveFound = TRUE;
+		}
+	}
+	if( bExclusiveFound )
+	{
+		PlayerPlain = 1.f;
+		PlayerPlain_Input = 1.f;
+		WorldPlain = 1.f;
+		PowerDeltaPlain = 1.f;
+	}
+	m_fCurrentPlayerTimeDilation = PlayerPlain * PlayerExclusive * PlayerAlways;
+	m_fCurrentPlayerTimeDilation_Input = PlayerPlain_Input * PlayerExclusive_Input * PlayerAlways_Input;
+	m_fCurrentWorldTimeDilation = WorldPlain * WorldExclusive * WorldAlways;
+	FBendTimeTrack& Track = m_TimeDilationTrack[m_TimeDilationTrackPos];
+	Track.m_fPlayerDilation = m_fCurrentPlayerTimeDilation;
+	Track.m_fPlayerDilation_Input = m_fCurrentPlayerTimeDilation_Input;
+	Track.m_fWorldDilation = m_fCurrentWorldTimeDilation;
+	Track.m_fEffectIntensity[1] = m_fBendTimeEffectIntensity[1];
+	Track.m_fEffectIntensity[2] = m_fBendTimeEffectIntensity[2];
+	m_TimeDilationTrackPos = ( m_TimeDilationTrackPos + 1 ) % 120;
+	m_fBendTimePowerRealTimeSeconds += PowerDeltaPlain * PowerDeltaExclusive * PowerDeltaAlways * _fDeltaSeconds;
+	if( m_fCurrentWorldTimeDilation != m_fPreviousWorldTimeDilation || m_fCurrentPlayerTimeDilation != m_fPreviousPlayerTimeDilation )
+	{
+		JFDIAG( "TickBendTime world %.3f player %.3f input %.3f (channel 3 world %.3f player %.3f)", m_fCurrentWorldTimeDilation, m_fCurrentPlayerTimeDilation,
+			m_fCurrentPlayerTimeDilation_Input, m_BendTimeInfo[BTC_PlayerMasterAction].m_fCurrentWorldTimeDilation, m_BendTimeInfo[BTC_PlayerMasterAction].m_fCurrentPlayerTimeDilation );
+	}
 }

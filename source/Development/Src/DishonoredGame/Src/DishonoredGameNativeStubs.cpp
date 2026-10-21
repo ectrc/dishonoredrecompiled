@@ -1250,14 +1250,6 @@ void UDishonoredDebugMenu::execHideMenu( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredDebugMenu, execHideMenu);
 }
-void UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip_Released( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredPlayerInput, execDis_PlayerChoice_RequestSkip_Released);
-}
-void UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredPlayerInput, execDis_PlayerChoice_RequestSkip);
-}
 void UDisBehaviorCombatMelee::execRequestStateExitCallback_FindShootingPosition( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatMelee, execRequestStateExitCallback_FindShootingPosition);
@@ -1489,10 +1481,6 @@ void UDisSeqVar_PlayerPawn::execGetObjectValue( FFrame& Stack, RESULT_DECL )
 void UDisGFxMoviePlayerBase::execOnFocusLost( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerBase, execOnFocusLost);
-}
-void UDisGFxMoviePlayerHUD::execOnPlayerChoiceConfirm( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerHUD, execOnPlayerChoiceConfirm);
 }
 void UDisGFxMoviePlayerMenuBase::execDisplayStorageDeviceSelection( FFrame& Stack, RESULT_DECL )
 {

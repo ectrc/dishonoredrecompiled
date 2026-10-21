@@ -600,3 +600,62 @@ void ADishonoredPlayerController::execProcessViewRotation( FFrame& Stack, RESULT
 	P_FINISH;
 	ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
 }
+
+// DISHONORED(port): agent JF. 2013 0x6a0e80 (55 B, unnamed, new in 2013): a track whose weight has not reached 1
+UBOOL FDisPlayerViewTarget::IsBlending() const
+{
+	return IsTracking() && Abs( m_fCurWeight - 1.f ) >= 0.0001f;
+}
+
+/**
+ * DISHONORED(port): agent JF. 2013 0x6a7750 (279 B, unnamed, new in 2013): whether the yaw or pitch target tracks anything, and
+ * whether the track with that id is one of them; _pbBlending reports it still blending in, or, for a zooming track (flag 0x100),
+ * the camera not yet at its target FOV.
+ */
+UBOOL ADishonoredPlayerController::IsTrackingTarget( INT _TrackID, UBOOL* _pbBlending ) const
+{
+	UBOOL bTracking = m_ViewTracking.m_ViewYawTarget.IsTracking() || m_ViewTracking.m_ViewPitchTarget.IsTracking();
+	const ADishonoredPlayerCamera* Camera = Cast<ADishonoredPlayerCamera>( PlayerCamera );
+	if( _pbBlending )
+	{
+		*_pbBlending = FALSE;
+	}
+	if( !bTracking )
+	{
+		return FALSE;
+	}
+	const FDisPlayerViewTarget& Pitch = m_ViewTracking.m_ViewPitchTarget;
+	if( Pitch.m_TrackID == _TrackID )
+	{
+		bTracking = TRUE;
+		if( _pbBlending )
+		{
+			if( Pitch.IsBlending() )
+			{
+				*_pbBlending = TRUE;
+			}
+			else if( Camera && ( Pitch.m_Flags & 0x100 ) )
+			{
+				*_pbBlending = !Camera->IsAtTargetFOV();
+			}
+		}
+	}
+	const FDisPlayerViewTarget& Yaw = m_ViewTracking.m_ViewYawTarget;
+	if( Yaw.m_TrackID == _TrackID )
+	{
+		bTracking = TRUE;
+		if( _pbBlending )
+		{
+			if( Yaw.IsBlending() )
+			{
+				*_pbBlending = TRUE;
+				return TRUE;
+			}
+			if( Camera && ( Yaw.m_Flags & 0x100 ) )
+			{
+				*_pbBlending = !Camera->IsAtTargetFOV();
+			}
+		}
+	}
+	return bTracking;
+}
