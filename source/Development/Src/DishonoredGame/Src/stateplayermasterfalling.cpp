@@ -15,14 +15,17 @@
 	agent IF (PHASE23 IF): UStatePlayerMasterFalling. ADishonoredPlayerPawn::setPhysics requests it for PHYS_Falling (a step
 	off a ledge) and the jump demands it at the top of its rise; landing (setPhysics PHYS_Walking) requests the walk state. The 2013
 	bodies are ported (rvas in Inc/CppText/UStatePlayerMasterFalling.h).
-	DISHONORED(bringup), named and not called inside: the projectiles' cancel, the camera bump smoother's weight, the longest-fall
+	DISHONORED(bringup), named and not called inside: the projectiles' cancel, the longest-fall
 	statistic (ADishonoredPlayerPawn::SetStatValueIfGreater, 2013 0x6b9980, ePlayerStat_LongestDistanceFallen), the 2013 game events
 	40 / 41 (start and end of a fall, through FArkGameEventDispatcher, a skeleton). UpdateWalkNavAnimState is agent IA's port (the crouch FOV target follows a sneak).
+	agent JG (PHASE24 JG): the camera bump smoother faded out over 0.1 s for the fall and back to its default weight when it ends
+	(2013 0x6759f0 / 0x663110).
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
 #include "stateplayermasterparams.h"
 #include "ifdiag.h"
+#include "jgdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkIF_UStatePlayerMasterFalling()
@@ -51,7 +54,12 @@ void UStatePlayerMasterFalling::OnEnterState( UDishonoredNativeState* LastState 
 	{
 		IFDIAG_ONCE( TEXT("UStatePlayerMasterFalling::OnEnterState: UDisGlobalProjectileManager::CancelActiveProjectiles is not ported") );
 	}
-	IFDIAG_ONCE( TEXT("UStatePlayerMasterFalling: the camera bump smoother weight (GetCamera_BumpSmoother / SetWeight) is not ported") );
+	ADishonoredPlayerCamera* Camera = m_pPlayerPawn->GetDishonoredCamera();
+	if( Camera )
+	{
+		Camera->GetCamera_BumpSmoother()->SetWeight( 0.f, 0.1f, FALSE );
+		DisJGNoteSmootherWeight( m_pPlayerPawn, TEXT("falling enter"), 0.f, 0.1f );
+	}
 	m_pPlayerPawn->EnableControllerInput( 0x7FFFF, TRUE, DisInputMaskLevel_MasterAction );
 	m_pPlayerPawn->EnableControllerInput( 0x200, FALSE, DisInputMaskLevel_MasterAction );
 	m_fFallTime = 0.f;
@@ -75,6 +83,13 @@ void UStatePlayerMasterFalling::OnEnterState( UDishonoredNativeState* LastState 
 void UStatePlayerMasterFalling::OnExitState( UDishonoredNativeState* NextState )
 {
 	m_bBlendingFromLastState = FALSE;
+	ADishonoredPlayerCamera* Camera = m_pPlayerPawn->GetDishonoredCamera();
+	if( Camera )
+	{
+		UDishonoredCamera_BumpSmoother* Smoother = Camera->GetCamera_BumpSmoother();
+		Smoother->SetWeight( Smoother->m_fDefaultWeight, 0.1f, FALSE );
+		DisJGNoteSmootherWeight( m_pPlayerPawn, TEXT("falling exit"), Smoother->m_fDefaultWeight, 0.1f );
+	}
 	m_pPlayerPawn->EnableControllerInput( 0x7FFFF, TRUE, DisInputMaskLevel_MasterAction );
 	m_pPlayerPawn->EnableCoreCamInfluence( UDishonoredCamera_PlayerControl::StaticClass(), -1.f );
 	m_pPlayerPawn->m_bLettingGoOfClimbable = FALSE;

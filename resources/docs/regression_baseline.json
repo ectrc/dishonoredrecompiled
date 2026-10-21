@@ -129,13 +129,13 @@
   },
   "inputtest_moved": {
     "op": ">=",
-    "value": 800.0,
-    "note": "2D distance the pawn walks; 1029.6 measured at HEAD (1030 in PHASE7.md)"
+    "value": 700.0,
+    "note": "Wave 27 JG: ApplyAttributes makes the player walk at retail Attribute_GroundSpeed 400 (the class default was 500), so the 90 s walk reads ~813; bound lowered from 800. 2D distance the pawn walks; 1029.6 measured at HEAD (1030 in PHASE7.md)"
   },
   "inputtest_peak_speed": {
     "op": ">=",
-    "value": 400.0,
-    "note": "peak 2D speed; 500 in PHASE7.md"
+    "value": 380.0,
+    "note": "Wave 27 JG: retail walk speed is the attribute 400, not 500; bound lowered from 400 so load noise does not flake it. peak 2D speed; 500 in PHASE7.md"
   },
   "physics_actors": {
     "op": ">=",

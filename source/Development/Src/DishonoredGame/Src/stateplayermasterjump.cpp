@@ -26,8 +26,9 @@
 	rising. The 2013 bodies are ported (2013 rvas in Inc/CppText/UStatePlayerMasterJump.h; 2013 reads AreIncomingAttacksAllowed
 	through the vtable and inlines EnableControllerInput where 2012 called them).
 	DISHONORED(bringup), named and not called inside: the active projectiles' cancel (UDisGlobalProjectileManager, as in
-	UStatePlayerMasterBase::OnEnterState), the camera bump smoother's weight (ADishonoredPlayerCamera::GetCamera_BumpSmoother,
-	UDishonoredCameraInfluence::SetWeight), the climbable's collision-restore timer (ADisClimbable::StartCollisionRestoreTimer).
+	UStatePlayerMasterBase::OnEnterState), the climbable's collision-restore timer (ADisClimbable::StartCollisionRestoreTimer).
+	agent JG (PHASE24 JG): the camera bump smoother is faded out over 0.1 s for the flight and back to its default weight on the way
+	out (2013 0x675ee0 / 0x65ffa0, SetWeight 0x6c49a0), so the view follows the pawn up and down instead of smoothing the rise.
 	(UpdateWalkNavAnimState is agent IA's port.) The jump-in actions go through RequestAction, refused while the upper FSM is
 	not initialised (dishonoredplayerpawn_action.cpp).
 -----------------------------------------------------------------------------*/
@@ -35,6 +36,7 @@
 #include "DishonoredGame.h"
 #include "stateplayermasterparams.h"
 #include "ifdiag.h"
+#include "jgdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkIF_UStatePlayerMasterJump()
@@ -105,7 +107,12 @@ void UStatePlayerMasterJump::OnEnterState( UDishonoredNativeState* LastState )
 	UpdateWalkNavAnimState( m_pPlayerPawn, TRUE );
 	m_fStartJumpHeight = m_pPlayerPawn->Location.Z;
 	m_fMaxJumpHeight = 0.f;
-	IFDIAG_ONCE( TEXT("UStatePlayerMasterJump: the camera bump smoother weight (GetCamera_BumpSmoother / SetWeight) is not ported") );
+	ADishonoredPlayerCamera* Camera = m_pPlayerPawn->GetDishonoredCamera();
+	if( Camera )
+	{
+		Camera->GetCamera_BumpSmoother()->SetWeight( 0.f, 0.1f, FALSE );
+		DisJGNoteSmootherWeight( m_pPlayerPawn, TEXT("jump enter"), 0.f, 0.1f );
+	}
 	m_bJumpingFromChain = m_pPlayerPawn->m_pClimbable != NULL;
 	IFDIAG( TEXT("jump enter: style %d, Velocity.Z %.1f, start Z %.1f"), (INT)m_JumpStyle, m_pPlayerPawn->Velocity.Z, m_fStartJumpHeight );
 	PlayJumpInActions();
@@ -116,6 +123,13 @@ void UStatePlayerMasterJump::OnEnterState( UDishonoredNativeState* LastState )
 void UStatePlayerMasterJump::OnExitState( UDishonoredNativeState* NextState )
 {
 	m_bBlendingFromLastState = FALSE;
+	ADishonoredPlayerCamera* Camera = m_pPlayerPawn->GetDishonoredCamera();
+	if( Camera )
+	{
+		UDishonoredCamera_BumpSmoother* Smoother = Camera->GetCamera_BumpSmoother();
+		Smoother->SetWeight( Smoother->m_fDefaultWeight, 0.1f, FALSE );
+		DisJGNoteSmootherWeight( m_pPlayerPawn, TEXT("jump exit"), Smoother->m_fDefaultWeight, 0.1f );
+	}
 	m_pPlayerPawn->EnableControllerInput( 0x8200, TRUE, DisInputMaskLevel_MasterAction );
 	if( m_bJumpingFromChain && m_pPlayerPawn->m_pClimbable )
 	{

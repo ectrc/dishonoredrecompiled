@@ -681,9 +681,8 @@ UBOOL ADishonoredPawn::IsRetargeting() const
 // m_bWaterVolumesRelevant, Tick_Health, Tick_Attributes when m_bAllowTickPawnMinorSubsystems, Tick_Inventory, Tick_Combat when
 // m_bAllowTickPawnMinorSubsystems, Tick_Body when m_bAllowTickBody, then m_bCachedAttnParamsValid cleared and Tick_Stealth.
 // DISHONORED(bringup): Tick_Begin (player 0x715a00, agent GF), Tick_Water (0x7b60e0 / player 0x708ef0, agent IF),
-// Tick_Inventory (0x7afac0 / NPC 0x7be2c0, agent GJ) and Tick_Body are ported. Tick_Health (0x7aca40), Tick_Attributes (0x78e880 -
-// deliberately out, see dishonoredpawn_attributes.cpp: ApplyAttributes would overwrite the movement values the walking path
-// depends on), Tick_Combat (0x7aa810 / player 0x716c80) and Tick_Stealth (0x7aaf10) are named here and not called; the
+// Tick_Inventory (0x7afac0 / NPC 0x7be2c0, agent GJ), Tick_Attributes (0x78e880 / 2013 0x749780, agent JG) and Tick_Body are ported.
+// Tick_Health (0x7aca40), Tick_Combat (0x7aa810 / player 0x716c80) and Tick_Stealth (0x7aaf10) are named here and not called; the
 // attention-parameter cache bit is cleared as retail does.
 UBOOL ADishonoredPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 {
@@ -696,6 +695,11 @@ UBOOL ADishonoredPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 		if( m_bAllowTickPawnMinorSubsystems && m_bWaterVolumesRelevant )
 		{
 			Tick_Water( DeltaTime, TickType );
+		}
+		// agent JG (PHASE24 JG): the fourth phase, gated as retail gates it
+		if( m_bAllowTickPawnMinorSubsystems )
+		{
+			Tick_Attributes( DeltaTime, TickType );
 		}
 		// agent GJ (PHASE20 GJ): the fifth phase (0x790c10 +0x8b), unconditional in retail
 		Tick_Inventory( DeltaTime, TickType );

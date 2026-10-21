@@ -287,6 +287,7 @@ struct FDisSpringPoint
     {
         appMemzero(this, sizeof(FDisSpringPoint));
     }
+#include "CppText/FDisSpringPoint.h"
 };
 
 // DishonoredGame.DishonoredCameraInfluenceGroup.DishonoredViewTarget: retail SDK size 124 (2012 PDB 124)
@@ -557,6 +558,7 @@ public:
     //## END PROPS DishonoredCamera_PhysicalReact
 
     DECLARE_CLASS(UDishonoredCamera_PhysicalReact,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDishonoredCamera_PhysicalReact.h"
 };
 
 // DishonoredGame.DishonoredCamera_HitReact: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)

@@ -1,0 +1,26 @@
+Function,rva_2012,rva_2013,unit,status,note
+FDisSpringPoint::StorePreviousPhysResult,0x721b90,inlined,dishonoredcamera_physicalreact.cpp,ported,
+FDisSpringPoint::IsSpringing,0x725ce0,0x6c09a0,dishonoredcamera_physicalreact.cpp,ported,byte-identical in both
+FDisSpringPoint::UpdateSpringPos,0x725d40,0x6c0a00,dishonoredcamera_physicalreact.cpp,ported,byte-identical in both
+FDisSpringPoint::ApplyMaxConstraint,0x725f90,unmatched,dishonoredcamera_physicalreact.cpp,ported,2012 body (no 2013 caller found)
+FDisSpringPoint::GetPos_Interpolated,0x7260e0,inlined,dishonoredcamera_physicalreact.cpp,ported,
+UDishonoredCamera_PhysicalReact::OnTeleport,0x721bc0,0x6c0900,dishonoredcamera_physicalreact.cpp,ported,OnActivate(NULL); 2013 body shared with the bump smoother's slot
+UDishonoredCamera_PhysicalReact::PostBeginPlay_Derived,0x726140,0x6c0c50,dishonoredcamera_physicalreact.cpp,ported,pivot offset added to both bound positions
+UDishonoredCamera_PhysicalReact::OnActivate_Derived,0x7261e0,0x6c0cf0,dishonoredcamera_physicalreact.cpp,ported,
+UDishonoredCamera_PhysicalReact::OnCameraCollided_Derived,0x726310,0x6c0e10,dishonoredcamera_physicalreact.cpp,ported,retail's strength-dot test kept for both points; caller HandleCollision 0x709e60 unported (never reached)
+UDishonoredCamera_PhysicalReact::GatherInfluence_Start,0x734b20,0x6d49b0,dishonoredcamera_physicalreact.cpp,ported,
+UDishonoredCamera_PhysicalReact::GatherInfluence_FixedTimeStep,0x726430,0x6c0f30,dishonoredcamera_physicalreact.cpp,ported,stability point kept 100 uu from strength
+UDishonoredCamera_PhysicalReact::GatherInfluence_Derived,0x7265e0,0x6c5be0,dishonoredcamera_physicalreact.cpp,ported,2013 body
+UDishonoredCamera_PhysicalReact::OnImpact,0x726a20,0x6c10f0,dishonoredcamera_physicalreact.cpp,ported,
+UDishonoredCameraInfluence::OnCameraCollided_Derived (slot),-,-,CppText/UDishonoredCameraInfluence.h,named,the base's unnamed empty vtable slot named
+UStatePlayerMasterJump::OnEnterState (bump smoother),0x6a79a0,0x675ee0,stateplayermasterjump.cpp,ported,SetWeight(0 0.1)
+UStatePlayerMasterJump::OnExitState (bump smoother),0x693020,0x65ffa0,stateplayermasterjump.cpp,ported,SetWeight(m_fDefaultWeight 0.1)
+UStatePlayerMasterFalling::OnEnterState (bump smoother),0x6a76d0,0x6759f0,stateplayermasterfalling.cpp,ported,SetWeight(0 0.1)
+UStatePlayerMasterFalling::OnExitState (bump smoother),0x696260,0x663110,stateplayermasterfalling.cpp,ported,the brief's "Landed (0xa63110)" is the Falling exit
+ADishonoredPlayerPawn::Landed_Native (camera/contact type/Kismet),0x70eff0,0x6b53a0,dishonoredplayerpawn.cpp,partial,OnImpact + ClearFOVTarget(1) + contact type + m_fTimeOfLastLandedContact + DisDLC06SeqEvent_Landed; floor trace + ApplyContact named; the big land's vtable+1144(0) call before RequestAction still not written (IM)
+UDishonoredContactSystem::ApplyContact,0x8410f0,0x7e61a0,dishonoredcontactsystem.cpp,not ported,contact system ~7.6 KB with lists/subs/materials - not one build; see agentJG.md
+ADishonoredPawn::Tick_Attributes,0x78e880,0x749780,dishonoredpawn_attributes.cpp,ported,called from ADishonoredPawn::Tick (4th phase gated on m_bAllowTickPawnMinorSubsystems)
+ADishonoredPawn::ApplyAttributes,0x794860,0x756880,dishonoredpawn_attributes.cpp,ported,2013 eleven ammo slots; missing slot skipped (written guard)
+ADishonoredPlayerPawn::ApplyAttributes,0x701cf0,0x6a7910,dishonoredplayerpawn.cpp,ported,mana max / view pitch / air control / spring razor
+ADishonoredPlayerPawn::performPhysics,0x6fd0e0,0x6a1670,dishonoredplayerpawn.cpp,ported,m_NetExternalVelocity
+-jgdiag,-,-,jgdiag.cpp/.h,written,measurement only

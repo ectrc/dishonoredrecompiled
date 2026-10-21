@@ -251,3 +251,8 @@ public:
 protected:
 	virtual FLOAT MaxSpeedModifier_Derived() { return 1.f; }
 public:
+// agent JG (PHASE24 JG): the attribute tick phase, Tick_Attributes 2012 0x78e880 / 2013 0x749780 (41 B: UDisAttributes::TickAttributes,
+// then ApplyAttributes), and ApplyAttributes 2012 0x794860 / 2013 0x756880 (678 / 950 B). Bodies in dishonoredpawn_attributes.cpp.
+public:
+	virtual void Tick_Attributes( FLOAT DeltaTime, ELevelTick TickType );
+	virtual void ApplyAttributes();

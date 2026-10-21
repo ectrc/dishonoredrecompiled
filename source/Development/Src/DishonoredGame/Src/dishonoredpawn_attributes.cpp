@@ -14,6 +14,7 @@
 
 #include "DishonoredGame.h"
 #include "ifdiag.h"
+#include "jgdiag.h"
 
 // ---- agent BF ports (PHASE8 BF): the pawn's half of the attributes system ----
 
@@ -73,16 +74,54 @@ void ADishonoredPawn::OnDifficultyChange()
 	}
 }
 
-// DISHONORED(port): ADishonoredPawn::Tick_Attributes (2013 rva 0x748880 region, 2012 0x78e880) is
-// m_pAttributes->TickAttributes( DeltaTime ) followed by ApplyAttributes, and ADishonoredPawn::Tick (2013 rva 0x750720)
-// is what calls it, gated on the pawn's bit 0x80000000 @1288. Tick is not ported, so neither is Tick_Attributes: nothing
-// adds a timed modifier yet either (UDisTweaks_Upgrade::ApplyAttributes 0x64f460 and the two Kismet actions are the only
-// callers of AddAttributeModifier and none of them is ported), so no modifier can need ageing.
-// DISHONORED(port): ApplyAttributes (2012 rva 0x794860) writes GroundSpeed / WaterSpeed / AccelRate from
-// Attribute_GroundSpeed[CarryingCorpse] / Attribute_WaterSpeed / Attribute_AccelerationRate and the eight ammo capacities
-// into m_pInventory->m_AmmoInfo, then CrouchHeight / MaxFallSpeed / WalkableFloorZ from the body tweaks. It needs
-// ADishonoredPawn::IsCarryingCorpse, which does not exist, and it would overwrite the movement values the walking path
-// depends on the moment Tick is ported - so it is deliberately left out and named here instead.
+// agent JG (PHASE24 JG): 2012 0x78e880 / 2013 0x749780 (41 B), the fourth tick phase: the timed modifiers age, then the attributes are
+// applied.
+void ADishonoredPawn::Tick_Attributes( FLOAT DeltaTime, ELevelTick TickType )
+{
+	GetAttributes().TickAttributes( DeltaTime );
+	ApplyAttributes();
+}
+
+/**
+ * agent JG (PHASE24 JG): 2012 0x794860 / 2013 0x756880 (678 / 950 B; 2013 adds four ammo kinds). Every tick: the ground speed (the
+ * corpse-carrying one while carrying), water speed and acceleration from the attributes, the ammo capacities (2013's eleven, the
+ * spring razor is the player's) into the inventory, then the crouch height, maximum fall speed and walkable floor from the pawn
+ * tweaks. The attribute names are retail's DNAME_Attribute_* globals, read back from their 2013 FName initialisers (0x9e5d96..0x9e6dee).
+ * DISHONORED(written): an ammo slot the inventory does not have is skipped (retail checks the index and stops; GetAttributes builds
+ * the attribute set on first use, see above).
+ */
+void ADishonoredPawn::ApplyAttributes()
+{
+	static const FName NAME_DisGroundSpeed( TEXT("Attribute_GroundSpeed") );
+	static const FName NAME_DisGroundSpeedCarryingCorpse( TEXT("Attribute_GroundSpeedCarryingCorpse") );
+	static const FName NAME_DisWaterSpeed( TEXT("Attribute_WaterSpeed") );
+	static const FName NAME_DisAccelerationRate( TEXT("Attribute_AccelerationRate") );
+	static const FName NAME_DisAmmoCapacity[12] =
+	{
+		FName( TEXT("Attribute_BulletCapacity") ), FName( TEXT("Attribute_ExplosiveBulletCapacity") ), FName( TEXT("Attribute_ArrowCapacity") ),
+		FName( TEXT("Attribute_SleepArrowCapacity") ), FName( TEXT("Attribute_FlareArrowCapacity") ), FName( NAME_None ),
+		FName( TEXT("Attribute_GrenadeCapacity") ), FName( TEXT("Attribute_StickyGrenadeCapacity") ), FName( TEXT("Attribute_ExplosiveArrowCapacity") ),
+		FName( TEXT("Attribute_ArcMineCapacity") ), FName( TEXT("Attribute_FlashSmokeCapacity") ), FName( TEXT("Attribute_ArcMineStunCapacity") ),
+	};
+	UDisTweaks_Pawn* Tweaks = GetPawnTweaks();
+	GroundSpeed = GetAttributeValue( IsCarryingCorpse() ? NAME_DisGroundSpeedCarryingCorpse : NAME_DisGroundSpeed );
+	WaterSpeed = GetAttributeValue( NAME_DisWaterSpeed );
+	AccelRate = GetAttributeValue( NAME_DisAccelerationRate );
+	if( m_pInventory )
+	{
+		for( INT Slot = 0; Slot < ARRAY_COUNT(NAME_DisAmmoCapacity); Slot++ )
+		{
+			if( NAME_DisAmmoCapacity[Slot] != NAME_None && m_pInventory->m_AmmoInfo.IsValidIndex( Slot ) )
+			{
+				m_pInventory->m_AmmoInfo(Slot).m_AmmoCapacity = (INT)GetAttributeValue( NAME_DisAmmoCapacity[Slot] );
+			}
+		}
+	}
+	CrouchHeight = Tweaks->m_fCrouchHeight;
+	MaxFallSpeed = Tweaks->m_fMaxFallSpeed;
+	WalkableFloorZ = appCos( Tweaks->m_fMaxWalkableFloorInDegrees * 0.017453292f );
+	DisJGNoteAttributes( this );
+}
 
 /**
  * DISHONORED(port): agent IF. 2012 rva 0x794b10 / 2013 0x756c40 (441 B both), the APawn virtual CalcVelocity scales the maximum

@@ -2436,6 +2436,8 @@ extern void DishonoredLinkIP_DisAnimNodeBlendByPhysicalCondition();
 extern void DishonoredLinkIP_DishonoredAnimNodeBlendBySpeed();
 extern void DishonoredLinkIP_DishonoredCameraBumpSmoother();
 extern void DishonoredLinkIS_DisAnimNodeBlendDirectional();
+extern void DishonoredLinkJG_Diag();
+extern void DishonoredLinkJG_DishonoredCameraPhysicalReact();
 extern void DishonoredLinkUDisAIBrainProcessAttention();
 extern void DishonoredLinkUDisAISubProcessFleetingGaze();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
@@ -2556,6 +2558,8 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkIP_DishonoredAnimNodeBlendBySpeed,
 	&DishonoredLinkIP_DishonoredCameraBumpSmoother,
 	&DishonoredLinkIS_DisAnimNodeBlendDirectional,
+	&DishonoredLinkJG_Diag,
+	&DishonoredLinkJG_DishonoredCameraPhysicalReact,
 	&DishonoredLinkUDisAIBrainProcessAttention,
 	&DishonoredLinkUDisAISubProcessFleetingGaze,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,

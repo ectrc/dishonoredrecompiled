@@ -271,3 +271,8 @@ public:
 // agent IP (PHASE23 IP): GetAimStability 2012 0x7032f0 / 2013 0x6a9030 (248 B), the out-of-breath weight (body in dishonoredplayerpawn.cpp).
 public:
 	FLOAT GetAimStability() const;
+// agent JG (PHASE24 JG): ApplyAttributes 2012 0x701cf0 / 2013 0x6a7910 (258 B both), performPhysics 2012 0x6fd0e0 / 2013 0x6a1670 (148 B
+// both). Bodies in dishonoredplayerpawn.cpp.
+public:
+	virtual void ApplyAttributes();
+	virtual void performPhysics( FLOAT DeltaSeconds );

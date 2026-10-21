@@ -175,6 +175,8 @@
 #include "ifdiag.h"
 #include "imdiag.h"
 #include "igdiag.h"
+#include "jgdiag.h"
+#include "dishonoredutilities.h"
 
 ADishonoredPlayerPawn* ADishonoredPlayerPawn::s_pInstance = NULL;
 
@@ -286,14 +288,23 @@ void ADishonoredPlayerPawn::execDisplayDebug_Native( FFrame& Stack, RESULT_DECL 
 // pointers are tested rather than assumed so this stays correct once those packages land.
 // agent IM (PHASE23 IM): 1 and 2 are ported now (2012 0x70eff0 read against 2013 0x6b53a0) - the action base and the upper /
 // left-arm machines exist. 3 (the contact system) and 4 (the camera's physical react) stay named.
+// agent JG (PHASE24 JG): 4 is ported (the physical react's impact with the landing velocity unless the big land's action was requested,
+// ClearFOVTarget(1)), and the 2013 tail: the DisDLC06SeqEvent_Landed Kismet event. Of 3, the contact type (JumpLand_Big / _Stealth /
+// JumpLand) and m_fTimeOfLastLandedContact are ported; DISHONORED(bringup): the floor trace (DisGetPhysicalMaterial,
+// DisConvertCheckResultToImpactInfo, DisGetPawnFeet) and UDishonoredContactSystem::ApplyContact (2013 0x7e61a0) are named - the whole
+// contact system (intersection lists, sub-intersections, physical materials) is unported, so the landing sound does not post. A
+// landing that does not animate the fall goes straight to the camera, as retail (it makes no contact).
 void ADishonoredPlayerPawn::Landed_Native( FVector HitNormal, AActor* FloorActor )
 {
 	if( UDisAttributes::IsCensusEnabled() )
 	{
-		debugf( TEXT("DISHONORED(bringup): disattrib land %s: Velocity %.1f %.1f %.1f, floor %s; contact and camera react unported"),
+		debugf( TEXT("DISHONORED(bringup): disattrib land %s: Velocity %.1f %.1f %.1f, floor %s; contact unported"),
 			*GetName(), Velocity.X, Velocity.Y, Velocity.Z, FloorActor ? *FloorActor->GetName() : TEXT("none") );
 	}
+	ADishonoredPlayerCamera* Camera = GetDishonoredCamera();
 	const FVector WorkingVel = Velocity;
+	UBOOL bBigLandAction = FALSE;
+	UClass* ContactType = NULL;
 	UStatePlayerMasterFalling* FallState = m_pPlayerMasterFSM ? Cast<UStatePlayerMasterFalling>( m_pPlayerMasterFSM->GetLogicalState() ) : NULL;
 	UStatePlayerMasterFalling* FallDefaults = m_pPlayerMasterFSM ? (UStatePlayerMasterFalling*)m_pPlayerMasterFSM->FindState( UStatePlayerMasterFalling::StaticClass() ) : NULL;
 	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( GetTweaks_Derived() );
@@ -309,10 +320,16 @@ void ADishonoredPlayerPawn::Landed_Native( FVector HitNormal, AActor* FloorActor
 		{
 			FStatePlayerMasterAction_Param ActionParam( Actions->m_Action_JumpLandBig );
 			RequestAction( eDisPlayerActionUsage_Fullbody, ActionParam, NULL, FALSE );
+			bBigLandAction = TRUE;
 		}
+		ContactType = UDisContactType_JumpLand_Big::StaticClass();
 		IMDIAG( TEXT("landed: big land (Velocity.Z %.1f below -%.1f)"), WorkingVel.Z, FallDefaults->m_fFall_Stun_Vel );
 	}
-	else if( !DisIPNoLand() && !( FallState && !FallState->ShouldAnimateFalling() ) && !IsHoldingMovableObject() && !IsCarryingCorpse() && m_pPlayerUpperFSM && m_pPlayerLeftArmFSM
+	else if( !( FallState && !FallState->ShouldAnimateFalling() ) )
+	{
+		ContactType = ( FallState && FallState->m_bIsStealthFall ) ? UDisContactType_JumpLand_Stealth::StaticClass() : UDisContactType_JumpLand::StaticClass();
+	}
+	if( ContactType && ContactType != UDisContactType_JumpLand_Big::StaticClass() && !DisIPNoLand() && !IsHoldingMovableObject() && !IsCarryingCorpse() && m_pPlayerUpperFSM && m_pPlayerLeftArmFSM
 		&& !m_pPlayerUpperFSM->IsCurState( UStateSharedActionBase::StaticClass(), FALSE ) && !m_pPlayerMasterFSM->IsCurState( UStateSharedActionBase::StaticClass(), FALSE )
 		&& !m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSlide::StaticClass(), FALSE ) )
 	{
@@ -354,8 +371,27 @@ void ADishonoredPlayerPawn::Landed_Native( FVector HitNormal, AActor* FloorActor
 			}
 		}
 	}
-	IMDIAG_ONCE( TEXT("Landed_Native: the landing contact (UDishonoredContactSystem::ApplyContact) and the camera's physical react are not ported") );
+	if( ContactType )
+	{
+		AWorldInfo* Info = GWorld ? GWorld->GetWorldInfo() : NULL;
+		m_fTimeOfLastLandedContact = Info ? Info->BendTimeSeconds : 0.f;
+		JGDIAG_ONCE( TEXT("Landed_Native: the landing contact (DisGetPhysicalMaterial, UDishonoredContactSystem::ApplyContact) is not ported") );
+	}
+	if( Camera )
+	{
+		if( !bBigLandAction )
+		{
+			UDishonoredCamera_PhysicalReact* React = Camera->GetCamera_PhysicalReact();
+			if( React )
+			{
+				React->OnImpact( WorkingVel );
+			}
+		}
+		Camera->ClearFOVTarget( 1 );
+	}
+	DisJGNoteLanded( this, WorkingVel, ContactType, !bBigLandAction, Camera != NULL );
 	m_Debug_Player.m_LastJumpLandVel = Velocity;
+	DisFireKismetEvent( this, UDisDLC06SeqEvent_Landed::StaticClass(), this, this, TRUE, NULL );
 }
 
 // DISHONORED(written): the generated exec wrapper; ICF folded it onto ADishonoredPawn::execLanded_Native (2013 rva
@@ -366,6 +402,46 @@ void ADishonoredPlayerPawn::execLanded_Native( FFrame& Stack, RESULT_DECL )
 	P_GET_ACTOR(FloorActor);
 	P_FINISH;
 	Landed_Native( HitNormal, FloorActor );
+}
+
+// agent JG (PHASE24 JG): 2012 0x701cf0 / 2013 0x6a7910 (258 B). The pawn's, then the maximum mana from the attribute (the mana kept
+// under it), the view pitch limits from the camera tweaks (degrees to rotator units, truncated), the air control from the tweaks and
+// the spring razor capacity. DISHONORED(written): ammo slot 5 is skipped when the inventory has none (retail checks and stops).
+void ADishonoredPlayerPawn::ApplyAttributes()
+{
+	static const FName NAME_DisManaMax( TEXT("Attribute_ManaMax") );
+	static const FName NAME_DisSpringRazorCapacity( TEXT("Attribute_SpringRazorCapacity") );
+	Super::ApplyAttributes();
+	m_ManaMax = (INT)GetAttributeValue( NAME_DisManaMax );
+	m_Mana = Min( m_ManaMax, m_Mana );
+	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( GetTweaks_Derived() );
+	if( Tweaks == NULL )
+	{
+		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+	}
+	ViewPitchMin = (FLOAT)(INT)( Tweaks->m_pCameraTweaks->m_fMinViewPitch * 182.04445f );
+	ViewPitchMax = (FLOAT)(INT)( Tweaks->m_pCameraTweaks->m_fMaxViewPitch * 182.04445f );
+	AirControl = Tweaks->m_fAirControl;
+	if( m_pInventory && m_pInventory->m_AmmoInfo.IsValidIndex( 5 ) )
+	{
+		m_pInventory->m_AmmoInfo(5).m_AmmoCapacity = (INT)GetAttributeValue( NAME_DisSpringRazorCapacity );
+	}
+	DisJGNoteAttributes( this );
+}
+
+// agent JG (PHASE24 JG): 2012 0x6fd0e0 / 2013 0x6a1670 (148 B). APawn's physics, then - unless the pawn is being deleted - the external
+// velocity gathered this frame is added (not while ghosting) and cleared.
+void ADishonoredPlayerPawn::performPhysics( FLOAT DeltaSeconds )
+{
+	Super::performPhysics( DeltaSeconds );
+	if( !bDeleteMe )
+	{
+		if( !m_Debug_Player.m_bIsGhosting )
+		{
+			Velocity += m_NetExternalVelocity;
+		}
+		m_NetExternalVelocity = FVector( 0.f, 0.f, 0.f );
+	}
 }
 
 // ---- agent EL (PHASE12 EL): the story-flag store ----
@@ -495,6 +571,7 @@ UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	DisGFReportPlayer( this );
 	DisIFReportPlayer( this, DeltaTime );
 	DisIMReport( this, DeltaTime );
+	DisJGReportPlayer( this );
 	return bResult;
 }
 
