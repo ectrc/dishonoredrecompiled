@@ -75,6 +75,18 @@ IMPLEMENT_CLASS(UInterpTrackStretchAnimControl);
 IMPLEMENT_CLASS(UInterpTrackStretchAnimKeyProperties);
 IMPLEMENT_CLASS(UInterpTrackInstStretchAnimControl);
 
+/** -jcdiag (agent JC): every key start on a group actor (where it stands against its stage mark) and every frame of a special
+    root-motion key (the backed-up anim position and the previous / current position handed to MAT_SetAnimPosition). */
+static UBOOL DisJCDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ( appStrfind( appCmdLine(), TEXT("-jcdiag") ) != NULL ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
 /** -fkdiag (agent FK's switch) also prints what this track drives; read once. */
 static UBOOL DisFSStretchDiagEnabled()
 {
@@ -307,6 +319,8 @@ INT UInterpTrackStretchAnimControl::CalcChannelIndex()
 
 // 2012 rva 0x549ac0 (71 B). Retail does not chain to UInterpTrackInst::InitTrackInst (the post-process
 // backup for camera actors); it stores the track and resets the loop state.
+// DISHONORED(port): agent JC. 2013 0x9016e0 (113 B): m_fCurrentAnimPosition is reset too, and a track with
+// m_bSpecialRootMotionExtract puts its group actor in the special root-motion extraction (ADishonoredPawn slot 307).
 void UInterpTrackInstStretchAnimControl::InitTrackInst( UInterpTrack* InTrack )
 {
 	Track = InTrack;
@@ -317,7 +331,23 @@ void UInterpTrackInstStretchAnimControl::InitTrackInst( UInterpTrack* InTrack )
 	LoopStart = 0.f;
 	LoopEnd = 0.f;
 	m_iPreviousKeyIndex = INDEX_NONE;
-	m_ChannelIndex = CastChecked<UInterpTrackStretchAnimControl>( Track )->CalcChannelIndex();
+	m_fCurrentAnimPosition = 0.f;
+	UInterpTrackStretchAnimControl* StretchTrack = CastChecked<UInterpTrackStretchAnimControl>( Track );
+	m_ChannelIndex = StretchTrack->CalcChannelIndex();
+	AActor* Actor = StretchTrack->m_bSpecialRootMotionExtract ? GetGroupActor() : NULL;
+	if( Actor != NULL )
+	{
+		Actor->MAT_SetSpecialRootMotionExtract( TRUE );
+	}
+}
+
+void UInterpTrackInstStretchAnimControl::TermTrackInst( UInterpTrack* InTrack )
+{
+	AActor* Actor = CastChecked<UInterpTrackStretchAnimControl>( Track )->m_bSpecialRootMotionExtract ? GetGroupActor() : NULL;
+	if( Actor != NULL )
+	{
+		Actor->MAT_SetSpecialRootMotionExtract( FALSE );
+	}
 }
 
 // 2012 rva 0x540860 (112 B)
@@ -561,6 +591,20 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 		const FLOAT AnimStartOffset = StretchTrack->GetAnimStartOffset( KeyIndex );
 		Actor->MAT_SetAnimPosition( StretchTrack->SlotName, ChannelIndex, NewAnimSeqName, FLT_MIN, AnimStartOffset, TRUE, FALSE, bEnableRootMotion );
 		m_iPreviousKeyIndex = KeyIndex;
+		if( DisJCDiagEnabled() )
+		{
+			const UInterpGroupInstAI* AIGroupInst = Cast<UInterpGroupInstAI>( GroupInst );
+			const AActor* StageMark = ( AIGroupInst != NULL ) ? AIGroupInst->StageMarkActor : NULL;
+			debugf( TEXT("DISHONORED(bringup): jcdiag keystart %s group '%s' ch %d key %d anim %s rm %d special %d start %.3f matpos %.3f world %.2f | %s at %.1f/%.1f/%.1f yaw %d | mark %s %.1f/%.1f/%.1f yaw %d d %.1f dyaw %.1f"),
+				( Matinee != NULL ) ? *Matinee->GetName() : TEXT("?"), *GroupInst->Group->GroupName.ToString(), ChannelIndex, KeyIndex,
+				*NewAnimSeqName.ToString(), (INT)RootMotionMode, (INT)bSpecialRootMotion, AnimStartOffset, NewPosition, GWorld->GetTimeSeconds(),
+				*Actor->GetName(), Actor->Location.X, Actor->Location.Y, Actor->Location.Z, Actor->Rotation.Yaw & 65535,
+				( StageMark != NULL ) ? *StageMark->GetName() : TEXT("none"),
+				( StageMark != NULL ) ? StageMark->Location.X : 0.f, ( StageMark != NULL ) ? StageMark->Location.Y : 0.f, ( StageMark != NULL ) ? StageMark->Location.Z : 0.f,
+				( StageMark != NULL ) ? ( StageMark->Rotation.Yaw & 65535 ) : 0,
+				( StageMark != NULL ) ? ( Actor->Location - StageMark->Location ).Size2D() : -1.f,
+				( StageMark != NULL ) ? Abs( (FLOAT)( (SWORD)( Actor->Rotation.Yaw - StageMark->Rotation.Yaw ) ) ) * 360.f / 65536.f : -1.f );
+		}
 		if( DisFSStretchDiagEnabled() )
 		{
 			debugf( TEXT("DISHONORED(bringup): fkdiag stretch %s group '%s' slot %s ch %d: key %d anim %s start %.2f rate %.2f rootMotion %d meshTrans %d noCollision %d on %s, matinee pos %.2f"),
@@ -585,6 +629,12 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 			NewAnimPosition = KeyPlayLength;
 		}
 		Actor->MAT_SetAnimPosition( StretchTrack->SlotName, ChannelIndex, NewAnimSeqName, m_fBackupAnimPosition, NewAnimPosition, TRUE, FALSE, bEnableRootMotion );
+		if( DisJCDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): jcdiag special %s key %d anim %s backup %.3f prev %.3f cur %.3f matpos %.3f world %.3f at %.1f/%.1f/%.1f yaw %d"),
+				*Actor->GetName(), KeyIndex, *NewAnimSeqName.ToString(), m_fBackupAnimPosition, m_fCurrentAnimPosition, NewAnimPosition, NewPosition,
+				GWorld->GetTimeSeconds(), Actor->Location.X, Actor->Location.Y, Actor->Location.Z, Actor->Rotation.Yaw & 65535 );
+		}
 	}
 	else
 	{

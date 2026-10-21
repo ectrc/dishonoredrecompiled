@@ -30,6 +30,10 @@ void (*GDisInterpSkipStepHook)( APawn* Pawn, INT Phase, FLOAT Step ) = NULL;
 void (*GDisLookAtTrackUpdateHook)( FLOAT NewPosition, UInterpGroupInstAI* GrInstAI, UBOOL bJump, UBOOL bPreview ) = NULL;
 void (*GDisLookAtTrackTermHook)( APawn* Pawn, const void* Asker ) = NULL;
 
+/** DISHONORED(port, agent JC): the FaceTo track instance's DishonoredGame halves. UnWorld.h. */
+void (*GDisFaceToTrackUpdateHook)( UInterpTrackInstFaceTo* TrInst, FLOAT NewPosition, UBOOL bJump ) = NULL;
+void (*GDisFaceToTrackTermHook)( UInterpTrackInstFaceTo* TrInst ) = NULL;
+
 /** -fkdiag (agent FK's switch): the AI group's pawn is reported once a second from UInterpGroupAI::UpdateGroup. */
 static UBOOL DisFSInterpDiagEnabled()
 {
@@ -3259,15 +3263,17 @@ void UInterpGroup::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UBOO
 		if( Actor != NULL )
 		{
 			Actor->MAT_SetRootMotionMode( GrInst->m_CurrentRootMotionMode );
-			// DISHONORED(port): agent HA. The tail of 2013's UpdateGroupInst (VA 0x62fed0): a backup was asked for (a
+			// DISHONORED(port): agents HA, JC. The tail of 2013's UpdateGroupInst (VA 0x62fed0): a backup was asked for (a
 			// special-root-motion key started) or Translate root motion starts this frame -> BackupTransform (VA 0x61fcb0);
-			// Translate stops -> the actor's 2013 virtual +812.
-			// DISHONORED(bringup): AActor 2013 slots 202 (+808, called by BackupTransform) and 203 (+812) are new 2013
-			// virtuals, empty on AActor; the pawn overrides are not identified, so the +812 call is not made here.
+			// Translate stops -> MAT_ClearBackupTransform (AActor 2013 slot 203, +812).
 			const UBOOL bTranslating = ( GrInst->m_CurrentRootMotionMode == MRMM_Translate );
 			if( GrInst->m_bShouldBackupTransform || ( !bWasTranslating && bTranslating ) )
 			{
 				GrInst->BackupTransform();
+			}
+			else if( bWasTranslating && !bTranslating )
+			{
+				Actor->MAT_ClearBackupTransform();
 			}
 		}
 	}
@@ -3734,16 +3740,18 @@ APawn* UInterpGroupInst::GetGroupPawn() const
 	return m_pGroupPawn;
 }
 
-// DISHONORED(port): agent HA. 2013 VA 0x61fcb0 (rva 0x21fcb0, 121 B): with a group actor, the actor's 2013 virtual +808
-// (not identified, see UpdateGroup), the request cleared, and every StretchAnimControl instance's backed-up position set
+// DISHONORED(port): agents HA, JC. 2013 VA 0x61fcb0 (rva 0x21fcb0, 121 B): with a group actor, MAT_BackupTransform (AActor 2013
+// slot 202, +808), the request cleared, and every StretchAnimControl instance's backed-up position set
 // to its current one (sub_8FCDE0, 7 B: +96 = +92). Retail picks the instances by UInterpTrackInst +60 bit 2
 // (m_bIsAUInterpTrackInstStretchAnim, not declared in this tree); the class test is the same set.
 void UInterpGroupInst::BackupTransform()
 {
-	if( GetGroupActor() == NULL )
+	AActor* Actor = GetGroupActor();
+	if( Actor == NULL )
 	{
 		return;
 	}
+	Actor->MAT_BackupTransform();
 	m_bShouldBackupTransform = 0;
 	for( INT TrackIndex = 0; TrackIndex < TrackInst.Num(); TrackIndex++ )
 	{

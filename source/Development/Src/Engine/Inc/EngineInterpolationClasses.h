@@ -3009,6 +3009,11 @@ public:
     //## END PROPS InterpTrackInstFaceTo
 
     DECLARE_CLASS(UInterpTrackInstFaceTo,UInterpTrackInst,0,Engine)
+
+    // DISHONORED(port): agent JC. UpdateTrackInst 2013 0x8ff8f0 / 2012 0x53eb90 (interptrackfaceto.cpp), TermTrackInst 2013
+    // 0x8fc9a0 / 2012 0x53bb30 (interptrackinstfaceto.cpp); both reach FArkComponentFaceTo through GDisFaceToTrack*Hook (UnWorld.h).
+    virtual void UpdateTrackInst( FLOAT NewPosition, UBOOL bJump );
+    virtual void TermTrackInst( UInterpTrack* Track );
 };
 
 // Engine.InterpTrackLookAt: retail sizeof 156, reflected span 144..156 (2012 PDB sizeof 156)
@@ -3238,6 +3243,8 @@ public:
     // DISHONORED(port): agent FS. 2012 rvas: InitTrackInst 0x549ac0, UpdateTrackInst 0x543f40,
     // GetAnimForTime 0x543a00, ConditionallyReversePosition 0x540860. Bodies in interptrackstretchanimcontrol.cpp.
     virtual void InitTrackInst( UInterpTrack* InTrack );
+    // DISHONORED(port): agent JC. 2013 0x901760 (49 B): the group actor leaves the special root-motion extraction.
+    virtual void TermTrackInst( UInterpTrack* InTrack );
     virtual void UpdateTrackInst( FLOAT NewPosition, UBOOL bJump );
 protected:
     UBOOL GetAnimForTime( FLOAT InTime, INT& OutKeyIndex, FLOAT& OutPosition, FLOAT& OutLoopStartPosition, FLOAT& OutLoopDuration ) const;

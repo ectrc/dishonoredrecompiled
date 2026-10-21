@@ -3365,351 +3365,161 @@ void USkeletalMeshComponent::RecalcRequiredBones(INT LODIndex)
 IMPLEMENT_COMPARE_CONSTREF( FAnimNodeTimeStat, UnSkeletalComponent, { return (B.NodeExclusiveTime > A.NodeExclusiveTime) ? 1 : -1; } )
 #endif
 
-// Track root motion rotation accumulation errors
-#define ROOT_MOTION_ROTATION_ERROR 0
-
-#if ROOT_MOTION_ROTATION_ERROR
-static FQuat AccumRMQuat;
-static FRotator AccumRMRotation;
-#endif
-
-
+// DISHONORED(port): agent JC. Retail 2013 VA 0x746280 (rva 0x346280, 3,920 B; 2012 0x353c80, 3,979 B, the same shape), whole,
+// replacing the reference body. Against the reference: the interp-curve root motion is the curve's change since the last frame
+// (both builds store that change back as the last value); the rotation is taken in the mesh frame with the component's own
+// Rotation removed (LocalToWorld recomputed from CachedParentToWorld with Rotation zeroed when it is not zero), scaled by
+// RootRotationScale and offset by AdditionalRootRotation before it goes to world space; no RMM_Accel physics tick (agent IK2);
+// no bypass-simulated-physics nudge and no RootMotionProcessed notify after the mode bookkeeping. The instant move runs only in
+// RMM_Translate (or RMM_Ignore right after it; agent IO's rule, which the bytes confirm) and RMM_Relative. RootMotionDelta's
+// translation (+832) is the accumulator: added to every extracted frame, cleared once a Translate / Relative move used it.
 void USkeletalMeshComponent::ProcessRootMotion( FLOAT DeltaTime, FBoneAtom& ExtractedRootMotionDelta, INT& bHasRootMotion )
 {
-	// If an interp curve has been setup to use, use that instead of the extracted root motion from the bone atoms
-	// Only usable for pawns mesh right now
-	APawn* PawnOwner = Cast<APawn>(GetOwner());
+	APawn* PawnOwner = Cast<APawn>( GetOwner() );
 	if( PawnOwner != NULL && PawnOwner->bRootMotionFromInterpCurve && PawnOwner->Mesh == this )
 	{
-		//const FVector OrigTrans = ExtractedRootMotionDelta.GetTranslation();
-
-		PawnOwner->RootMotionInterpCurrentTime += (PawnOwner->RootMotionInterpRate * DeltaTime);
-
-		FInterpCurveInitVector VC;
-		VC.Points = PawnOwner->RootMotionInterpCurve.Curve.Points;
-		ExtractedRootMotionDelta.SetTranslation(VC.Eval( PawnOwner->RootMotionInterpCurrentTime, FVector::ZeroVector ));
+		PawnOwner->RootMotionInterpCurrentTime += PawnOwner->RootMotionInterpRate * DeltaTime;
+		FInterpCurveInitVector Curve;
+		Curve.Points = PawnOwner->RootMotionInterpCurve.Curve.Points;
+		ExtractedRootMotionDelta.SetTranslation( Curve.Eval( PawnOwner->RootMotionInterpCurrentTime, FVector::ZeroVector ) - PawnOwner->RootMotionInterpCurveLastValue );
 		PawnOwner->RootMotionInterpCurveLastValue = ExtractedRootMotionDelta.GetTranslation();
-
 		bHasRootMotion = !ExtractedRootMotionDelta.GetTranslation().IsNearlyZero();
-
-		//warnf(TEXT("Orig Trans %s Interp Curve Trans %s -- Time: %f"), *OrigTrans.ToString(), *ExtractedRootMotionDelta.GetTranslation().ToString(), PawnOwner->RootMotionInterpCurrentTime );
-
-#if 0 // DEBUG (draw the curve in game so you can see it)
-			PawnOwner->FlushPersistentDebugLines();
-			FInterpCurveInitVector VCDebug;
-			VCDebug.Points = PawnOwner->RootMotionInterpCurve.Curve.Points;
-			FLOAT CurrentTime = 0.f;
-			FVector PrevPos = PawnOwner->Location;
-			FVector CurrPos(0.f);
-			while( CurrentTime <= PawnOwner->RootMotionInterpCurve.MaxCurveTime )
-			{
-				CurrPos = LocalToWorld.TransformNormal(VCDebug.Eval( CurrentTime, FVector(0,0,0) ));
-				PawnOwner->DrawDebugLine( PrevPos, CurrPos + PrevPos, 255, 0, 0, TRUE );
-				if( CurrentTime == 0.f )
-				{
-					PawnOwner->DrawDebugBox( CurrPos + PrevPos, FVector(5.f), 255, 0, 0, TRUE );
-				}
-
-				PrevPos += CurrPos;
-				CurrentTime += DeltaTime; // this will give us the curve as "played" in the game and not the original value
-			}
-			PawnOwner->DrawDebugBox( PrevPos, FVector(5.f), 0, 0, 255, TRUE );	
-#endif
-
 	}
 
-	// Root motion movement is done only once per tick. 
-	// Because RootMotionDelta is relative to the last time the animation was ticked. 
-	// So we can't just arbitrarily call that function and have root motion work, the same offsets would be applied every time.
-	// UPDATE: Adding support for Matineee root motion. The DeltaTime can be minus as it can go backward.
-	// DeltaTime will the elapsed time since last updated. 
-	// Second condition make sure it allows for Matinee. 
-	if( DeltaTime > 0.f || (GIsEditor && !GIsGame) )
+	if( !( DeltaTime > 0.f || ( GIsEditor && !GIsGame ) ) )
 	{
-		// If PendingRMM has changed, set it
-		if( PendingRMM != OldPendingRMM )
+		return;
+	}
+
+	if( PendingRMM != OldPendingRMM )
+	{
+		if( RootMotionMode == PendingRMM )
 		{
-			// Already set, do nothing
-			if( RootMotionMode == PendingRMM )
-			{
-				OldPendingRMM = PendingRMM;
-			}
-			// delay by a frame if setting to RMM_Ignore AND animation extracted root motion on this frame.
-			// This is to force physics to process the entire root motion.
-			else if( PendingRMM != RMM_Ignore || !bHasRootMotion || bRMMOneFrameDelay == 1 )
-			{
-				RootMotionMode		= PendingRMM;
-				OldPendingRMM		= PendingRMM;
-				bRMMOneFrameDelay	= 0;
-			}
-			else
-			{
-				bRMMOneFrameDelay	= 1;
-			}
+			OldPendingRMM = PendingRMM;
 		}
-
-		// if root motion is requested, then transform it from mesh space to world space so it can be used.
-		if( bHasRootMotion && RootMotionMode != RMM_Ignore )
+		else if( PendingRMM == RMM_Ignore && bHasRootMotion && bRMMOneFrameDelay != 1 )
 		{
-#if 0 // DEBUG
-			warnf(TEXT("%3.2f [%s] [%0.5f] Extracted RM, PreProcessing, Translation: %3.3f, vect: %s, RootMotionAccelScale: %s"), 
-				GWorld->GetTimeSeconds(), *Owner->GetName(), DeltaTime, ExtractedRootMotionDelta.GetTranslation().Size(), *ExtractedRootMotionDelta.GetTranslation().ToString(), *RootMotionAccelScale.ToString());
-#endif
-			// Transform mesh space root delta translation to world space
-			ExtractedRootMotionDelta.SetTranslation(LocalToWorld.TransformNormal(ExtractedRootMotionDelta.GetTranslation()));
-
-			// Scale RootMotion translation in Mesh Space.
-			if( RootMotionAccelScale != FVector(1.f) )
-			{
-				ExtractedRootMotionDelta.SetTranslation(ExtractedRootMotionDelta.GetTranslation() * RootMotionAccelScale);
-			}
-
-			// DISHONORED(layout): retail 2013 has no bRootMotionExtractedNotify / RootMotionExtracted delegate
-
-			// Root Motion delta is accumulated every time it is extracted.
-			// This is because on servers using autonomous physics, physics updates and ticking are out of synch.
-			// So 2 physics updates can happen in a row, or 2 animation updates, effectively
-			// making client and server out of synch.
-			// So root motion is accumulated, and reset when used by physics.
-			RootMotionDelta.AddToTranslation(ExtractedRootMotionDelta.GetTranslation());
-			RootMotionVelocity = ExtractedRootMotionDelta.GetTranslation() / DeltaTime;
+			bRMMOneFrameDelay = 1;
 		}
 		else
 		{
-			RootMotionDelta.SetTranslation(FVector::ZeroVector);
-			RootMotionVelocity			= FVector::ZeroVector;
-		}
-
-#if 0 // DEBUG
-		static FVector	AccumulatedRMTranslation = FVector(0.f);
-		{
-			if( RootMotionMode != RMM_Ignore )
-			{
-				AccumulatedRMTranslation	+= ExtractedRootMotionDelta.GetTranslation();
-			}
-			else
-			{
-				AccumulatedRMTranslation	= FVector(0.f);
-			}
-
-			if( RootMotionMode != RMM_Ignore )
-			{
-				debugf(TEXT("%3.2f [%s] RM Translation: %3.3f, vect: %s"), GWorld->GetTimeSeconds(), *Owner->GetName(), RootMotionDelta.GetTranslation().Size(), *RootMotionDelta.GetTranslation().ToString());
-				debugf(TEXT("%3.2f [%s] RM Velocity: %3.3f, vect: %s"), GWorld->GetTimeSeconds(), *Owner->GetName(), RootMotionVelocity.Size(), *RootMotionVelocity.ToString());
-				debugf(TEXT("%3.2f [%s] RM AccumulatedRMTranslation: %3.3f, vect: %s"), GWorld->GetTimeSeconds(), *Owner->GetName(), AccumulatedRMTranslation.Size(), *AccumulatedRMTranslation.ToString());
-			}
-		}
-#endif
-
-		if( bHasRootMotion && RootMotionRotationMode != RMRM_Ignore )
-		{
-			FMatrix	TM = LocalToWorld;
-			TM.RemoveScaling();
-			FQuat	MeshToWorldQuat(TM);
-
-			// Transform mesh space delta rotation to world space.
-			RootMotionDelta.SetRotation(MeshToWorldQuat * ExtractedRootMotionDelta.GetRotation() * (-MeshToWorldQuat));
-			RootMotionDelta.NormalizeRotation();
-		}
-		else
-		{
-			RootMotionDelta.SetRotation(FQuat::Identity);
-		}
-
-#if 0 // DEBUG ROOT ROTATION
-		if( RootMotionRotationMode != RMRM_Ignore )
-		{
-			const FRotator DeltaRotation = FQuatRotationTranslationMatrix(RootMotionDelta.GetRotation(), FVector(0.f)).Rotator();
-			debugf(TEXT("%3.2f Root Rotation: %s"), GWorld->GetTimeSeconds(), *DeltaRotation.ToString());
-		}
-#endif
-		
-#if ROOT_MOTION_ROTATION_ERROR
-		// Clear up rotation error compensation code
-		if( RootMotionRotationMode == RMRM_Ignore )
-		{
-			AccumRMQuat = FQuat::Identity;
-			AccumRMRotation = FRotator(0,0,0); 
-		}
-#endif
-		// Motion applied right away
-		if( bHasRootMotion )
-		{
-			// DISHONORED(IO): retail 2012 0x353c80 / 2013 0x746280 applies instant root motion here only in RMM_Translate (or
-			// RMM_Ignore right after Translate); the reference engine also rotated the actor whenever RMRM_RotateActor was set,
-			// which turned NPC turn animations twice (the locomotion's FaceTo already applies the body yaw in RMM_Accel).
-			if( (RootMotionMode == RMM_Translate || 
-				(RootMotionMode == RMM_Ignore && PreviousRMM == RMM_Translate)) )	// If root motion was just turned off, forward remaining root motion.
-			{
-				/** 
-				* Delay applying instant translation for one frame
-				* So we check for PreviousRMM to be up to date with the current root motion mode.
-				* We need to do this because in-game physics have already been applied for this tick.
-				* So we want root motion to kick in for next frame.
-				*/
-				const UBOOL		bCanDoTranslation	= (RootMotionMode == RMM_Translate && PreviousRMM == RMM_Translate);
-				const FVector	InstantTranslation	= bCanDoTranslation ? RootMotionDelta.GetTranslation() : FVector::ZeroVector;
-
-				const UBOOL		bCanDoRotation		= (RootMotionRotationMode == RMRM_RotateActor);
-				const FMatrix	DeltaRotM			= FQuatRotationTranslationMatrix(RootMotionDelta.GetRotation(), FVector::ZeroVector);
-				const UBOOL		bShouldDoRotation	= bCanDoRotation && !DeltaRotM.Rotator().IsZero();
-
-				if( Owner && (bShouldDoRotation || InstantTranslation.SizeSquared() > SMALL_NUMBER) )
-				{
-					FRotator DesiredRotation = Owner->Rotation;
-					if( bShouldDoRotation )
-					{
-						FRotator const DeltaRotation = RootMotionDelta.GetRotation().Rotator();
-						DesiredRotation = (Owner->Rotation + DeltaRotation).GetNormalized();
-
-#if 0 // DEBUG ROOT MOTION
-						debugf(TEXT("%3.2f Root Motion Instant. DesiredRotation: %s"), GWorld->GetTimeSeconds(), *DesiredRotation.ToString());
-#endif
-
-#if ROOT_MOTION_ROTATION_ERROR
-						// Accumulate quaternion rotation
-						AccumRMQuat = AccumRMQuat * RootMotionDelta.GetRotation();
-						// Accumulate the actual applied FRotator rotation
-						AccumRMRotation = (AccumRMRotation + DeltaRotation).GetNormalized();
-						// Compute accumulated error
-						FRotator const AccumErrorRot = (AccumRMQuat.Rotator() - AccumRMRotation).GetNormalized();
-// 						DesiredRotation += AccumErrorRot;  //Comment out these lines to debug FQuat vs FRotator error
-// 						AccumRMRotation += AccumErrorRot;  //Comment out these lines to debug FQuat vs FRotator error 
-	#if 1 // DEBUG ROOT MOTION
-						debugf(TEXT("Accum RMRot: %s Accum RMQuat: %s Error: %s"),
-							*AccumRMRotation.ToString(),
-							*(AccumRMQuat.Rotator().ToString()),
-							*(AccumErrorRot.ToString()) ); 
-	#endif 
-#endif
-					}
-
-					// Transform mesh directly. Doesn't take in-game physics into account.
-					FCheckResult Hit(1.f);
-					GWorld->MoveActor(Owner, InstantTranslation, DesiredRotation, 0, Hit);
-
-#if !FINAL_RELEASE
-					// @fixme: delete this - this is for temporary debugging matinee
-					if (GIsEditor && !GIsGame)
-					{
-						debugf(TEXT("Matinee(EnableRootMotion) : Translation (%s), Rotation (%s), RootMotionVelocity(%s), RootMotionDelta(%s)"), *InstantTranslation.ToString(), *DesiredRotation.ToString(), *RootMotionVelocity.ToString(), *RootMotionDelta.ToString());
-					}
-#endif
-					// If we have used translation, reset the accumulator.
-					if( bCanDoTranslation )
-					{
-						RootMotionDelta.SetTranslation(FVector::ZeroVector);
-					}
-
-					if( bCanDoRotation )
-					{
-						// Update DesiredRotation for AI Controlled Pawns
-						if( PawnOwner )
-						{
-							PawnOwner->SetDesiredRotation(Owner->Rotation);
-						}
-					}
-				}
-			}
-
-			// RMM Relative
-			if( RootMotionMode == RMM_Relative || (RootMotionMode == RMM_Ignore && PreviousRMM == RMM_Relative) )
-			{
-				const UBOOL		bCanDoTranslation	= (RootMotionMode == RMM_Relative && PreviousRMM == RMM_Relative);
-				const FVector	InstantTranslation	= bCanDoTranslation ? RootMotionDelta.GetTranslation() : FVector::ZeroVector;
-				if( Owner && Owner->Base && InstantTranslation.SizeSquared() > SMALL_NUMBER )
-				{
-					if( Owner->bHardAttach )
-					{
-						// Remove actor from base
-						AActor* OldBase = Owner->Base;
-						USkeletalMeshComponent* OldBaseSkelComponent = Owner->BaseSkelComponent;
-						FName OldBaseBoneName = Owner->BaseBoneName;
-
-						// do a stat here to see if ths taking some time
-						Owner->SetBase(NULL, FVector(0.f,0.f,1.f), 0, NULL, NAME_None);
-
-#if 0 // DEBUG ROOT ROTATION
-						{
-							debugf(TEXT("RMM_Relative : %3.2f Before Move Current Location : %s, Instant Translation Value : %s, RelativeLocation, %s"), GWorld->GetTimeSeconds(), *Owner->Location.ToString(), *InstantTranslation.ToString(), *Owner->RelativeLocation.ToString());
-						}
-#endif
-						// Move to new location
-						FCheckResult Hit(1.f);
-						GWorld->MoveActor(Owner, InstantTranslation, Owner->Rotation, 0, Hit);
-
-#if 0 // DEBUG ROOT ROTATION
-						{
-							debugf(TEXT("RMM_Relative : %3.2f After Move Current Location : %s, RelativeLocation: %s"), GWorld->GetTimeSeconds(), *Owner->Location.ToString() , *Owner->RelativeLocation.ToString());
-						}
-#endif
-
-						// Rebase Actor				
-						Owner->SetBase(OldBase, FVector(0.f,0.f,1.f), 0, OldBaseSkelComponent, OldBaseBoneName);
-
-						// If we have used translation, reset the accumulator.
-						if( bCanDoTranslation )
-						{
-							RootMotionDelta.SetTranslation(FVector::ZeroVector);
-						}
-					}
-				}
-			}
-		}
-
-		// DISHONORED(retail, agent IK2): the reference ticked the owner's physics here for RMM_Accel ("so there is no frame of
-		// lag"); retail's ProcessRootMotion (2012 0x353c80, 3,979 B) has no immediate physics tick. The reference's block ran the NPC's physWalking -> FArkComponentLocomotion::FullMovePawn inside the animation update after
-		// every turn animation (UpdateTurn leaves the mesh in RMM_Accel), and its move zeroed the start animation's root motion
-		// before ComputeDynamic read it (agentIK2.md).
-
-		// Track root motion mode changes
-		if( RootMotionMode != PreviousRMM )
-		{
-			// DISHONORED(layout): retail 2013 has no bRootMotionModeChangeNotify / RootMotionModeChanged delegate
-			PreviousRMM = RootMotionMode;
-
-			// If switching from ShouldBypassSimulatedClientPhysics to not, force a location & velocity update for replication.
-			if( PawnOwner && PawnOwner->bPrevBypassSimulatedClientPhysics && !PawnOwner->ShouldBypassSimulatedClientPhysics())
-			{
-				if (Owner->Role == ROLE_SimulatedProxy )
-				{
-					PawnOwner->bSimulateGravity = ((PawnOwner->Physics == PHYS_Falling) || (PawnOwner->Physics == PHYS_Walking));
-				}
-				else
-				{
-					AActor* OldBase = Owner->Base;
-					USkeletalMeshComponent* OldBaseSkelComponent = Owner->BaseSkelComponent;
-					FName OldBaseBoneName = Owner->BaseBoneName;
-					FVector OldFloor = Owner->GetAPawn() ? Owner->GetAPawn()->Floor : FVector(0.f,0.f,1.f);
-
-					FVector const Nudge(0.f, 0.f, 0.1f);
-					Owner->SetLocation( Owner->Location + Nudge );
-					Owner->Velocity += Nudge;
-
-					// Restore Base we lost by doing a set location.
-					Owner->SetBase(OldBase, OldFloor, 0, OldBaseSkelComponent, OldBaseBoneName);
-				}
-			}
-		}
-
-		if( PawnOwner )
-		{
-			PawnOwner->bPrevBypassSimulatedClientPhysics = PawnOwner->ShouldBypassSimulatedClientPhysics();
-		}
-
-		// Notify Owner, if requested, that we have processed Root Motion.
-		if( bNotifyRootMotionProcessed && Owner )
-		{
-			Owner->eventRootMotionProcessed(this);
+			RootMotionMode = PendingRMM;
+			bRMMOneFrameDelay = 0;
+			OldPendingRMM = PendingRMM;
 		}
 	}
 
-#if 0 // DEBUG root Rotation
-	if( Owner )
+	if( !bHasRootMotion || RootMotionMode == RMM_Ignore )
 	{
-		Owner->DrawDebugLine(Owner->Location, Owner->Location + Owner->Rotation.Vector() * 200.f, 255, 0, 0, FALSE);
+		RootMotionDelta.SetTranslation( FVector::ZeroVector );
+		RootMotionVelocity = FVector::ZeroVector;
 	}
-#endif
+	else
+	{
+		ExtractedRootMotionDelta.SetTranslation( LocalToWorld.TransformNormal( ExtractedRootMotionDelta.GetTranslation() ) );
+		if( RootMotionAccelScale != FVector( 1.f ) )
+		{
+			ExtractedRootMotionDelta.SetTranslation( ExtractedRootMotionDelta.GetTranslation() * RootMotionAccelScale );
+		}
+		RootMotionDelta.AddToTranslation( ExtractedRootMotionDelta.GetTranslation() );
+		RootMotionVelocity = ExtractedRootMotionDelta.GetTranslation() * ( 1.f / DeltaTime );
+	}
+
+	if( bHasRootMotion && RootMotionRotationMode != RMRM_Ignore )
+	{
+		FMatrix MeshToWorld = LocalToWorld;
+		if( !Rotation.IsZero() )
+		{
+			const FRotator SavedRotation = Rotation;
+			Rotation = FRotator( 0, 0, 0 );
+			MeshToWorld = CalcCurrentLocalToWorld( CachedParentToWorld );
+			Rotation = SavedRotation;
+		}
+		MeshToWorld.RemoveScaling();
+		const FQuat MeshToWorldQuat( MeshToWorld );
+		FRotator ExtractedRotation = FQuatRotationTranslationMatrix( ExtractedRootMotionDelta.GetRotation(), FVector::ZeroVector ).Rotator();
+		ExtractedRotation *= RootRotationScale;
+		ExtractedRotation += AdditionalRootRotation;
+		RootMotionDelta.SetRotation( MeshToWorldQuat * ExtractedRotation.Quaternion() * ( -MeshToWorldQuat ) );
+		RootMotionDelta.NormalizeRotation();
+	}
+	else
+	{
+		RootMotionDelta.SetRotation( FQuat::Identity );
+	}
+
+	if( bHasRootMotion )
+	{
+		if( RootMotionMode == RMM_Translate || ( RootMotionMode == RMM_Ignore && PreviousRMM == RMM_Translate ) )
+		{
+			const UBOOL bCanDoTranslation = ( RootMotionMode == RMM_Translate && PreviousRMM == RMM_Translate );
+			const FVector InstantTranslation = bCanDoTranslation ? RootMotionDelta.GetTranslation() : FVector::ZeroVector;
+			const UBOOL bCanDoRotation = ( RootMotionRotationMode == RMRM_RotateActor );
+			const FRotator DeltaRotation = FQuatRotationTranslationMatrix( RootMotionDelta.GetRotation(), FVector::ZeroVector ).Rotator();
+			const UBOOL bShouldDoRotation = bCanDoRotation && !DeltaRotation.IsZero();
+			if( Owner != NULL && ( bShouldDoRotation || InstantTranslation.SizeSquared() > SMALL_NUMBER ) )
+			{
+				FRotator DesiredRotation = Owner->Rotation;
+				if( bShouldDoRotation )
+				{
+					DesiredRotation = ( Owner->Rotation + DeltaRotation ).GetNormalized();
+				}
+				FCheckResult Hit( 1.f );
+				GWorld->MoveActor( Owner, InstantTranslation, DesiredRotation, 0, Hit );
+				if( bCanDoTranslation )
+				{
+					RootMotionDelta.SetTranslation( FVector::ZeroVector );
+				}
+				APawn* RotatedPawn = bCanDoRotation ? Cast<APawn>( Owner ) : NULL;
+				if( RotatedPawn != NULL )
+				{
+					RotatedPawn->SetDesiredRotation( Owner->Rotation );
+				}
+			}
+		}
+
+		if( RootMotionMode == RMM_Relative || ( RootMotionMode == RMM_Ignore && PreviousRMM == RMM_Relative ) )
+		{
+			const UBOOL bCanDoTranslation = ( RootMotionMode == RMM_Relative && PreviousRMM == RMM_Relative );
+			const FVector InstantTranslation = bCanDoTranslation ? RootMotionDelta.GetTranslation() : FVector::ZeroVector;
+			if( Owner != NULL && Owner->Base != NULL && InstantTranslation.SizeSquared() > SMALL_NUMBER && Owner->bHardAttach )
+			{
+				AActor* OldBase = Owner->Base;
+				USkeletalMeshComponent* OldBaseSkelComponent = Owner->BaseSkelComponent;
+				const FName OldBaseBoneName = Owner->BaseBoneName;
+				Owner->SetBase( NULL, FVector( 0.f, 0.f, 1.f ), 0, NULL, NAME_None );
+				FCheckResult Hit( 1.f );
+				GWorld->MoveActor( Owner, InstantTranslation, Owner->Rotation, 0, Hit );
+				Owner->SetBase( OldBase, FVector( 0.f, 0.f, 1.f ), 0, OldBaseSkelComponent, OldBaseBoneName );
+				if( bCanDoTranslation )
+				{
+					RootMotionDelta.SetTranslation( FVector::ZeroVector );
+				}
+			}
+		}
+	}
+
+	if( RootMotionMode != PreviousRMM )
+	{
+		PreviousRMM = RootMotionMode;
+	}
+}
+
+// DISHONORED(port): agent JC. 2013 0x70da70 (1,761 B, unnamed; ecx = the pawn's mesh, from ADishonoredPawn 0xb492e0). The
+// translation is the raw delta's through the backed-up mesh transform (TransformNormal); the rotation is the raw delta's rotator
+// taken back to a quaternion and conjugated by the backed-up mesh rotation (scaling removed), as ProcessRootMotion does for the
+// live one but without RootRotationScale / AdditionalRootRotation. Retail also receives the backed-up actor LocalToWorld and
+// never reads it; it is not a parameter here.
+void USkeletalMeshComponent::GetRawRootMotionWorldDelta( FVector& OutTranslation, FRotator& OutRotation, const FMatrix& MeshLocalToWorld ) const
+{
+	OutTranslation = MeshLocalToWorld.TransformNormal( RawExtractedRootMotionDelta.GetTranslation() );
+	FMatrix MeshToWorld = MeshLocalToWorld;
+	MeshToWorld.RemoveScaling();
+	const FQuat MeshToWorldQuat( MeshToWorld );
+	const FRotator RawRotation = FQuatRotationTranslationMatrix( RawExtractedRootMotionDelta.GetRotation(), FVector::ZeroVector ).Rotator();
+	FQuat WorldRotation = MeshToWorldQuat * RawRotation.Quaternion() * ( -MeshToWorldQuat );
+	WorldRotation.Normalize();
+	OutRotation = FQuatRotationTranslationMatrix( WorldRotation, FVector::ZeroVector ).Rotator();
 }
 
 
@@ -4007,7 +3817,9 @@ void USkeletalMeshComponent::UpdateSkelPose( FLOAT DeltaTime, UBOOL bTickFaceFX 
 		}
 	}
 
-	// Root Motion 
+	// DISHONORED(port): agent JC. 2013 UpdateSkelPoseEnd (0x7471d0, 0x7477c0) keeps the extracted root motion, mesh space and
+	// before ProcessRootMotion transforms it, every frame: ADishonoredPawn places a pawn on a special root-motion key from it.
+	RawExtractedRootMotionDelta = ExtractedRootMotionDelta;
 	ProcessRootMotion( DeltaTime, ExtractedRootMotionDelta, bHasRootMotion );
 
 	if( bForceDiscardRootMotion )

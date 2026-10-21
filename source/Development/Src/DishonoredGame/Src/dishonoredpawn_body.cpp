@@ -53,6 +53,7 @@
 //   0x7a6360  public: virtual void __thiscall UDisSkeletalMeshComponent::PreComposeSkeleton(void)
 
 #include "DishonoredGame.h"
+#include "jcdiag.h"
 
 // ---- agent BF ports (PHASE8 BF): the fall-damage native ----
 
@@ -288,13 +289,73 @@ FVector ADishonoredPawn::GetSpineBendRefPoint() const
 // DISHONORED(port): 2012 0x799d10 (71 B; 2013 unnamed, reached through the vtable): after the base, a component that is not slaved to a
 // parent animation component runs the tick-end hook chain. Retail also skips it under a per-component flag this tree does not name
 // (the dword after m_pSoulMaterial) and then syncs the NPC's physics sensor (ADishonoredNPCPawn::SyncPhysicsSensor, unported).
+// DISHONORED(port): agent JC. 2013 0xb62270 (115 B): between the two, a Dishonored pawn a matinee controls is placed on its special
+// root-motion key (ADishonoredPawn::ProcessMatineeRootMotion, 0xb5c890).
 void UDisSkeletalMeshComponent::TickEnd( FLOAT DeltaTime )
 {
 	Super::TickEnd( DeltaTime );
 	if( !ParentAnimComponent )
 	{
 		UpdateChildForTickEnd();
+		ADishonoredPawn* DisPawn = Cast<ADishonoredPawn>( GetOwner() );
+		if( DisPawn != NULL && DisPawn->m_bIsControlledByAMatinee )
+		{
+			DisPawn->ProcessMatineeRootMotion();
+		}
+		if( DisPawn != NULL && DisJCDiagEnabled() )
+		{
+			DisJCDiagReportView( DisPawn, Bounds.Origin );
+		}
 	}
+}
+
+// DISHONORED(bringup): agent JC. -jcdiag -jcwatch=<name,...>: twice a second per watched pawn, where its mesh is against the local
+// player's view (horizontal / vertical angle off the view axis, inside the frustum at the view's FOV and 16:9).
+void DisJCDiagReportView( const ADishonoredPawn* Pawn, const FVector& MeshCenter )
+{
+	static FString Watched;
+	static UBOOL bParsed = FALSE;
+	if( !bParsed )
+	{
+		bParsed = TRUE;
+		Parse( appCmdLine(), TEXT("-jcwatch="), Watched );
+	}
+	TArray<FString> WatchedNames;
+	Watched.ParseIntoArray( &WatchedNames, TEXT(","), TRUE );
+	if( WatchedNames.FindItemIndex( Pawn->GetName() ) == INDEX_NONE )
+	{
+		return;
+	}
+	static TMap<const AActor*, FLOAT> LastReportAt;
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	FLOAT* Last = LastReportAt.Find( Pawn );
+	if( Last != NULL && Now - *Last < 0.5f )
+	{
+		return;
+	}
+	LastReportAt.Set( Pawn, Now );
+	APlayerController* PC = const_cast<ADishonoredPawn*>( Pawn )->GetALocalPlayerController();
+	if( PC == NULL )
+	{
+		return;
+	}
+	FVector ViewLocation;
+	FRotator ViewRotation;
+	PC->GetPlayerViewPoint( ViewLocation, ViewRotation );
+	const FLOAT HalfFOV = PC->GetFOVAngle() * 0.5f * PI / 180.f;
+	const FLOAT HalfVFOV = appAtan( appTan( HalfFOV ) * 9.f / 16.f );
+	const FRotationMatrix ViewAxes( ViewRotation );
+	const FVector ToMesh = MeshCenter - ViewLocation;
+	const FLOAT Forward = ToMesh | ViewAxes.GetAxis( 0 );
+	const FLOAT Right = ToMesh | ViewAxes.GetAxis( 1 );
+	const FLOAT Up = ToMesh | ViewAxes.GetAxis( 2 );
+	const FLOAT HAngle = appAtan2( Right, Forward );
+	const FLOAT VAngle = appAtan2( Up, Forward );
+	const UBOOL bInFrame = Forward > 0.f && Abs( HAngle ) <= HalfFOV && Abs( VAngle ) <= HalfVFOV;
+	debugf( TEXT("DISHONORED(bringup): jcdiag view %s world %.2f mesh %.1f/%.1f/%.1f actor %.1f/%.1f/%.1f yaw %d | view %.1f/%.1f/%.1f yaw %d pitch %d fov %.1f | h %.1f v %.1f screen %.3f/%.3f inframe %d"),
+		*Pawn->GetName(), Now, MeshCenter.X, MeshCenter.Y, MeshCenter.Z, Pawn->Location.X, Pawn->Location.Y, Pawn->Location.Z, Pawn->Rotation.Yaw & 65535,
+		ViewLocation.X, ViewLocation.Y, ViewLocation.Z, ViewRotation.Yaw & 65535, ViewRotation.Pitch & 65535, PC->GetFOVAngle(),
+		HAngle * 180.f / PI, VAngle * 180.f / PI, 0.5f + 0.5f * appTan( HAngle ) / appTan( HalfFOV ), 0.5f - 0.5f * appTan( VAngle ) / appTan( HalfVFOV ), bInFrame );
 }
 
 // DISHONORED(port): 2012 0x794e50 / 2013 0x750f20 (179 B, same bytes): the derived hook, then every attached player skeletal component's

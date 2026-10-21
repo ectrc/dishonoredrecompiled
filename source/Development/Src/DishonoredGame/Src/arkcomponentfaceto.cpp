@@ -19,6 +19,7 @@
 #include "arkcomponentfaceto.h"
 #include "arkcomponentlocomotion.h"
 #include "icdiag.h"
+#include "jcdiag.h"
 
 ARKCOMPONENT_IMPLEMENT_TYPE( FArkComponentFaceTo )
 
@@ -806,3 +807,101 @@ void FArkComponentFaceTo::ReportIfWatched()
 		m_CurBodyYawDelta, m_fRotateSpeed, m_CurReqWorkData.m_bSnapped ? 1 : 0, m_CurReqWorkData.m_bOrientationAlreadyReached ? 1 : 0,
 		m_ReqMgr.GetRequestsCount(), Now );
 }
+
+// ---- agent JC (PHASE24 JC): the matinee FaceTo track's component half (Engine reaches it through GDisFaceToTrack*Hook) ----
+
+// DISHONORED(port): agent JC. UInterpTrackInstFaceTo::UpdateTrackInst, 2013 0x8ff8f0 (2012 0x53eb90, 592 B). A jump to 0 drops the
+// running request. Then each key: one whose start was crossed since the last frame (or that starts at 0 on the first frame) turns
+// the group pawn towards its target - the local player's pawn (m_TargetType 0) or the first instance of the key's target group (2)
+// - at the track priority (UInterpTrackFaceTo::SetFaceToPriority, 15 from UDishonoredEngine::Init), exact rotation unless the key
+// allows procedural rotation, unless the target is the pawn itself, the key already ended or it is the key already started; one
+// whose end was crossed stops the running request. -jcnofaceto: inert. Deviations: a group actor that is not a pawn and a target
+// group with no instance are skipped (retail reads through them).
+static void DisFaceToTrackUpdate( UInterpTrackInstFaceTo* TrInst, FLOAT NewPosition, UBOOL bJump )
+{
+	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( TrInst->GetOuter() );
+	USeqAct_Interp* Matinee = TrInst->GetMatinee();
+	const UInterpTrackFaceTo* Track = CastChecked<UInterpTrackFaceTo>( TrInst->Track );
+	AActor* GroupActor = GrInst->GetGroupActor();
+	APawn* GroupPawn = Cast<APawn>( GroupActor );
+	FArkComponentFaceTo* FaceTo = ( GroupPawn != NULL ) ? FArkComponentFaceTo::GetFaceToComponent( GroupPawn ) : NULL;
+	if( DisJCNoFaceTo() || FaceTo == NULL || !FaceTo->IsInitialized() )
+	{
+		return;
+	}
+	if( bJump && NewPosition == 0.f )
+	{
+		TrInst->m_iLastKeyStarted = INDEX_NONE;
+		FaceTo->StopFaceTo( TrInst->m_iLastRequestID );
+		TrInst->m_iLastRequestID = INDEX_NONE;
+	}
+	const FLOAT PreviousPosition = NewPosition - Matinee->DeltaTime;
+	for( INT KeyIndex = 0; KeyIndex < Track->FaceToKeys.Num(); KeyIndex++ )
+	{
+		const FFaceToControlTrackKey& Key = Track->FaceToKeys(KeyIndex);
+		const FLOAT KeyEnd = Key.StartTime + Key.KeyLength;
+		if( ( PreviousPosition <= 0.f && Key.StartTime == 0.f ) || ( Key.StartTime > PreviousPosition && NewPosition >= Key.StartTime ) )
+		{
+			const UInterpTrackFaceToKeyProperties* Properties = Key.Properties;
+			AActor* Target = NULL;
+			if( Properties->m_TargetType == 0 )
+			{
+				APlayerController* LocalPC = GroupActor->GetALocalPlayerController();
+				Target = ( LocalPC != NULL ) ? LocalPC->Pawn : NULL;
+			}
+			else if( Properties->m_TargetType == 2 )
+			{
+				UInterpGroupInst* TargetGroupInst = Matinee->FindFirstGroupInst( Properties->m_Target );
+				Target = ( TargetGroupInst != NULL ) ? TargetGroupInst->GetGroupActor() : NULL;
+			}
+			if( Target != GroupActor && Target != NULL && KeyEnd >= NewPosition && TrInst->m_iLastKeyStarted != KeyIndex )
+			{
+				FArkCpntFaceToActorProp Prop;
+				Prop.InitAllByDefaultExcept( FaceTo, Target, -100.f, NULL, NULL );
+				Prop.OverwriteExactRotation( Properties->m_bAllowProceduralRotation );
+				TrInst->m_iLastRequestID = FaceTo->StartFaceToActor( TrInst, TrInst->GetFName(), UInterpTrackFaceTo::s_InterpTrackFaceToPriority, Prop );
+				TrInst->m_iLastKeyStarted = KeyIndex;
+				if( DisJCDiagEnabled() )
+				{
+					const FLOAT TargetYaw = ( Target->Location - GroupActor->Location ).Rotation().Yaw & 65535;
+					debugf( TEXT("DISHONORED(bringup): jcdiag faceto %s key %d target %s (type %d) req %d prio %d exact %d matpos %.3f world %.2f yaw %d -> %d"),
+						*GroupActor->GetName(), KeyIndex, *Target->GetName(), (INT)Properties->m_TargetType, TrInst->m_iLastRequestID,
+						UInterpTrackFaceTo::s_InterpTrackFaceToPriority, (INT)Properties->m_bAllowProceduralRotation, NewPosition, GWorld->GetTimeSeconds(),
+						GroupActor->Rotation.Yaw & 65535, (INT)TargetYaw );
+				}
+			}
+		}
+		else if( KeyEnd > PreviousPosition && NewPosition >= KeyEnd && TrInst->m_iLastRequestID != INDEX_NONE )
+		{
+			FaceTo->StopFaceTo( TrInst->m_iLastRequestID );
+			TrInst->m_iLastRequestID = INDEX_NONE;
+			if( DisJCDiagEnabled() )
+			{
+				debugf( TEXT("DISHONORED(bringup): jcdiag faceto %s key %d stop matpos %.3f world %.2f yaw %d"), *GroupActor->GetName(), KeyIndex,
+					NewPosition, GWorld->GetTimeSeconds(), GroupActor->Rotation.Yaw & 65535 );
+			}
+		}
+	}
+}
+
+// DISHONORED(port): agent JC. UInterpTrackInstFaceTo::TermTrackInst, 2013 0x8fc9a0 (2012 0x53bb30, 52 B).
+static void DisFaceToTrackTerm( UInterpTrackInstFaceTo* TrInst )
+{
+	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( TrInst->GetOuter() );
+	APawn* GroupPawn = Cast<APawn>( GrInst->GetGroupActor() );
+	FArkComponentFaceTo* FaceTo = ( GroupPawn != NULL ) ? FArkComponentFaceTo::GetFaceToComponent( GroupPawn ) : NULL;
+	if( FaceTo != NULL && FaceTo->IsInitialized() )
+	{
+		FaceTo->StopAllFaceToFromAsker( TrInst );
+	}
+}
+
+struct FDisFaceToTrackHookInstaller
+{
+	FDisFaceToTrackHookInstaller()
+	{
+		GDisFaceToTrackUpdateHook = &DisFaceToTrackUpdate;
+		GDisFaceToTrackTermHook = &DisFaceToTrackTerm;
+	}
+};
+static FDisFaceToTrackHookInstaller GDisFaceToTrackHookInstaller;

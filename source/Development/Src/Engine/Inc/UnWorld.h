@@ -1062,3 +1062,9 @@ extern void (*GDisInterpSkipStepHook)( class APawn* Pawn, INT Phase, FLOAT Step 
     interptracklookat_dis.cpp installs both. NULL by default: the Engine alone makes no look-at request. */
 extern void (*GDisLookAtTrackUpdateHook)( FLOAT NewPosition, class UInterpGroupInstAI* GrInstAI, UBOOL bJump, UBOOL bPreview );
 extern void (*GDisLookAtTrackTermHook)( class APawn* Pawn, const void* Asker );
+
+/** DISHONORED(port): agent JC. UInterpTrackInstFaceTo::UpdateTrackInst (2013 0x8ff8f0 / 2012 0x53eb90) and TermTrackInst
+    (2013 0x8fc9a0 / 2012 0x53bb30) start and stop requests on FArkComponentFaceTo, which lives in DishonoredGame; its
+    arkcomponentfaceto.cpp installs both. NULL by default: the Engine alone makes no face-to request. */
+extern void (*GDisFaceToTrackUpdateHook)( class UInterpTrackInstFaceTo* TrInst, FLOAT NewPosition, UBOOL bJump );
+extern void (*GDisFaceToTrackTermHook)( class UInterpTrackInstFaceTo* TrInst );

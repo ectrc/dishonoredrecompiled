@@ -78,3 +78,13 @@ void UInterpTrackFaceTo::PostLoad()
 		}
 	}
 }
+
+// DISHONORED(port): agent JC. 2013 0x8ff8f0 / 2012 0x53eb90: the keys crossed since the last frame start or stop face-to requests
+// on the group pawn's FArkComponentFaceTo; the component lives in DishonoredGame (arkcomponentfaceto.cpp installs the hook).
+void UInterpTrackInstFaceTo::UpdateTrackInst( FLOAT NewPosition, UBOOL bJump )
+{
+	if( GDisFaceToTrackUpdateHook != NULL )
+	{
+		GDisFaceToTrackUpdateHook( this, NewPosition, bJump );
+	}
+}

@@ -1,0 +1,18 @@
+item,state,evidence
+step 1: -jcdiag drift / key-start measurement,done,"JC1a/JC1b/JC1e/JC2a/JC2e: 634-651 key starts per run, 0 special root-motion keys, 0 place frames; tables build/agentJC/JC*_table.md"
+USkeletalMeshComponent::ProcessRootMotion whole (2013 0x746280 / 2012 0x353c80),done,"rotation scale/offset, own Rotation removed, interp-curve delta, no RMM_Accel tick / bypass / notify; WorkerB 46.6 uu (46.3 pre-JC)"
+RawExtractedRootMotionDelta store (UpdateSkelPoseEnd 0x7477c0) + GetRawRootMotionWorldDelta (0x70da70),done,ported; not reached on the measured routes
+AActor slots 202/203 (backup / clear) + ADishonoredPawn 0xb491e0/0xb49260 + NPC 0xb4b180/0xb4b1e0,done,"backup/clearbackup lines bracket WorkerB _20, _3, _4 Translate keys"
+special root-motion placement (slot 307 0xb493e0, MAT_SetRootMotionMode 2013 0xb4d440, 0xb5c890/0xb492e0/0xb562d0 via TickEnd 0xb62270),done (unexercised),no key with m_bSpecialRootMotionExtract on the ride or the Empress route
+stretch InitTrackInst 2013 0x9016e0 / TermTrackInst 0x901760; UpdateTrackInst 0x905c70 re-diff,done,re-diff: no change needed
+MAT_BeginAIGroup / MAT_FinishAIGroup m_bIsControlledByAMatinee; MAT_SetCollision 2013 else-branch,done,ported
+UInterpTrackInstFaceTo UpdateTrackInst 0x8ff8f0 / TermTrackInst 0x8fc9a0,done,"19 faceto requests on JC2e at prio 15; Empress turned to TargetPoint_4 (163.4 deg off her spawner, 0 with -jcnofaceto)"
+UInterpTrackAIControl UpdateTrack 0x8fee50 + NPC MAT_Send* requests,done (Fire logs only; aim state unported),0 AIControl keys on both routes
+MAT_BeginAIGroup mesh snap (step 5),not changed,no key start off its mark that the snap explains
+Emily in frame 165-200 (Empress route),not met,"JC2e: 0 of 73 samples in frame; she is never matinee-bound, her go-to stops 1100 uu short of the gazebo (JE chain)"
+scene-anim start within 10 uu / 5 deg of the stage mark,met for ground NPCs (distance),"0.0 uu for every ground NPC; boat passengers 2-103 uu identical pre-JC; yaw offsets are the FaceTo keys"
+ride SSIM >= .84 at the constant offset,met on build 1; build 2 0.821,"JC1a 0.840, JC1b 0.842; JC2a 0.821 vs the same exe with JC off (JC2b) 0.705 - run-to-run noise on the merged tree"
+walkers 123 u/s,met,Worker B _3 peak 123 u/s on JC2a
+IO2 facing table,mostly unchanged,"JC2a vs JC2b: _3/_8/_9/_12 100%, _26 100% (95% off); _4 72% (100% off) - its FaceTo keys turn him"
+gate d3d9+inputtest+newgame,see agentJC.md section 6,build/agentJC/gate2.txt
+bitfield_audit / generator,done,"mismatches 0; 79/79 byte-identical"

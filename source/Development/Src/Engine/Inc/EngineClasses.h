@@ -4319,6 +4319,15 @@ public:
 	// the notifies between the two (APawn 2013 0x2b53a0, retn 28h = ten DWORDs).
 	virtual void MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPrevPosition, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion) {}
 	virtual void MAT_SetRootMotionMode(BYTE MatRootMotionMode) {}
+	// DISHONORED(port): agent JC. The 2013 special root-motion extraction (m_bSpecialRootMotionExtract keys). AActor 2013 vtable
+	// slots 202 (+808) and 203 (+812) are empty on AActor: UInterpGroupInst::BackupTransform (2013 0x61fcb0) calls the first, the
+	// tail of UInterpGroup::UpdateGroup (2013 0x62fed0) the second when Translate root motion stops; ADishonoredPawn (0xb491e0 /
+	// 0xb49260) and ADishonoredNPCPawn (0xb4b180 / 0xb4b1e0) override them. MAT_SetSpecialRootMotionExtract is ADishonoredPawn's
+	// 2013 slot 307 (+1228, 0xb493e0), which the StretchAnimControl track instance's InitTrackInst / TermTrackInst (0x9016e0 /
+	// 0x901760) call on the group actor; declared here because the Engine cannot name ADishonoredPawn.
+	virtual void MAT_BackupTransform() {}
+	virtual void MAT_ClearBackupTransform() {}
+	virtual void MAT_SetSpecialRootMotionExtract(UBOOL bSpecialRootMotionExtract) {}
 	// DISHONORED(port): agent FS. Retail's native notification from USkeletalMeshComponent::InitAnimTree
 	// (the retail Actor script has no PostInitAnimTree event); APawn (2012 0x2dd5c0) caches its
 	// UArkAnimNodeStack slots in it, ADishonoredNPCPawn (0x7ad200) adds its FDisComponentAnimPlayer.

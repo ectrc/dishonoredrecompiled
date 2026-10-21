@@ -735,6 +735,9 @@ class USkeletalMeshComponent : public UMeshComponent
 	void UpdateSkelPose( FLOAT DeltaTime = 0.f, UBOOL bTickFaceFX = TRUE );
 	void UpdateMorph( FLOAT DeltaTime = 0.f, UBOOL bTickFaceFX = TRUE );
 	void ProcessRootMotion( FLOAT DeltaTime, FBoneAtom& ExtractedRootMotionDelta, INT& bHasRootMotion );
+	// DISHONORED(port): agent JC. 2013 0x70da70 (1,761 B, unnamed): RawExtractedRootMotionDelta (the animation's root motion before
+	// ProcessRootMotion, mesh space) in world space through a backed-up mesh transform; ADishonoredPawn places a pawn with it.
+	void GetRawRootMotionWorldDelta( FVector& OutTranslation, FRotator& OutRotation, const FMatrix& MeshLocalToWorld ) const;
 	void ComposeSkeleton();
 	void ApplyControllersForBoneIndex(INT BoneIndex, UBOOL bPrePhysControls, UBOOL bPostPhysControls, const UAnimTree* Tree, UBOOL bRenderedRecently, const BYTE* BoneProcessed);
 	void UpdateActiveMorphs();

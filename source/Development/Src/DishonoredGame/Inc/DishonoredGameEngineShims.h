@@ -13092,6 +13092,7 @@ public:
     //## END PROPS InterpTrackAIControl
 
     DECLARE_CLASS(UInterpTrackAIControl,UInterpTrack,0,Engine)
+#include "CppText/UInterpTrackAIControl.h"
 };
 
 // Engine.InterpTrackAIControlKeyProperties: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
@@ -13102,6 +13103,7 @@ public:
     //## END PROPS InterpTrackAIControlKeyProperties
 
     DECLARE_ABSTRACT_CLASS(UInterpTrackAIControlKeyProperties,UInterpTrackKeyProperties,0,Engine)
+#include "CppText/UInterpTrackAIControlKeyProperties.h"
 };
 
 // Engine.InterpTrackAIControlBodyIntentionKeyProperties: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 64) [shim: Engine package]
@@ -13130,6 +13132,7 @@ public:
     //## END PROPS InterpTrackAIControlNPCAimKeyProperties
 
     DECLARE_CLASS(UInterpTrackAIControlNPCAimKeyProperties,UInterpTrackAIControlKeyProperties,0,Engine)
+#include "CppText/UInterpTrackAIControlNPCAimKeyProperties.h"
 };
 
 // Engine.InterpTrackAIControlNPCFireKeyProperties: retail sizeof 72, reflected span 56..72 (2012 PDB sizeof 72) [shim: Engine package]
@@ -13143,6 +13146,7 @@ public:
     //## END PROPS InterpTrackAIControlNPCFireKeyProperties
 
     DECLARE_CLASS(UInterpTrackAIControlNPCFireKeyProperties,UInterpTrackAIControlKeyProperties,0,Engine)
+#include "CppText/UInterpTrackAIControlNPCFireKeyProperties.h"
 };
 
 // Engine.InterpTrackAkEventKeyProperties: retail sizeof 60, reflected span 56..60 (2012 PDB sizeof 60) [shim: Engine package]
@@ -13167,6 +13171,7 @@ public:
     //## END PROPS InterpTrackInstAIControl
 
     DECLARE_CLASS(UInterpTrackInstAIControl,UInterpTrackInst,0,Engine)
+#include "CppText/UInterpTrackInstAIControl.h"
 };
 
 // Engine.NaturalVoiceEnums: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]

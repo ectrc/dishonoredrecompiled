@@ -500,6 +500,41 @@ void ADishonoredPawn::PostBeginPlay()
 
 #include "arkcomponentmeshoffset.h"
 #include "discomponentretargeting.h"
+#include "arkcomponentlocomotion.h"
+#include "jcdiag.h"
+
+static UBOOL DisJCCmdLineHas( const TCHAR* Switch, INT& Cache )
+{
+	if( Cache < 0 )
+	{
+		Cache = ( appStrfind( appCmdLine(), Switch ) != NULL ) ? 1 : 0;
+	}
+	return Cache != 0;
+}
+
+UBOOL DisJCDiagEnabled()
+{
+	static INT Cache = -1;
+	return DisJCCmdLineHas( TEXT("-jcdiag"), Cache );
+}
+
+UBOOL DisJCOldRootMotion()
+{
+	static INT Cache = -1;
+	return DisJCCmdLineHas( TEXT("-jcoldrm"), Cache );
+}
+
+UBOOL DisJCNoFaceTo()
+{
+	static INT Cache = -1;
+	return DisJCCmdLineHas( TEXT("-jcnofaceto"), Cache );
+}
+
+UBOOL DisJCNoAIControl()
+{
+	static INT Cache = -1;
+	return DisJCCmdLineHas( TEXT("-jcnoaicontrol"), Cache );
+}
 
 // 2012 rva 0x78e550 (46 B), 2013 0x4fcfa0
 void ADishonoredPawn::ChangeAnimStateMotionModes( BYTE _RootMotion, BYTE _RootRotation )
@@ -535,20 +570,150 @@ void ADishonoredPawn::MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FNa
 
 // 2012 rva 0x7910e0 (71 B): Translate and Accel start the matching root-motion mode with RMRM_RotateActor, anything
 // else stops it
+// DISHONORED(port): agent JC. 2013 0xb4d440 (145 B, slot 195): Disable stops the root motion, Accel starts it as 2012, and
+// Translate on a pawn in the special root-motion extraction (m_bSpecialRootMotionExtract, slot 308) leaves the mesh's mode
+// alone: the locomotion is disabled and the pawn is flagged so its mesh's tick end places it from the backed-up transform
+// (ProcessMatineeRootMotion; slot 201 sets the flag). Any other value does nothing in 2013. -jcoldrm: the 2012 body.
 void ADishonoredPawn::MAT_SetRootMotionMode( BYTE MatRootMotionMode )
 {
-	switch( MatRootMotionMode )
+	if( DisJCOldRootMotion() )
 	{
-	case MRMM_Translate:
-		StartRootMotionMode( RMM_Translate, RMRM_RotateActor );
-		break;
-	case MRMM_Accel:
-		StartRootMotionMode( RMM_Accel, RMRM_RotateActor );
-		break;
-	default:
-		MAT_StopRootMotion();
-		break;
+		switch( MatRootMotionMode )
+		{
+		case MRMM_Translate:
+			StartRootMotionMode( RMM_Translate, RMRM_RotateActor );
+			break;
+		case MRMM_Accel:
+			StartRootMotionMode( RMM_Accel, RMRM_RotateActor );
+			break;
+		default:
+			MAT_StopRootMotion();
+			break;
+		}
+		return;
 	}
+	if( MatRootMotionMode == MRMM_Disable )
+	{
+		StopRootMotionMode();
+	}
+	else if( MatRootMotionMode == MRMM_Translate )
+	{
+		if( m_bSpecialRootMotionExtract )
+		{
+			FArkComponentLocomotion* Locomotion = FArkComponentLocomotion::GetLocomotionComponent( this );
+			if( Locomotion != NULL && !Locomotion->IsDisabled() )
+			{
+				Locomotion->Disable();
+			}
+			m_bShouldProccessMatineeRootMotion = 1;
+		}
+		else
+		{
+			StartRootMotionMode( RMM_Translate, RMRM_RotateActor );
+		}
+	}
+	else if( MatRootMotionMode == MRMM_Accel )
+	{
+		StartRootMotionMode( RMM_Accel, RMRM_RotateActor );
+	}
+}
+
+// DISHONORED(port): agent JC. 2013 0xb491e0 (125 B, slot 202): the transform a special root-motion key is played from.
+void ADishonoredPawn::MAT_BackupTransform()
+{
+	m_vBackupedPosition = Location;
+	m_rBackupedRotation = Rotation;
+	m_BackupedLocalToWorld = LocalToWorld();
+	m_BackupedMeshLocalToWorld = Mesh->LocalToWorld;
+	if( DisJCDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): jcdiag backup %s at %.1f/%.1f/%.1f yaw %d world %.3f"), *GetName(), Location.X, Location.Y, Location.Z,
+			Rotation.Yaw & 65535, GWorld->GetTimeSeconds() );
+	}
+}
+
+// DISHONORED(port): agent JC. 2013 0xb49260 (115 B, slot 203): the backup is cleared when Translate root motion stops.
+void ADishonoredPawn::MAT_ClearBackupTransform()
+{
+	m_vBackupedPosition = FVector::ZeroVector;
+	m_rBackupedRotation = FRotator::ZeroRotator;
+	m_BackupedLocalToWorld = FMatrix::Identity;
+	m_BackupedMeshLocalToWorld = FMatrix::Identity;
+	if( DisJCDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): jcdiag clearbackup %s at %.1f/%.1f/%.1f yaw %d world %.3f"), *GetName(), Location.X, Location.Y, Location.Z,
+			Rotation.Yaw & 65535, GWorld->GetTimeSeconds() );
+	}
+}
+
+// DISHONORED(port): agent JC. 2013 0xb493e0 (30 B, slot 307).
+void ADishonoredPawn::MAT_SetSpecialRootMotionExtract( UBOOL bSpecialRootMotionExtract )
+{
+	m_bSpecialRootMotionExtract = bSpecialRootMotionExtract ? 1 : 0;
+}
+
+// DISHONORED(port): agent JC. 2013 0xb492e0 (255 B): the backed-up transform plus the animation's root motion since the key's
+// backup (the stack extracts it from the backed-up anim position), through the backed-up mesh transform.
+void ADishonoredPawn::GetMatineeRootMotionTransform( FVector& OutLocation, FRotator& OutRotation ) const
+{
+	FVector DeltaTranslation( 0.f, 0.f, 0.f );
+	FRotator DeltaRotation( 0, 0, 0 );
+	Mesh->GetRawRootMotionWorldDelta( DeltaTranslation, DeltaRotation, m_BackupedMeshLocalToWorld );
+	OutLocation = m_vBackupedPosition + DeltaTranslation;
+	OutRotation = ( m_rBackupedRotation + DeltaRotation ).GetNormalized();
+}
+
+// DISHONORED(port): agent JC. 2013 0xb5c890 (199 B), from the mesh's tick end while a matinee controls the pawn: a pawn flagged by
+// MAT_SetRootMotionMode and not carried by the retargeting component is placed at the backed-up transform plus the root motion,
+// then the flag is cleared. -jcoldrm: only the -jcdiag line (the pawn moves through ProcessRootMotion instead).
+void ADishonoredPawn::ProcessMatineeRootMotion()
+{
+	const UBOOL bOldPath = DisJCOldRootMotion();
+	if( !bOldPath && ( !m_bShouldProccessMatineeRootMotion || IsRetargeting() ) )
+	{
+		return;
+	}
+	if( bOldPath && ( !m_bSpecialRootMotionExtract || m_BackupedMeshLocalToWorld == FMatrix::Identity ) )
+	{
+		return;
+	}
+	FVector NewLocation;
+	FRotator NewRotation;
+	GetMatineeRootMotionTransform( NewLocation, NewRotation );
+	if( DisJCDiagEnabled() )
+	{
+		const FVector Raw = Mesh->RawExtractedRootMotionDelta.GetTranslation();
+		const FVector Accum = Mesh->RootMotionDelta.GetTranslation();
+		debugf( TEXT("DISHONORED(bringup): jcdiag place %s world %.3f raw %.2f/%.2f/%.2f rmd %.2f/%.2f/%.2f mode %d | mark %.1f/%.1f/%.1f yaw %d | actor %.1f/%.1f/%.1f yaw %d drift %.1f dyaw %.1f%s"),
+			*GetName(), GWorld->GetTimeSeconds(), Raw.X, Raw.Y, Raw.Z, Accum.X, Accum.Y, Accum.Z, (INT)Mesh->RootMotionMode,
+			NewLocation.X, NewLocation.Y, NewLocation.Z, NewRotation.Yaw & 65535, Location.X, Location.Y, Location.Z, Rotation.Yaw & 65535,
+			( Location - NewLocation ).Size(), Abs( (FLOAT)( (SWORD)( Rotation.Yaw - NewRotation.Yaw ) ) ) * 360.f / 65536.f,
+			bOldPath ? TEXT(" (old path)") : TEXT("") );
+	}
+	if( bOldPath )
+	{
+		return;
+	}
+	MoveByMatineeRootMotion( NewLocation, NewRotation );
+	m_bShouldProccessMatineeRootMotion = 0;
+}
+
+// DISHONORED(port): agent JC. 2013 0xb562d0 (832 B): one MoveActor to the placement (MOVE_IgnoreBases | MOVE_NoFail), then the
+// move is written back as the mesh's root-motion delta (translation and rotation) for the systems that read it. Retail formats
+// "%s (%s) : Can't do the RM move, the NPC hit the actor %s at time %.3f." when the move fails and drops the string; printed
+// here under -jcdiag.
+void ADishonoredPawn::MoveByMatineeRootMotion( const FVector& NewLocation, const FRotator& NewRotation )
+{
+	const FVector DeltaLocation = NewLocation - Location;
+	const FRotator DeltaRotation = NewRotation - Rotation;
+	FCheckResult Hit( 1.f );
+	if( !GWorld->MoveActor( this, DeltaLocation, NewRotation, MOVE_IgnoreBases | MOVE_NoFail, Hit ) && DisJCDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): jcdiag %s (The Matinee) : Can't do the RM move, the NPC hit the actor %s at time %.3f."), *GetName(),
+			( Hit.Actor != NULL ) ? *Hit.Actor->GetName() : TEXT("[none]"), Hit.Time );
+	}
+	Mesh->RootMotionDelta.SetTranslation( DeltaLocation );
+	Mesh->RootMotionDelta.SetRotation( DeltaRotation.Quaternion() );
 }
 
 // 2012 rva 0x791190 (81 B)
