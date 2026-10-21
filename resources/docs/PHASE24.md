@@ -265,4 +265,39 @@ constant offset (a = 13.57 - soirée-enter). Nobody touches `UnPlayer.cpp`/`UnCo
 | JE | `618473c` | the teleport natives (pawn/NPC/player/controller), real FaceTo requests in `DoRequest` with the callback into `HandleFaceToEvent`, `AttemptTeleportSpell`, the player `StartDialog/EndDialog`, `UStatePlayerMasterInDialog` (minus the choice half) over the choice base's enter/exit/bend-time half, the view-tracking starts, the two look-at nodes, the NPC dialog availability + stims, every behaviour's `GetDialogAvailability`; `-jediag`; Emily teleports, runs in at ~400 u/s, her go-to succeeds at 170.94, Gate_37/Switch_8 fire, the next scene starts at 176.99, the bars on 160.89-185.04; gate stages 23/23, unported_natives 0 | the bars' writer is the choice base's `OnEnterState` (bit 0x10 at the PlayerState level), not `SetCinematicMode_Native`; both the teleport and the real FaceTo were needed; `InDialog::OnEnterState` is 2012 0x6b8b20 / 2013 0x673720; the named availability overrides were not enough (five folded `return 0` overrides found by vtable slot 98 - build 1 broke the ride without them); `MAT_IsAllowed` left (needs an Engine virtual) |
 | JF | `49f2a49` | the conversation node fires (no scripted-choice Kismet op in the level); `UDisConv_PlayerChoice` play/tick/init/matching + getters, the dialog state's `SetActivePlayerChoice/GetNumChoices/GetChoiceInfo`, the choice base's `ShowChoiceSelection/MakePlayerChoice/ReadyToMakeChoice` + choice calls in `TickState`, HUD `ShowChoiceSelection/HideChoiceSelection/OnPlayerChoiceConfirm`, the two skip natives, `BendTime/GetBendTime/TickBendTime`, four 2013-only helpers; `-jfdiag`; the list shows at 174.6 with both texts, Down+Enter takes output 1 (PlayerWin), Enter output 0 (Emily_GoToHideAndSeek), nothing fires without input; Empress scene unchanged; gate stages 23/23 | bend time was the missing piece (`ReadyToMakeChoice` waits for channel 3 < 0.1); the 2013 hand-over is in `TickNode`, not `PlayNode`; the HUD movie owns Down/Enter (no ini keys); `TickBendTime` does not write world `TimeDilation` (no out-of-bend tick); `USeqAct_Interp::OnSkipRequest` still unported so the dialog skip does not stop the matinee; `UDisSeqAct_DialogScriptedChoice` (UpdateOp 333 B) left |
 **JH** launched on `7ead454`.
-**JF** launched on `618473c`.
+**JF** launched on `777497b`.
+
+## Wave result (2026-10-21, head `5904aa0`, 8 packages merged, JI not needed)
+
+Final gate on `5904aa0`: **47 ok, 0 failed, 0 skipped** (1816 s, `build/gate_final27.log`, machine quiet). `build/head_rel` rebuilt
+at `49f2a49` (same tree) and staged as `DishonoredGame-Win64-Shipping.exe`. End-to-end compare on a quiet machine
+(`build/cmp/final27q`, rescored at the constant offset a = 13.57 - soiree-enter 56.22 = -42.65 in `final27q_const`):
+
+| metric (median over the ride) | wave 26 (`2127b56`) | wave 27 (`5904aa0`) |
+|---|---|---|
+| SSIM | .848 | **.852** |
+| MAD | 7.6 | **7.55** |
+| zoom | 1.00 | 1.00 |
+| zoom NCC | .83 | .82 |
+
+The two hand-played scenes on the staged exe (our frames under `build/cmp/w27_scenes/`, README inside; retail.mp4 does not
+cover them): the Empress route `-fwteleport=DisTrigger_16@160` plays through (bars 160.87-185.05, Emily teleports and runs
+in, `Emily_GoToGazebo_Success`/`Gate_37`/`Switch_8` 170.95, the next scene 176.98); the Emily greeting
+`-fwteleport=TriggerVolume_1@155` shows the hide-and-seek choice at 174.93 with both texts, keys sent before the list
+(170.7) do nothing and the list stays up, `Down`+`Enter` at 177.94 takes output 1 -> PlayerWin.
+
+The user's seven defects: (1) main-menu UI sounds play (JB: `gfxProcessSound` bound, `SoundThemes` filled); (2) NPCs walk
+straight legs with in-place turns and avoidance (JD) and scene anims start on their marks (JC: retail `ProcessRootMotion`,
+the transform backup/restore virtuals, FaceTo/AIControl tracks), Emily's walk-off was JE's chain; (3) the choice shows and
+waits (JF); (4) markers read the target name (JA: `SetText` through `SetTextValue`); (5) the Empress scene plays through
+(JE: teleport natives, real FaceTo requests, `AttemptTeleportSpell`, the dialog state = bars); (6) the landing spring and
+the bump smoother off in flight, `ApplyAttributes` (JG; walk speed now retail's 400, `inputtest_peak_speed` ratcheted to
+380); (7) the interaction prompt ("Talk" + name) and the highlight glow (JH).
+
+Open after wave 27: `MAT_IsAllowed` (needs an `APawn` virtual + the `UnInterpolation.cpp` call); `USeqAct_Interp::OnSkipRequest`
+(the dialog skip reaches `InterruptTickingNode` but the matinee keeps playing); `TickBendTime`'s world `TimeDilation` write
+(no out-of-bend-time tick); the Kismet scripted-choice classes (not used in this level); the hover "Move" sound; the
+pickups' crosshair (the masked probe family); the land thud (the contact system); the item-context half of
+`AttemptTeleportSpell`; `GameInfo::BendTime`'s particle/post-process/power halves; one render-thread VertexBuffer assert
+flake; the ride SSIM's run-to-run spread (~.82-.85). The override file is removed. **No further wave: the user said
+"After this phase don't do any more".**

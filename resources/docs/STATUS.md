@@ -1,8 +1,8 @@
-# Project status — 2026-10-20 (wave 26 complete, head `2127b56`: the hand-played opening, real audio (Wwise reimplemented) and lip-sync (FaceFX reimplemented), `PHASE23.md`; wave 25 = `PHASE22.md`)
+# Project status — 2026-10-21 (wave 27 complete, head `5904aa0`: the second hand play - menu sounds, markers, NPC placement and walking, the Empress scene, the hide-and-seek choice, jump feel, the interaction prompt, `PHASE24.md`; wave 26 = `PHASE23.md`)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), `PHASE21.md` (a wave-25 draft that was never run — void), **`PHASE22.md` (wave 25, done: HA..HL)**, **`PHASE23.md` (wave 26, done: IA..IT, IH1-IH4, FX1-FX3)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), `PHASE21.md` (a wave-25 draft that was never run — void), **`PHASE22.md` (wave 25, done: HA..HL)**, **`PHASE23.md` (wave 26, done: IA..IT, IH1-IH4, FX1-FX3)**, **`PHASE24.md` (wave 27, done: JA..JH)**. Decisions and fixes: `porting_notes.md`. Per-function status:
 `progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GK>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
@@ -281,6 +281,19 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
     the boat's sockets (`FDisComponentRetargeting`). Wave 25 GM.
 17. One of L_Tower_P's eight streaming sublevels never loads, on the control too (GG; name not logged). Wave 25 GN.
 
+## Wave 27 — the second hand play: menu sounds, markers, NPC placement, the Empress scene, the choice, jump feel, the prompt
+
+Eight packages (JA..JH; JI dropped - one pylon on the route), all merged and gated: the final gate on `5904aa0` is **47 of 47**;
+ride SSIM .848 -> .852 at the constant offset (`PHASE24.md` "Outcomes"/"Wave result"; `agents/agentJA.md` … `agentJH.md`).
+The user's seven defects, all closed on the route: the main menu's UI sounds (JB: `gfxProcessSound` bound, the sound themes
+filled), the markers' "Description" (JA: `GFxValue::SetText` through `SetTextValue`), NPC scene placement (JC: retail
+`ProcessRootMotion`, the actor transform backup/restore virtuals, FaceTo/AIControl tracks) and walking (JD: turn-ahead, path
+yaw, Arkane `PointReachable`, `FArkComponentAvoidance`), the Empress scene (JE: teleport natives, real FaceTo requests,
+`AttemptTeleportSpell`, the player dialog state = the black bars), the hide-and-seek choice (JF: the player choice node, the
+choice half of the dialog state, HUD show/hide, bend time), jump feel (JG: `UDishonoredCamera_PhysicalReact`, the bump
+smoother off in flight, `ApplyAttributes`), the interaction prompt and glow (JH: `FillUIInteractions`, the probe fill, the
+highlights). Scene captures for the user: `build/cmp/w27_scenes/`. Residue in PHASE24 "Wave result".
+
 ## Wave 26 — the hand-played opening, real audio, lip-sync
 
 Twenty-nine packages, all merged and gated: the final gate on `2127b56` is **47 of 47**; ride SSIM vs `retail.mp4` .696 -> .848
@@ -496,9 +509,11 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**No wave is planned.** Wave 26 closed 2026-10-20 (PHASE23 "Wave result" lists the residue: the audio A/B gap, NPC landing/water,
-the generator's `m_Points` placeholder, the Steam cloud profile IJ, the compare tool's slope fit). `build/head_rel` is at `2127b56`
-and staged as `DishonoredGame-Win64-Shipping.exe`.
+**No wave is planned - the user said "After this phase don't do any more".** Wave 27 closed 2026-10-21 (PHASE24 "Wave result" lists
+the residue: `MAT_IsAllowed`, the matinee skip, the bend-time `TimeDilation` write, the pickups' crosshair, the land thud, the
+hover sound; wave 26's residue stands: the audio A/B gap, NPC landing/water, the generator's `m_Points` placeholder, the Steam
+cloud profile IJ, the compare tool's slope fit). `build/head_rel` is at `49f2a49` (= `5904aa0`'s tree) and staged as
+`DishonoredGame-Win64-Shipping.exe`.
 
 **Deferred and said so**: the rest of the UI list (menu camera, haze, text clarity); the retail dismod
 measurements; faction tables; the probe family; the NPC inventory override (guards' swords); `DropItemsInSlot`,
@@ -507,7 +522,7 @@ the wheel; **wave 15**; audio.
 **Process, from the user, all absolute**: `-windowed` on every launch; input only through `game_input.py`; builds
 only through `build_queued.py` (FIFO, half the cores, two per package); no retail launches while the user is at the
 machine. The override file (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`) lifts the cap and the queue only
-when the user says so (2026-10-14 13:00–21:10, 2026-10-14 23:00–2026-10-15 15:00, 2026-10-19 00:00–2026-10-20; gone since). **Never hand-edit a generated
+when the user says so (2026-10-14 13:00–21:10, 2026-10-14 23:00–2026-10-15 15:00, 2026-10-19 00:00–2026-10-20, 2026-10-21 wave 27; gone since). **Never hand-edit a generated
 header**: `Inc/CppText/<Class>.h` and `DishonoredLink<X>()` anchors; the coordinator regenerates on merge.
 
 ## Known pitfalls
