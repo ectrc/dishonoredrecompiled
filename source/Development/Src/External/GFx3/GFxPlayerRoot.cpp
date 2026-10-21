@@ -568,12 +568,76 @@ void GFxMovieRoot::CreateArray(GFxValue* v)                            // 2012 0
     ASValue2GFxValue(&Env, result, v);
 }
 
+// DISHONORED(port, agent JB): GASUserDefinedFunctionObject, the AS2 function a GFxFunctionHandler answers
+// (2012 ctor 0x9af0d0, Invoke 0x9b0ce0, InvokeImpl 0x9b0a60, Finalize_GC 0x9af180). The handler is held with a
+// reference; a call hands it `this` and the arguments as GFxValues (pArgsWithThisRef[0] is `this`, pArgs the
+// rest, null without arguments), and a return value other than undefined becomes the call's result.
+// Deviation: retail calls through a `super` object with the super's alternate prototype reset afterwards; this
+// tree's GASSuperObject keeps the real `this` directly, which is what the handler is given.
+class GASUserDefinedFunctionObject : public GASFunctionObject
+{
+public:
+    GASUserDefinedFunctionObject(GASStringContext* sc, GASObject* proto, GFxFunctionHandler* handler, void* userData)
+        : GASFunctionObject(sc, proto), pHandler(handler), pUserData(userData)
+    {
+        if (pHandler) pHandler->AddRef();
+    }
+    virtual ~GASUserDefinedFunctionObject()
+    {
+        if (pHandler) pHandler->Release();
+    }
+    virtual void Finalize_GC()
+    {
+        if (pHandler) pHandler->Release();
+        pHandler = 0;
+        GASFunctionObject::Finalize_GC();
+    }
+    virtual void Invoke(const GASFnCall& fn)
+    {
+        if (pHandler == 0)
+            return;
+        GASObjectInterface* self = fn.pThis;
+        if (self && self->GetObjectType() == Object_Super)
+            self = static_cast<GASSuperObject*>(self->ToASObject())->pRealThis;
+
+        GASValue thisValue;
+        if (self == 0)
+            thisValue.SetNull();
+        else if (GFxASCharacter* ch = self->ToASCharacter())
+            thisValue.SetAsCharacter(ch);
+        else
+            thisValue.SetAsObject(self->ToASObject());
+
+        GFxMovieRoot* root = fn.pEnv->GetMovieRoot();
+        GFxValue* args = new GFxValue[fn.NArgs + 1];
+        root->ASValue2GFxValue(fn.pEnv, thisValue, &args[0]);
+        for (int i = 0; i < fn.NArgs; ++i)
+            root->ASValue2GFxValue(fn.pEnv, fn.Arg(i), &args[i + 1]);
+
+        GFxValue retVal;
+        GFxFunctionHandler::Params params;
+        params.pRetVal = &retVal;
+        params.pMovie = root;
+        params.pThis = &args[0];
+        params.pArgsWithThisRef = args;
+        params.pArgs = fn.NArgs > 0 ? args + 1 : 0;
+        params.ArgCount = (unsigned int)fn.NArgs;
+        params.pUserData = pUserData;
+        pHandler->Call(params);
+        if (!retVal.IsUndefined() && fn.pResult)
+            root->GFxValue2ASValue(retVal, fn.pResult);
+        delete[] args;
+    }
+
+    GFxFunctionHandler* pHandler;
+    void*               pUserData;
+};
+
 void GFxMovieRoot::CreateFunction(GFxValue* v, GFxFunctionHandler* h, void* userData) // 0x9af5c0
 {
-    // Wrapping a GFxFunctionHandler needs GFxFunctionHandler::Call, whose parameter struct
-    // (GFxFunctionHandler::Params) the generated header does not carry yet. Reported to agent BB
-    // rather than guessed; agentBC.md 6 lists it.
-    v->SetUndefined();
+    GASValue func;
+    func.SetAsFunction(new GASUserDefinedFunctionObject(pGC->GetSC(), pGC->GetPrototype(GASGlobalContext::Proto_Function), h, userData));
+    ASValue2GFxValue(&Env, func, v);
 }
 
 bool GFxMovieRoot::SetVariable(const char* path, const GFxValue& v, GFxMovie::SetVarType type)

@@ -34,7 +34,9 @@ void UGFxAction_OpenMovie::Activated()
 
 	if( MoviePlayerClass != NULL )
 	{
-		MoviePlayer = Cast<UGFxMoviePlayer>( StaticConstructObject( MoviePlayerClass, GetOuter() ) );
+		// agent JB: retail constructs the player inside the action itself (2012 0x5e51a0 passes `this`), which is how
+		// UDisGFxMoviePlayerBase::PreLoad finds the action's m_pTweaks (the main menu's Twk_GFxMoviePlayerMainMenu)
+		MoviePlayer = Cast<UGFxMoviePlayer>( StaticConstructObject( MoviePlayerClass, this ) );
 		MoviePlayer->MovieInfo = Movie;
 	}
 

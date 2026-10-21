@@ -1888,9 +1888,192 @@ UBOOL UGFxMoviePlayer::Load( const FString& Filename, UBOOL bInitFirstFrame )
 	return TRUE;
 }
 
-// DISHONORED(port): 2012 rva 0x5e3a30: PreLoad opens MovieInfo's own package path. Most of the retail
-// body's 1,044 bytes assemble that path from MovieInfo's outer chain and then install the CLIK load /
-// unload / sound callbacks, which are FGFxCLIKObject*EventCallback and belong to the runtime glue.
+/*-----------------------------------------------------------------------------
+	The three AS2 globals PreLoad installs (agent JB, PHASE24 JB)
+-----------------------------------------------------------------------------*/
+
+static UBOOL GFxJBDiag()
+{
+	static const UBOOL bDiag = ParseParam( appCmdLine(), TEXT("jbdiag") );
+	return bDiag;
+}
+
+/** -jbdiag, once per function: the objects a script body's bytecode references (functions it calls, properties) */
+static void GFxJBDumpScriptReferences( UFunction* Function )
+{
+	static TSet<UFunction*> Dumped;
+	if( Function == NULL || Dumped.Contains( Function ) )
+	{
+		return;
+	}
+	Dumped.Add( Function );
+	TSet<UObject*> Objects;
+	for( FObjectIterator It; It; ++It )
+	{
+		Objects.Add( *It );
+	}
+	debugf( TEXT("jbdiag: script %s: %d bytes"), *Function->GetPathName(), Function->Script.Num() );
+	for( INT Offset = 0; Offset + 4 <= Function->Script.Num(); Offset++ )
+	{
+		UObject* Referenced = *(UObject**)&Function->Script(Offset);
+		if( Referenced != NULL && Objects.Contains( Referenced ) )
+		{
+			debugf( TEXT("jbdiag: script %s +%d (op 0x%02x): %s"), *Function->GetName(), Offset, Offset > 0 ? Function->Script(Offset - 1) : 0,
+				*Referenced->GetFullName() );
+		}
+	}
+}
+
+/** retail reads the argument as a wide string; our AS2 runtime hands function handlers UTF-8 (ASValue2GFxValue) */
+static FString GFxArgString( const GFxValue& Arg )
+{
+	if( Arg.IsStringW() )
+	{
+		return FString( Arg.GetStringW() );
+	}
+	if( Arg.IsString() )
+	{
+		return FString( FUTF8ToTCHAR( Arg.GetString() ) );
+	}
+	return FString();
+}
+
+// DISHONORED(port): 2012 vtables 0xcc0dc8 / 0xcc0dd4, Call 2012 rva 0x5e6800. _global.CLIK_loadCallback /
+// CLIK_unloadCallback(widgetName, widgetPath, widget): the most derived WidgetPathBindings entry of the path
+// (split from the right) handles the widget with its SubWidgetBindings, else the movie with WidgetBindings; the
+// widget is wrapped in the bound class (UGFxObject by default) and handed to WidgetInitialized / WidgetUnloaded.
+class FGFxCLIKObjectEventCallback : public GFxFunctionHandler
+{
+public:
+	FGFxCLIKObjectEventCallback( UGFxMoviePlayer* InMovie ) : Movie( InMovie ) { RefCount = 1; }
+
+	virtual UBOOL CallEventHandler( const FName& WidgetName, const FName& WidgetPath, UGFxObject* Widget, UGFxObject* PathHandlingWidget ) = 0;
+
+	virtual void Call( const Params& InParams )
+	{
+		if( Movie == NULL || Movie->IsPendingKill() || Movie->HasAnyFlags( RF_Unreachable ) )
+		{
+			return;
+		}
+		const FName WidgetName( *GFxArgString( InParams.pArgs[0] ) );
+		FString WidgetPathString = GFxArgString( InParams.pArgs[1] );
+		const FName WidgetPath( *WidgetPathString );
+
+		UGFxObject* PathHandlingWidget = NULL;
+		FString Tmp;
+		while( WidgetPathString.Split( TEXT("."), &WidgetPathString, &Tmp, TRUE ) )
+		{
+			PathHandlingWidget = Movie->WidgetPathBindings.FindRef( FName( *WidgetPathString ) );
+			if( PathHandlingWidget != NULL )
+			{
+				break;
+			}
+		}
+		TArrayNoInit<FGFxWidgetBinding>& WidgetBindings = PathHandlingWidget != NULL ? PathHandlingWidget->SubWidgetBindings : Movie->WidgetBindings;
+
+		UClass* WidgetClass = UGFxObject::StaticClass();
+		for( INT Index = 0; Index < WidgetBindings.Num(); Index++ )
+		{
+			if( WidgetBindings(Index).WidgetName == WidgetName )
+			{
+				WidgetClass = WidgetBindings(Index).WidgetClass;
+				break;
+			}
+		}
+		UGFxObject* Widget = Movie->CreateValueAddRef( &InParams.pArgs[2], WidgetClass );
+		const UBOOL bHandled = CallEventHandler( WidgetName, WidgetPath, Widget, PathHandlingWidget );
+		if( GFxJBDiag() )
+		{
+			debugf( TEXT("jbdiag: CLIK callback %s widget %s path %s class %s handled %d"), *Movie->GetName(), *WidgetName.ToString(),
+				*WidgetPath.ToString(), *WidgetClass->GetName(), bHandled );
+		}
+	}
+
+protected:
+	UGFxMoviePlayer* Movie;
+};
+
+// DISHONORED(port): 2012 rva 0x5cf480
+class FGFxCLIKObjectOnLoadEventCallback : public FGFxCLIKObjectEventCallback
+{
+public:
+	FGFxCLIKObjectOnLoadEventCallback( UGFxMoviePlayer* InMovie ) : FGFxCLIKObjectEventCallback( InMovie ) {}
+
+	virtual UBOOL CallEventHandler( const FName& WidgetName, const FName& WidgetPath, UGFxObject* Widget, UGFxObject* PathHandlingWidget )
+	{
+		Movie->bWidgetsInitializedThisFrame = TRUE;
+		if( PathHandlingWidget != NULL )
+		{
+			return PathHandlingWidget->eventWidgetInitialized( WidgetName, WidgetPath, Widget );
+		}
+		return Movie->eventWidgetInitialized( WidgetName, WidgetPath, Widget );
+	}
+};
+
+// DISHONORED(port): 2012 rva 0x5cf550
+class FGFxCLIKObjectOnUnloadEventCallback : public FGFxCLIKObjectEventCallback
+{
+public:
+	FGFxCLIKObjectOnUnloadEventCallback( UGFxMoviePlayer* InMovie ) : FGFxCLIKObjectEventCallback( InMovie ) {}
+
+	virtual UBOOL CallEventHandler( const FName& WidgetName, const FName& WidgetPath, UGFxObject* Widget, UGFxObject* PathHandlingWidget )
+	{
+		if( PathHandlingWidget != NULL )
+		{
+			return PathHandlingWidget->eventWidgetUnloaded( WidgetName, WidgetPath, Widget );
+		}
+		return Movie->eventWidgetUnloaded( WidgetName, WidgetPath, Widget );
+	}
+};
+
+// DISHONORED(port): 2013 rva 0x588570 (2012 0x5cb160). _global.gfxProcessSound(this, themeName, eventName), called by
+// the content's SoundHandler.PlaySound: every SoundThemes entry of the movie under that theme name processes the
+// event for the movie's player controller (UDisUISoundTheme::ProcessSoundEvent, script, maps it to an AkEvent).
+class FGFxSoundEventCallback : public GFxFunctionHandler
+{
+public:
+	FGFxSoundEventCallback( FGFxMovie* InMovie ) : Movie( InMovie ) { RefCount = 1; }
+
+	virtual void Call( const Params& InParams )
+	{
+		if( Movie == NULL || Movie->pUMovie == NULL || Movie->pUMovie->IsPendingKill() || Movie->pUMovie->HasAnyFlags( RF_Unreachable ) )
+		{
+			return;
+		}
+		const FName SoundThemeName( *GFxArgString( InParams.pArgs[1] ) );
+		const FName SoundEventName( *GFxArgString( InParams.pArgs[2] ) );
+		INT Matched = 0;
+		for( INT Index = 0; Index < Movie->pUMovie->SoundThemes.Num(); Index++ )
+		{
+			FSoundThemeBinding& Binding = Movie->pUMovie->SoundThemes(Index);
+			if( Binding.ThemeName == SoundThemeName && Binding.Theme != NULL )
+			{
+				if( GFxJBDiag() )
+				{
+					debugf( TEXT("jbdiag: gfxProcessSound %s theme %s event %s -> %s"), *Movie->pUMovie->GetName(), *SoundThemeName.ToString(),
+						*SoundEventName.ToString(), *Binding.Theme->GetPathName() );
+				}
+				if( GFxJBDiag() )
+				{
+					GFxJBDumpScriptReferences( Binding.Theme->FindFunction( FName( TEXT("ProcessSoundEvent") ) ) );
+				}
+				Matched++;
+				Binding.Theme->eventProcessSoundEvent( SoundEventName, Movie->pUMovie->eventGetPC() );
+			}
+		}
+		if( GFxJBDiag() && Matched == 0 )
+		{
+			debugf( TEXT("jbdiag: gfxProcessSound %s theme %s event %s: no theme of %d"), *Movie->pUMovie->GetName(), *SoundThemeName.ToString(),
+				*SoundEventName.ToString(), Movie->pUMovie->SoundThemes.Num() );
+		}
+	}
+
+private:
+	FGFxMovie* Movie;
+};
+
+// DISHONORED(port): 2012 rva 0x5e3a30: PreLoad opens MovieInfo's own package path, assembled from MovieInfo's outer
+// chain, then installs _global.gfxProcessSound, CLIK_loadCallback and CLIK_unloadCallback on the new view (sticky).
 UBOOL UGFxMoviePlayer::PreLoad()
 {
 	if( pMovie != NULL )
@@ -1918,10 +2101,42 @@ UBOOL UGFxMoviePlayer::PreLoad()
 	{
 		FullName = MovieInfo->GetOutermost()->GetName() + TEXT(".") + MovieInfo->GetName();
 	}
-	return Load( FullName, TRUE );
-	// DISHONORED(bringup): retail then installs FGFxCLIKObjectOnLoadEventCallback,
-	// FGFxCLIKObjectOnUnloadEventCallback and FGFxSoundEventCallback on the new view through
-	// GFxMovieView::CreateFunction; those three handlers are the runtime glue's (agent BB).
+	// DISHONORED(deviation, agent JB): retail loads with bInitFirstFrame 0, so the first frame (and the CLIK widgets'
+	// onLoad) runs after the callbacks below exist; this tree has loaded with TRUE since agent BE. -jbfirstframe0
+	// takes retail's 0 for the A/B.
+	static const UBOOL bRetailFirstFrame = ParseParam( appCmdLine(), TEXT("jbfirstframe0") );
+	if( !Load( FullName, bRetailFirstFrame ? FALSE : TRUE ) )
+	{
+		return FALSE;
+	}
+	FGFxMovie* Movie = GetMovie();
+	GFxMovieView* View = Movie->pView.GetPtr();
+	GFxValue SoundFunction;
+	FGFxSoundEventCallback* SoundEventHandler = new FGFxSoundEventCallback( Movie );
+	View->CreateFunction( &SoundFunction, SoundEventHandler, NULL );
+	View->SetVariable( "_global.gfxProcessSound", SoundFunction, GFxMovie::SV_Sticky );
+	GFxValue LoadFunction;
+	FGFxCLIKObjectOnLoadEventCallback* LoadCallback = new FGFxCLIKObjectOnLoadEventCallback( this );
+	View->CreateFunction( &LoadFunction, LoadCallback, NULL );
+	View->SetVariable( "_global.CLIK_loadCallback", LoadFunction, GFxMovie::SV_Sticky );
+	GFxValue UnloadFunction;
+	FGFxCLIKObjectOnUnloadEventCallback* UnloadCallback = new FGFxCLIKObjectOnUnloadEventCallback( this );
+	View->CreateFunction( &UnloadFunction, UnloadCallback, NULL );
+	View->SetVariable( "_global.CLIK_unloadCallback", UnloadFunction, GFxMovie::SV_Sticky );
+	UnloadCallback->Release();
+	LoadCallback->Release();
+	SoundEventHandler->Release();
+	if( GFxJBDiag() )
+	{
+		debugf( TEXT("jbdiag: PreLoad %s function values %d %d %d"), *GetName(), (INT)SoundFunction.GetType(), (INT)LoadFunction.GetType(),
+			(INT)UnloadFunction.GetType() );
+	}
+	if( GFxJBDiag() )
+	{
+		debugf( TEXT("jbdiag: PreLoad %s installed gfxProcessSound, CLIK_loadCallback, CLIK_unloadCallback (%d sound themes)"), *GetName(),
+			SoundThemes.Num() );
+	}
+	return TRUE;
 }
 
 // DISHONORED(port): 2013 rva 0x58e820 (2012 0x5cf5b0): the C++ PreLoad, then FGFxEngine::StartScene with

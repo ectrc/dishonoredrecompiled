@@ -146,6 +146,50 @@ void UDisGFxMoviePlayerBase::execPreLoad( FFrame& Stack, RESULT_DECL )
 	*(UBOOL*)Result = PreLoad();
 }
 
+UDisTweaksBase* UDisGFxMoviePlayerBase::GetTweaks_Derived()
+{
+	return m_pTweaks;
+}
+
+void UDisGFxMoviePlayerBase::SetTweaks_Derived( UDisTweaksBase* Tweaks )
+{
+	m_pTweaks = (UDisTweaks_GFxMoviePlayerBase*)Tweaks;
+}
+
+// DISHONORED(port): agent JB, 2012 rva 0x808a20. The movie's sound themes are the tweaks' bindings: every theme name
+// binds its Theme and, when there is one, its ExternalTheme (both entries under the same name, in that order).
+void UDisGFxMoviePlayerBase::ApplyTweakChanges_Derived()
+{
+	SoundThemes.Empty();
+	for( INT Index = 0; Index < m_pTweaks->m_SoundThemes.Num(); Index++ )
+	{
+		const FDisSoundThemeBinding& Binding = m_pTweaks->m_SoundThemes(Index);
+		FSoundThemeBinding SoundThemeBinding;
+		SoundThemeBinding.ThemeName = Binding.ThemeName;
+		if( Binding.Theme != NULL )
+		{
+			SoundThemeBinding.Theme = Binding.Theme;
+			SoundThemes.AddItem( SoundThemeBinding );
+		}
+		if( Binding.ExternalTheme != NULL )
+		{
+			SoundThemeBinding.Theme = Binding.ExternalTheme;
+			SoundThemes.AddItem( SoundThemeBinding );
+		}
+	}
+	static const UBOOL bDiag = ParseParam( appCmdLine(), TEXT("jbdiag") );
+	if( bDiag )
+	{
+		FString Themes;
+		for( INT Index = 0; Index < SoundThemes.Num(); Index++ )
+		{
+			Themes += FString::Printf( TEXT(" %s=%s"), *SoundThemes(Index).ThemeName.ToString(), *SoundThemes(Index).Theme->GetPathName() );
+		}
+		debugf( TEXT("jbdiag: ApplyTweakChanges_Derived %s tweaks %s: %d sound themes%s"), *GetName(), *m_pTweaks->GetPathName(),
+			SoundThemes.Num(), *Themes );
+	}
+}
+
 // DISHONORED(port): agent FP, 2013 rva 0x7a3fd0 (2012 0x81d0c0). Nothing to do while a movie is already held or a
 // package is streaming in. Without a path the tweaks name the package and the movie. Retail brackets LoadPackage with
 // the streaming manager's BlockTillAllRequestsFinished and CancelPendingTextureStreaming, which this tree's streaming

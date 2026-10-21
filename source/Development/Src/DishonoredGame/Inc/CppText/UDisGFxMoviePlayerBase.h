@@ -46,3 +46,13 @@ public:
 	static void FormatMouseKeyName( FName _Key, FString& _rOut );
 	// DISHONORED(port): 2013 rva 0x793dc0 (2012 0x7fa350)
 	static FString LocalizeKeyboardKeyName( FName _Key, UBOOL _bInGame );
+
+// ---- agent JB (PHASE24 JB): the IDisTweaksInterface slots; ApplyTweakChanges_Derived fills SoundThemes ----
+public:
+	// DISHONORED(port): 2012 rva 0x81c4b0
+	virtual UObject* GetUObjectInterfaceDisTweaksInterface() { return this; }
+	// DISHONORED(port): 2012 vtable 0xd528c8 (a folded `return this->m_pTweaks`), 2012 rva 0x7f6030, 2012 rva 0x808a20.
+	// Bodies in disgfxmovieplayerbase.cpp.
+	virtual UDisTweaksBase* GetTweaks_Derived();
+	virtual void SetTweaks_Derived( UDisTweaksBase* Tweaks );
+	virtual void ApplyTweakChanges_Derived();

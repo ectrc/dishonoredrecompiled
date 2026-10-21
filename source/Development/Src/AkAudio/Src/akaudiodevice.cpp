@@ -654,7 +654,14 @@ AkPlayingID UAkAudioDevice::PostEvent( UAkEvent* Event, AActor* Actor, FName Bon
 		return AK_INVALID_PLAYING_ID;
 	}
 	const FLOAT MaxRadius = Event->GetMaxRadius();
-	return PostEvent( (AkUniqueID)Event->m_akID, MaxRadius, Actor, BoneName, Flags, Callback, Cookie, bStopWhenOwnerDestroyed );
+	const AkPlayingID PlayingID = PostEvent( (AkUniqueID)Event->m_akID, MaxRadius, Actor, BoneName, Flags, Callback, Cookie, bStopWhenOwnerDestroyed );
+	static const UBOOL bJBDiag = ParseParam( appCmdLine(), TEXT("jbdiag") );
+	if( bJBDiag )
+	{
+		debugf( TEXT("jbdiag: PostEvent %s (0x%08x) on %s -> playing id %u"), *Event->GetPathName(), (DWORD)Event->m_akID,
+			Actor ? *Actor->GetName() : TEXT("none"), (DWORD)PlayingID );
+	}
+	return PlayingID;
 }
 
 // DISHONORED(port): 2013 rva 0x5b2c40

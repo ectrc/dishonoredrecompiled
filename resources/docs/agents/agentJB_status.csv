@@ -1,0 +1,14 @@
+item,state,evidence
+UGFxMoviePlayer::PreLoad tail (2012 0x5e3a30 / 2013 0x5a3af0): gfxProcessSound + CLIK_load/unloadCallback,done,JB2/JB4 jbdiag: three VT_Object (6) function values per movie
+FGFxSoundEventCallback::Call (2013 0x588570 / 2012 0x5cb160),done,JB4: 14 dispatches to Default themes -> 7 UI posts
+FGFxCLIKObjectEventCallback::Call + OnLoad/OnUnload (2012 0x5e6800 / 0x5cf480 / 0x5cf550),done (dormant),0 calls in JB2-JB5; menu/options/loading AS2 never reference CLIK_loadCallback
+GFxMovieRoot::CreateFunction + GASUserDefinedFunctionObject (2012 0x9af5c0 / 0x9af0d0 / 0x9b0ce0 / 0x9b0a60 / 0x9af180),done,was a stub returning undefined; brief said it worked
+UDisGFxMoviePlayerBase::ApplyTweakChanges_Derived (2012 0x808a20) + IDisTweaksInterface slots,done,JB2: pGlobal/pHUD/MainMenu 2 sound themes each
+UDisGFxMoviePlayerBase::PreLoad prologue SetTweaks/ApplyTweakChanges (2012 0x822820),done,ApplyTweakChanges_Derived fires per PreLoad (jbdiag)
+UGFxAction_OpenMovie::Activated player outer = action (2012 0x5e51a0),done,JB1 main menu 0 themes -> JB2 2 themes (Twk_UI_MainMenu.Twk_GFxMoviePlayerMainMenu)
+script half DisUISoundTheme.ProcessSoundEvent -> Actor.PostAkEvent (bodied),verified,jbdiag bytecode reference dump; PostEvent on WorldInfo_0 -> playing ids 4..13
+UI sounds audible in -akwav,verified,JB4 7/7 events +13.9..+28.8 dB high-passed over 1 s before; voice-out id 4 -21.5 dBFS
+options stage,green 4 of 5,JB1/JB2/JBo1/JBo2 ok (as2 39 <= 41; criticals 0); JBg 1 render-thread VertexBuffer assert in SetVertexShadowMap (no GFx/Wwise frame)
+d3d9 + inputtest + newgame gate,green,JBg 24/24: unported_natives 0 probe_natives 3 criticals 0
+bInitFirstFrame 0 as retail,deviation (flag -jbfirstframe0),JB5 identical posts; default left TRUE
+Move sound on focus change,open,Down/Up/hover produce no PlaySound('Move') in our menu

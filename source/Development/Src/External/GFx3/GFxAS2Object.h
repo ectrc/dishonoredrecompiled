@@ -303,7 +303,7 @@ public:
     virtual GASFunctionObject* ToFunction() { return this; }
     virtual void Finalize_GC();                                       // 2013 0xde9290 (GASAsFunctionObject)
 
-    void Invoke(const GASFnCall& fn);
+    virtual void Invoke(const GASFnCall& fn);
 
     // 2012 0x9e89c0 calls this through the vtable slot at +60. Null makes a plain GASObject, which
     // is what a content class's constructor gets.

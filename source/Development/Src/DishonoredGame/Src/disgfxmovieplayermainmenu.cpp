@@ -1080,10 +1080,16 @@ static void DisGFxMoviePlayerPreLoading( UGFxMoviePlayer* Player )
 	// DISHONORED(port, agent FP): the prologue of UDisGFxMoviePlayerBase::PreLoad (2012 0x822820). A movie opened by
 	// the Kismet action takes the action's tweaks; then, with no movie set, the tweaks' own movie, or the package and
 	// movie they name. This is how the manager's pGlobal, whose Init never touches MovieInfo, gets UI_Global.Global.
+	// agent JB: retail sets the action's tweaks through IDisTweaksInterface::SetTweaks and otherwise re-applies the
+	// tweaks it has, so ApplyTweakChanges_Derived (2012 0x808a20) fills SoundThemes on every PreLoad.
 	UDisGFxActionOpenMovie* Action = Cast<UDisGFxActionOpenMovie>( Base->GetOuter() );
 	if( Base->m_pTweaks == NULL && Action != NULL && Action->m_pTweaks != NULL )
 	{
-		Base->m_pTweaks = Action->m_pTweaks;
+		Base->SetTweaks( Action->m_pTweaks );
+	}
+	else
+	{
+		Base->ApplyTweakChanges();
 	}
 	if( Base->MovieInfo == NULL && Base->m_pTweaks != NULL )
 	{
