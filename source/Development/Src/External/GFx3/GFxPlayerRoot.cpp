@@ -18,6 +18,8 @@
 // DISHONORED(port): see GFxAS2.h.
 #include "GFxPlayer.h"
 #include "GFxText.h"
+#include "GFxTextField.h"
+#include "GFxAS2Runtime.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1150,6 +1152,25 @@ static GASObjectInterface* ResolveObj(void* obj, bool isDObj, GFxMovieRoot* root
     return h->ResolveCharacter(root);
 }
 
+static GFxEditTextCharacter* GFxValueTextField(GFxASCharacter* ch)
+{
+    return (ch && ch->GetObjectType() == Object_TextField) ? (GFxEditTextCharacter*)ch : 0;
+}
+
+int GFxValueTextTraceCount = 0;
+
+static void GFxValueTextTrace(GFxMovieRoot* root, const char* op, GFxASCharacter* ch, bool html, const char* before,
+                              const char* text, bool ok)
+{
+    if (GFxValueTextTraceCount <= 0)
+        return;
+    --GFxValueTextTraceCount;
+    GFxEditTextCharacter* field = GFxValueTextField(ch);
+    const GASString path = ch ? ch->GetTargetPath(root->GetASContext()->GetSC()) : root->CreateString("(gone)");
+    GFxLogf("DISHONORED(bringup): jadiag %s %s field %d html %d ok %d before '%s' text '%s' now '%s'", op, path.ToCStr(),
+            field != 0, (int)html, (int)ok, before ? before : "", text ? text : "", field ? field->GetTextValue() : "");
+}
+
 void GFxValue::ObjectInterface::ObjectAddRef(GFxValue* val, void* obj)  // 2012 0x9ae650
 {
     if (obj == 0)
@@ -1217,7 +1238,17 @@ bool GFxValue::ObjectInterface::SetMember(void* obj, const char* name, const GFx
         return false;
     GASValue av;
     root->GFxValue2ASValue(val, &av);
-    return oi->SetMember(root->GetASEnvironment(), root->CreateString(name), av, GASPropFlags());
+    const bool ok = oi->SetMember(root->GetASEnvironment(), root->CreateString(name), av, GASPropFlags());
+    if (GFxValueTextTraceCount > 0 && (strcmp(name, "text") == 0 || strcmp(name, "htmlText") == 0))
+    {
+        GFxASCharacter* ch = oi->ToASCharacter();
+        if (ch)
+            GFxValueTextTrace(root, isDObj ? "SetMember(dobj)" : "SetMember", ch, strcmp(name, "htmlText") == 0, 0,
+                              av.ToString(root->GetASEnvironment()).ToCStr(), ok);
+        else
+            GFxLogf("DISHONORED(bringup): jadiag SetMember %s on a non-display object, ok %d", name, (int)ok);
+    }
+    return ok;
 }
 
 bool GFxValue::ObjectInterface::Invoke(void* obj, GFxValue* result, const char* name,
@@ -1234,6 +1265,17 @@ bool GFxValue::ObjectInterface::Invoke(void* obj, GFxValue* result, const char* 
     GASFunctionObject* fn = fnVal.GetFunction();
     if (fn == 0)
         return false;
+    if (GFxValueTextTraceCount > 0 && strcmp(name, "SetText") == 0)
+    {
+        --GFxValueTextTraceCount;
+        GFxASCharacter* ch = oi->ToASCharacter();
+        GASValue a0;
+        if (nargs > 0)
+            root->GFxValue2ASValue(args[0], &a0);
+        GFxLogf("DISHONORED(bringup): jadiag Invoke SetText on %s (an AS2 method, not GFxValue::SetText) arg '%s'",
+                ch ? ch->GetTargetPath(root->GetASContext()->GetSC()).ToCStr() : "an object",
+                nargs > 0 ? a0.ToString(env).ToCStr() : "");
+    }
     for (unsigned int i = 0; i < nargs; ++i)
     {
         GASValue a;
@@ -1384,42 +1426,79 @@ bool GFxValue::ObjectInterface::RemoveElements(void* obj, unsigned int idx, int 
     return true;
 }
 
-bool GFxValue::ObjectInterface::GetText(void* obj, GFxValue* val, bool html) const // 2012 0x9b0640
+// DISHONORED(port): the three text entry points, 2012 0x9b0640 / 0x9afdb0 / 0x9afee0 = 2013 0x9a9660 / 0x9a8dd0 /
+// 0x9a8f00 (byte-identical). Retail resolves the handle, asks the character's type virtual (vtable +0xB0: 1 character,
+// 2 sprite, 4 edit text) and hands an edit text straight to its own GetText/SetText (+0x16C/+0x174, +0x170 wide), which
+// write through SetTextValue; anything else gets "text" or "htmlText" through the ordinary GetMember/SetMember of the
+// isDObj path. This tree has no such type virtual: GetObjectType() == Object_TextField is the same question, the
+// test GFxDrawing and the TextField methods already use.
+bool GFxValue::ObjectInterface::GetText(void* obj, GFxValue* val, bool html) const
 {
-    // A text field's text lives on GFxEditTextCharacter, which is 125 retail functions and needs the
-    // text engine. Until then the member named "text" is the honest answer, because that is where a
-    // dynamic text field's content is written from AS2 anyway.
     GFxMovieRoot* root = pMovieRoot;
-    GASObjectInterface* oi = ResolveObj(obj, true, root);
-    if (oi == 0)
+    GFxASCharacter* ch = obj ? ((GFxCharacterHandle*)obj)->ResolveCharacter(root) : 0;
+    if (ch == 0)
         return false;
-    GASValue av;
-    if (!oi->GetMemberRaw(root->GetASContext()->GetSC(), root->CreateString("text"), &av))
+    GFxEditTextCharacter* field = GFxValueTextField(ch);
+    if (field)
     {
-        if (val) val->SetUndefined();
-        return false;
+        GASEnvironment* env = root->GetASEnvironment();
+        GASValue av;
+        av.SetString(field->GetText(env, html));
+        root->ASValue2GFxValue(env, av, val);
+        return true;
     }
-    root->ASValue2GFxValue(root->GetASEnvironment(), av, val);
-    return true;
+    return GetMember(obj, html ? "htmlText" : "text", val, true);
 }
 
-bool GFxValue::ObjectInterface::SetText(void* obj, const char* text, bool html) // 2012 0x9afdb0
+bool GFxValue::ObjectInterface::SetText(void* obj, const char* text, bool html)
 {
     GFxMovieRoot* root = pMovieRoot;
-    GASObjectInterface* oi = ResolveObj(obj, true, root);
-    if (oi == 0)
+    GFxASCharacter* ch = obj ? ((GFxCharacterHandle*)obj)->ResolveCharacter(root) : 0;
+    if (ch == 0)
         return false;
-    GASValue av;
-    av.SetString(root->CreateString(text));
-    return oi->SetMemberRaw(root->GetASContext()->GetSC(), root->CreateString("text"), av,
-                            GASPropFlags());
+    GFxEditTextCharacter* field = GFxValueTextField(ch);
+    char before[96] = "";
+    if (field && GFxValueTextTraceCount > 0)
+        strncpy(before, field->GetTextValue(), sizeof(before) - 1);
+    bool ok = true;
+    if (field)
+        field->SetText(text, html);
+    else
+    {
+        GFxValue v;
+        v.SetString(text);
+        ok = SetMember(obj, html ? "htmlText" : "text", v, true);
+    }
+    GFxValueTextTrace(root, "SetText", ch, html, before, text, ok);
+    return ok;
 }
 
-bool GFxValue::ObjectInterface::SetText(void* obj, const wchar_t* text, bool html) // 2012 0x9afee0
+bool GFxValue::ObjectInterface::SetText(void* obj, const wchar_t* text, bool html)
 {
-    char buf[2048];
-    GFxTextWideToUtf8(text, GFxTextWideNulTerminated, buf, sizeof(buf));
-    return SetText(obj, buf, html);
+    GFxMovieRoot* root = pMovieRoot;
+    GFxASCharacter* ch = obj ? ((GFxCharacterHandle*)obj)->ResolveCharacter(root) : 0;
+    if (ch == 0)
+        return false;
+    GFxEditTextCharacter* field = GFxValueTextField(ch);
+    char before[96] = "";
+    if (field && GFxValueTextTraceCount > 0)
+        strncpy(before, field->GetTextValue(), sizeof(before) - 1);
+    bool ok = true;
+    if (field)
+        field->SetText(text, html);
+    else
+    {
+        GFxValue v;
+        v.SetStringW(text);
+        ok = SetMember(obj, html ? "htmlText" : "text", v, true);
+    }
+    if (GFxValueTextTraceCount > 0)
+    {
+        char utf8[256];
+        GFxTextWideToUtf8(text ? text : L"", GFxTextWideNulTerminated, utf8, sizeof(utf8));
+        GFxValueTextTrace(root, "SetTextW", ch, html, before, utf8, ok);
+    }
+    return ok;
 }
 
 bool GFxValue::ObjectInterface::GetDisplayInfo(void* obj, DisplayInfo* info) const // 2012 0x9ad900

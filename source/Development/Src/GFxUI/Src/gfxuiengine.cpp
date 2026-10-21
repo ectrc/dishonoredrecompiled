@@ -1880,6 +1880,10 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 				appStrncpyANSI( GFxAS2ClipTracePrefix, "_level0.location_mc", 64 );
 				GFxAS2ClipTraceCount = 4000;
 			}
+			if( ParseParam( appCmdLine(), TEXT("jadiag") ) )
+			{
+				GFxValueTextTraceCount = 4000;
+			}
 			// DISHONORED(bringup): -gfxuioptrace=<from>[:<count>] is GFx3Run's --optrace, in the
 			// game. An opcode that leaves no other mark - a branch taken on an underflowed stack -
 			// is only visible here.

@@ -680,6 +680,48 @@ void GFxEditTextCharacter::SetTextValue(const char* s, bool html, bool notifyVar
     bDirty = true;
 }
 
+// DISHONORED(port): 2012 0xa2ce10 / 2013 0xa234c0 (74 bytes each). Retail keeps the field's html mode in its own
+// flag word (bit 1 of character+228) and writes it only when it changes; this tree keeps that mode as the view's
+// VF_Html, which is what `html` answers.
+void GFxEditTextCharacter::SetText(const char* s, bool html)
+{
+    const unsigned int flags = Doc.GetFlags();
+    if (html != ((flags & GFxTextDocView::VF_Html) != 0))
+        Doc.SetFlags(html ? (flags | GFxTextDocView::VF_Html) : (flags & ~(unsigned int)GFxTextDocView::VF_Html));
+    SetTextValue(s, html, true);
+}
+
+// DISHONORED(port): 2012 0xa2ce60 / 2013 0xa23510 (211 bytes each): the UTF-8 copy is on the stack below 256
+// characters and on the heap from there, then the same write as the narrow overload.
+void GFxEditTextCharacter::SetText(const wchar_t* s, bool html)
+{
+    const unsigned int flags = Doc.GetFlags();
+    if (html != ((flags & GFxTextDocView::VF_Html) != 0))
+        Doc.SetFlags(html ? (flags | GFxTextDocView::VF_Html) : (flags & ~(unsigned int)GFxTextDocView::VF_Html));
+    const unsigned int len = s ? (unsigned int)wcslen(s) : 0;
+    char local[0x104];
+    GArray<char> heap;
+    char* utf8 = local;
+    unsigned int bytes = sizeof(local);
+    if (len >= 0x100)
+    {
+        heap.Resize(5 * len + 1);
+        utf8 = &heap[0];
+        bytes = heap.GetSize();
+    }
+    GFxTextWideToUtf8(s ? s : L"", GFxTextWideNulTerminated, utf8, bytes);
+    SetTextValue(utf8, html, true);
+}
+
+// DISHONORED(port): 2012 0xa2d1e0 / 2013 0xa23890 (246 bytes each). Retail answers the view's plain text, or with
+// `html` its markup (GFxTextDocView::GetHtml, or the original string of a field with a style sheet). This tree has
+// no GetHtml: both answer the markup-free string, as the `text`/`htmlText` getters here do.
+GASString GFxEditTextCharacter::GetText(GASEnvironment* env, bool html) const
+{
+    (void)html;
+    return env->CreateString(TextValue);
+}
+
 void GFxEditTextCharacter::AdvanceFrame(bool bAdvance, float framePos)
 {
     // DISHONORED(port): 0xa2e250 -> CheckAdvanceStatus 0xa2d0b0. A text field's frame advance is a

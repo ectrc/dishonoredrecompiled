@@ -43,6 +43,8 @@ extern int GFxAS2MemberWriteDiag;
 // TextField.setImageSubstitutions element, is logged while GFxAS2ClipTraceCount lasts.
 extern char GFxAS2ClipTracePrefix[64];
 extern int  GFxAS2ClipTraceCount;
+// -jadiag (agent JA): every GFxValue text write (SetText, SetMember "text"/"htmlText", Invoke "SetText").
+extern int  GFxValueTextTraceCount;
 bool GFxAS2ClipTraceMatches(GASObjectInterface* oi, GASStringContext* sc, GASString* pathOut);
 
 // Runs a DefineFunction/DefineFunction2 body: binds `this`, the arguments, the preload registers and

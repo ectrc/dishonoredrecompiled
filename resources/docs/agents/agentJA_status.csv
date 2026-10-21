@@ -1,0 +1,13 @@
+item,state,evidence
+audit of every SetText / SetMember text / Invoke SetText site,done,"agentJA.md §3; -jadiag lines in JA_JA2.log, CC_JA1.log, JAo__options.log: 2 marker writes, 0 script SetText, 0 SetMember text, 0 Invoke SetText"
+GFxValue::ObjectInterface::SetText (char),done,2012 0x9afdb0 / 2013 0x9a8dd0: type test -> GFxEditTextCharacter::SetText else SetMember isDObj
+GFxValue::ObjectInterface::SetText (wchar_t),done,2012 0x9afee0 / 2013 0x9a8f00; JA2: before 'Description' now 'Empress Jessamine'
+GFxValue::ObjectInterface::GetText,done,2012 0x9b0640 / 2013 0x9a9660; html branch answers plain text (GetHtml unported)
+GFxEditTextCharacter::SetText (char / wchar_t),done,2012 0xa2ce10 / 0xa2ce60; 2013 0xa234c0 / 0xa23510; html flag = VF_Html
+GFxEditTextCharacter::GetText,done (deviation),2012 0xa2d1e0 / 2013 0xa23890; GetHtml / style-sheet branch unported
+marker focus bit,confirmed,2013 0x7a0890: one focused marker; JA1 flags 0x1 throughout; JA2 0x3 from world 155.8
+marker capture,done,build/agentJA/JA2/w0170.014.png 'Empress Jessamine [62m]'
+options AS2 errors,ok,39 (bound 41; head_rel 39)
+gate d3d9+inputtest+newgame+options,ok,gate.txt 26/28 (load fails d3d9_frames 930 / inputtest_moved 328) -> gate2.txt rerun 18/18; criticals 0; unported_natives 0; probe_natives 3
+UGFxObject::SetText translator branch,open,2012 0x5d5380 / 2013 0x595680 (TTranslator + FOutputToGfxPolicy); no call on the routes
+GFxTextDocView::GetHtml,open,needed for htmlText / GetText(html)

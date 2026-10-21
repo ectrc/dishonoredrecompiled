@@ -186,7 +186,9 @@ public:
     void GetInitialFormats(GFxTextFormat* fmt, GFxTextParagraphFormat* pfmt);            // 0xa27860
     void SetInitialFormatsAsDefault();                                                   // 0xa28460
     void SetTextValue(const char* s, bool html, bool notifyVariable);                    // 0xa32e50
-    void SetText(const char* s, bool html) { SetTextValue(s, html, true); }              // 0xa2ce10
+    void SetText(const char* s, bool html);                                              // 0xa2ce10
+    void SetText(const wchar_t* s, bool html);                                           // 0xa2ce60
+    GASString GetText(GASEnvironment* env, bool html) const;                              // 0xa2d1e0
     const char* GetTextValue() const { return TextValue; }                               // 0xa2cf40
 
     GFxTextDocView& GetDocView() { return Doc; }

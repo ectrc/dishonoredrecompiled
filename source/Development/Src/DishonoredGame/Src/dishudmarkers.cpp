@@ -165,6 +165,13 @@ FDisTaskMarker::FDisTaskMarker( const FDisTaskTarget* _pTaskTarget, const FDisHU
 	Info.SetVisible( false );
 	m_GFxTaskDesc.SetDisplayInfo( Info );
 	m_GFxTaskDescText.SetText( *m_TargetName );
+	static const UBOOL bDiag = ParseParam( appCmdLine(), TEXT("jadiag") );
+	if( bDiag )
+	{
+		debugf( TEXT("DISHONORED(bringup): jadiag marker %s name '%s' (%s / %s) desc display object %d txt display object %d"),
+			*m_pTrackedActor->GetName(), *m_TargetName, *_pTaskTarget->m_TargetNameLocFile, *_pTaskTarget->m_TargetNameLocSection,
+			m_GFxTaskDesc.IsDisplayObject() ? 1 : 0, m_GFxTaskDescText.IsDisplayObject() ? 1 : 0 );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x7ce680 (2012 0x831460)

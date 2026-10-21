@@ -1664,6 +1664,12 @@ void UGFxObject::execSetText( FFrame& Stack, RESULT_DECL )
 	P_GET_STR(Text);
 	P_GET_OBJECT_OPTX(UTranslationContext,InContext,NULL);
 	P_FINISH;
+	static const UBOOL bDiag = ParseParam( appCmdLine(), TEXT("jadiag") );
+	if( bDiag )
+	{
+		debugf( TEXT("DISHONORED(bringup): jadiag script SetText from %s on %s display object %d '%s'"),
+			Stack.Node ? *Stack.Node->GetPathName() : TEXT("?"), *GetName(), GetASValue()->IsDisplayObject() ? 1 : 0, *Text );
+	}
 	SetText(Text,InContext);
 }
 void UGFxObject::execGetText( FFrame& Stack, RESULT_DECL )
