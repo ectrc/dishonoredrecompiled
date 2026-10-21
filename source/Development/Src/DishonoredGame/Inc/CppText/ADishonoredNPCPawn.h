@@ -160,6 +160,9 @@ public:
 	virtual void Tick_Body( FLOAT _fDeltaTime, ELevelTick _TickType );
 	virtual BYTE ChooseLookAt();
 	BYTE GetCurrentTransitSpeed() const;
+	// agent JD: the avoidable, 2013 rvas 0x7796b0 / 0x759c50 (2012 0x7c1ab0 / 0x7c0450), dishonorednpcpawn_locomotion.cpp
+	void RegisterAvoidable();
+	void UpdateAvoidableCollisionGroupFlags();
 	virtual void OnRelationshipChange();
 protected:
 	void Tick_SpineBending( FLOAT _fDeltaTime );

@@ -24,6 +24,7 @@
 
 #include "disdesirestructs.h"
 #include "ibdiag.h"
+#include "jddiag.h"
 
 /*-----------------------------------------------------------------------------
 	"where on the mesh is this point"
@@ -235,6 +236,7 @@ UBOOL FArkComponentLocomotion::UpdatePathFindingEdges( const FVector& _StartLoca
 
 	const FLOAT fFunnelMultiplier = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps.m_fMaxFunnelRadiusMultiplier;
 	const FLOAT fRadius = m_pPawnOwner->CylinderComponent ? m_pPawnOwner->CylinderComponent->CollisionRadius : 0.f;
+	// agent JD: retail draws the jitter too - 2012 0x5875e0: radius x (rand() x (multiplier - 1) / 32767 + 1) x 1.65, which is appFrand()
 	const FLOAT fJitter = 1.f + ( appFrand() * ( fFunnelMultiplier - 1.f ) );
 	const FLOAT fMinDistanceFromWalls = fRadius * fJitter * 1.65f;
 
@@ -345,82 +347,112 @@ UBOOL FArkComponentLocomotion::UpdateBuiltPathPoints()
 	return TRUE;
 }
 
-// DISHONORED(port): 2013 rva 0x541ee0 (2012 0x582eb0, 2,499 bytes). What it does: advance m_CurPathPointIdx while the
-// pawn is within m_fIntermediatePointValidDist of the current corner, keep m_PathPoint / m_LastPathPoint / the two path
-// yaws and the two path directions in step with that index, ignore the very first corner when the pawn is already inside
-// m_fIgnoreFirstPathPointDist of it, and raise m_bPathAtEnd when the index reaches the last point.
-// DISHONORED(bringup): retail's body also keeps the "turn ahead" bookkeeping the root-motion system needs
-// (m_bMustTestPathAfterTurn, m_fBeforeTurnSquaredDist, m_fBeforeTurnDuration and the next-corner yaw prediction through
-// ComputePathYawFromDist, 2013 rva 0x5428b0) - that is the turn-in-place half, which is not ported, so those four are
-// left at their reset values. The corner advance, the two directions and the end flag are retail's.
+// DISHONORED(port, agent JD): 2013 rva 0x541ee0 (2012 0x582eb0, 2,499 bytes), whole. m_CurPathPointIdx is the corner the pawn walks
+// to, m_PathPoint that corner, m_CurPathDir / m_CurPathYaw the direction of the segment that ends there (not the pawn -> corner
+// direction) and m_NextPathDir / m_NextPathYaw the one that leaves it. On a new polyline (index INDEX_NONE) the first corner is
+// point 1, or point 2 when point 1 is within m_fIgnoreFirstPathPointDist; then, in a loop:
+//   - the corner is left behind when the pawn is within m_fIntermediatePointValidDist of it (2D), or the corner lies behind the
+//     pawn along the current segment, or the next corner can be seen through the corner's navmesh edge (the next corner lies
+//     between the pawn -> left end and the pawn -> right end of the edge the corner was pulled in from; a corner without an
+//     edge is its own two ends) - otherwise the loop ends;
+//   - after one corner has been passed this tick, the following one is passed too as long as the corner after it is reachable
+//     from the pawn in a straight line (UNavigationHandle::PointReachable with the pawn's extent);
+//   - passing a corner makes the next segment the current one, advances the index, recomputes the next segment (or, at the
+//     last point, raises m_bPathAtEnd and keeps the current one as the next) and measures m_fDistBetweenPathPoints (3D).
+// This replaces DN's "advance within the intermediate distance only, aim the current direction at the corner from the pawn".
+// The turn-ahead fields the brief placed here are not in this function in either database: m_bMustTestPathAfterTurn is the
+// path scheduler's (UpdatePathOfHigherPriorityRequest, agent IK2) and m_fBeforeTurnSquaredDist / m_fBeforeTurnDuration are
+// RequestTurn's and UpdateTurn's (agent GK).
 void FArkComponentLocomotion::UpdatePathProperties()
 {
-	if( !m_bBuiltPathUpToDate || m_PathPoints.Num() < 2 || !m_pPawnOwner )
+	if( !m_bBuiltPathUpToDate )
 	{
 		return;
 	}
-
-	const FLOAT fIgnoreFirst = m_pConfig ? m_pConfig->m_fIgnoreFirstPathPointDist : 0.f;
-	const FLOAT fIntermediate = m_pConfig ? m_pConfig->m_fIntermediatePointValidDist : 0.f;
-
-	if( m_CurPathPointIdx == INDEX_NONE )
+	UBOOL bPassedACorner = FALSE;
+	for( ;; )
 	{
-		m_bPathAtEnd = FALSE;
-		m_CurPathPointIdx = 0;
-		if( m_PathPoints.Num() > 2 )
+		if( m_CurPathPointIdx == INDEX_NONE )
 		{
-			const FVector ToSecond = m_PathPoints( 1 ).m_Point - m_CurPawnLocation;
-			if( ( fIgnoreFirst * fIgnoreFirst ) >= ( ToSecond.X * ToSecond.X + ToSecond.Y * ToSecond.Y ) )
+			m_bPathAtEnd = FALSE;
+			m_CurPathPointIdx = 0;
+			if( m_PathPoints.Num() > 2 )
 			{
-				m_CurPathPointIdx = 1;
+				const FVector& Second = m_PathPoints( 1 ).m_Point;
+				const FLOAT fDX = Second.X - m_CurPawnLocation.X;
+				const FLOAT fDY = Second.Y - m_CurPawnLocation.Y;
+				if( m_pConfig->m_fIgnoreFirstPathPointDist * m_pConfig->m_fIgnoreFirstPathPointDist >= fDX * fDX + fDY * fDY )
+				{
+					m_CurPathPointIdx = 1;
+				}
 			}
+			m_PathPoint = m_PathPoints( m_CurPathPointIdx ).m_Point;
+			const FVector& Next = m_PathPoints( m_CurPathPointIdx + 1 ).m_Point;
+			m_CurPathDir = FVector( Next.X - m_PathPoint.X, Next.Y - m_PathPoint.Y, 0.f ).SafeNormal();
+			m_CurPathYaw = appTrunc( appAtan2( m_CurPathDir.Y, m_CurPathDir.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
 		}
-	}
-
-	// Advance through every corner the pawn is already close enough to. Retail loops rather than stepping once, so a
-	// single long frame cannot leave the pawn walking back to a corner it has passed.
-	while( m_CurPathPointIdx < m_PathPoints.Num() - 1 )
-	{
-		const FVector ToCorner = m_PathPoints( m_CurPathPointIdx ).m_Point - m_CurPawnLocation;
-		const FLOAT fSq2D = ToCorner.X * ToCorner.X + ToCorner.Y * ToCorner.Y;
-		if( fSq2D > fIntermediate * fIntermediate )
+		else
 		{
-			break;
+			if( m_bPathAtEnd )
+			{
+				return;
+			}
+			if( !bPassedACorner )
+			{
+				const FArkCpntLocoPathPoint& rCorner = m_PathPoints( m_CurPathPointIdx );
+				const FVector ToCorner = rCorner.m_Point - m_CurPawnLocation;
+				const FLOAT fSq2D = ToCorner.X * ToCorner.X + ToCorner.Y * ToCorner.Y;
+				if( m_pConfig->m_fIntermediatePointValidDist * m_pConfig->m_fIntermediatePointValidDist < fSq2D )
+				{
+					const FVector ToCornerDir = FVector( ToCorner.X, ToCorner.Y, 0.f ).SafeNormal();
+					if( ( m_CurPathDir | ToCornerDir ) >= 0.f )
+					{
+						const UBOOL bHasEdge = rCorner.m_EdgeIndex != INDEX_NONE;
+						const FVector& EdgeLeft = bHasEdge ? m_PathFindingEdges( rCorner.m_EdgeIndex ).m_EdgeLeftPoint : rCorner.m_Point;
+						const FVector& EdgeRight = bHasEdge ? m_PathFindingEdges( rCorner.m_EdgeIndex ).m_EdgeRightPoint : rCorner.m_Point;
+						const FVector& Next = m_PathPoints( m_CurPathPointIdx + 1 ).m_Point;
+						const FVector& Pawn = m_pPawnOwner->Location;
+						const UBOOL bRightOfLeftEnd = ( ( EdgeLeft.Y - Pawn.Y ) * ( Next.X - Pawn.X ) - ( Next.Y - Pawn.Y ) * ( EdgeLeft.X - Pawn.X ) ) <= 0.f;
+						const UBOOL bLeftOfRightEnd = ( ( Next.Y - Pawn.Y ) * ( EdgeRight.X - Pawn.X ) - ( EdgeRight.Y - Pawn.Y ) * ( Next.X - Pawn.X ) ) <= 0.f;
+						if( !bRightOfLeftEnd || !bLeftOfRightEnd )
+						{
+							return;
+						}
+					}
+				}
+			}
+			else
+			{
+				bPassedACorner = FALSE;
+				UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
+				if( !pNavHandle->PointReachable( m_PathPoints( m_CurPathPointIdx + 1 ).m_Point, FVector( 0.f, 0.f, 0.f ), TRUE, NULL, NULL ) )
+				{
+					return;
+				}
+			}
+			m_CurPathDir = m_NextPathDir;
+			m_CurPathYaw = m_NextPathYaw;
 		}
 		++m_CurPathPointIdx;
-	}
-
-	m_PathPoint = m_PathPoints( m_CurPathPointIdx ).m_Point;
-	m_LastPathPoint = m_PathPoints( m_PathPoints.Num() - 1 ).m_Point;
-
-	FVector CurDir = m_PathPoint - m_CurPawnLocation;
-	CurDir.Z = 0.f;
-	if( CurDir.SizeSquared() > KINDA_SMALL_NUMBER )
-	{
-		m_CurPathDir = CurDir.SafeNormal();
-		m_CurPathYaw = m_CurPathDir.Rotation().Yaw;
-	}
-
-	if( m_CurPathPointIdx + 1 < m_PathPoints.Num() )
-	{
-		FVector NextDir = m_PathPoints( m_CurPathPointIdx + 1 ).m_Point - m_PathPoint;
-		NextDir.Z = 0.f;
-		if( NextDir.SizeSquared() > KINDA_SMALL_NUMBER )
+		if( m_CurPathPointIdx != m_PathPoints.Num() - 1 )
 		{
-			m_NextPathDir = NextDir.SafeNormal();
-			m_NextPathYaw = m_NextPathDir.Rotation().Yaw;
+			const FVector& Corner = m_PathPoints( m_CurPathPointIdx ).m_Point;
+			const FVector& Next = m_PathPoints( m_CurPathPointIdx + 1 ).m_Point;
+			m_NextPathDir = FVector( Next.X - Corner.X, Next.Y - Corner.Y, 0.f ).SafeNormal();
+			m_NextPathYaw = appTrunc( appAtan2( m_NextPathDir.Y, m_NextPathDir.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+			bPassedACorner = TRUE;
 		}
+		else
+		{
+			m_bPathAtEnd = TRUE;
+			m_NextPathDir = m_CurPathDir;
+			m_NextPathYaw = m_CurPathYaw;
+		}
+		const FVector PreviousPathPoint = m_PathPoint;
+		m_PathPoint = m_PathPoints( m_CurPathPointIdx ).m_Point;
+		m_fDistBetweenPathPoints = ( m_PathPoint - PreviousPathPoint ).Size();
+		JDDiagCorner();
 	}
-	else
-	{
-		m_NextPathDir = m_CurPathDir;
-		m_NextPathYaw = m_CurPathYaw;
-		m_bPathAtEnd = TRUE;
-	}
-
-	m_fDistBetweenPathPoints = ( m_CurPathPointIdx > 0 )
-		? ( m_PathPoints( m_CurPathPointIdx ).m_Point - m_PathPoints( m_CurPathPointIdx - 1 ).m_Point ).Size2D()
-		: ( m_PathPoints( 1 ).m_Point - m_PathPoints( 0 ).m_Point ).Size2D();
 }
 
 // DISHONORED(port): 2013 rva 0x545410 (2012 0x586320, 562 bytes); agent IK2: the flag word is `& 0xFFFFFF01 | 0x20` - bits 0x2..0x80
@@ -454,31 +486,42 @@ void FArkComponentLocomotion::ResetPathProperties()
 	m_bHasRequestWithPathComputed = ComputeHasRequestWithPathComputedFlag();
 }
 
-// DISHONORED(port): 2013 rva 0x5428b0 (2012 0x583880, 614 bytes): the yaw the path will have _fDist further along, which
-// the turn system uses to decide whether to turn in place now.
-// DISHONORED(bringup): only the part the dynamics need - walk the corners forward accumulating distance and answer the
-// direction of the segment the distance lands in.
+// DISHONORED(port, agent JD): 2013 rva 0x5428b0 (2012 0x583880, 614 bytes), whole: the yaw of the path _fDist further along it,
+// which EvaluateStaticTurn compares with the move yaw. At the path's end, or while the distance stays within the stretch from the
+// pawn to the current corner, it is m_CurPathYaw (the current segment's); otherwise the 2D direction of the segment the distance
+// ends in, the last one when the path is shorter. DN's version answered the pawn -> corner yaw for the first stretch.
+// DISHONORED(bringup): a negative index answers m_CurPathYaw (retail's array access would assert).
 INT FArkComponentLocomotion::ComputePathYawFromDist( FLOAT _fDist ) const
 {
-	if( m_PathPoints.Num() < 2 || m_CurPathPointIdx < 0 )
+	if( m_bPathAtEnd || m_CurPathPointIdx < 0 )
 	{
 		return m_CurPathYaw;
 	}
-	FLOAT fRemaining = _fDist;
-	FVector From = m_CurPawnLocation;
-	for( INT i = m_CurPathPointIdx; i < m_PathPoints.Num(); ++i )
+	INT PathPointIdx = m_CurPathPointIdx;
+	FLOAT fLeftDist = _fDist;
+	FLOAT fFromX = m_CurPawnLocation.X;
+	FLOAT fFromY = m_CurPawnLocation.Y;
+	FLOAT fToNextX = 0.f;
+	FLOAT fToNextY = 0.f;
+	while( PathPointIdx < m_PathPoints.Num() )
 	{
-		FVector Segment = m_PathPoints( i ).m_Point - From;
-		Segment.Z = 0.f;
-		const FLOAT fLen = Segment.Size();
-		if( fLen >= fRemaining || i == m_PathPoints.Num() - 1 )
+		const FVector& PathPoint = m_PathPoints( PathPointIdx ).m_Point;
+		fToNextX = PathPoint.X - fFromX;
+		fToNextY = PathPoint.Y - fFromY;
+		fLeftDist -= appSqrt( fToNextX * fToNextX + fToNextY * fToNextY );
+		if( fLeftDist <= 0.f )
 		{
-			return ( fLen > KINDA_SMALL_NUMBER ) ? Segment.Rotation().Yaw : m_CurPathYaw;
+			break;
 		}
-		fRemaining -= fLen;
-		From = m_PathPoints( i ).m_Point;
+		fFromX = PathPoint.X;
+		fFromY = PathPoint.Y;
+		++PathPointIdx;
 	}
-	return m_CurPathYaw;
+	if( PathPointIdx == m_CurPathPointIdx )
+	{
+		return m_CurPathYaw;
+	}
+	return appTrunc( appAtan2( fToNextY, fToNextX ) * 10430.219f * 2.f + 0.5f ) >> 1;
 }
 
 // DISHONORED(port, agent IK2): 2012 0x58a4d0 (3,132 B) / 2013 VA 0x949890 (3,285 B) - the path scheduler, retail's m_LastPFError
@@ -502,10 +545,9 @@ INT FArkComponentLocomotion::ComputePathYawFromDist( FLOAT _fDist ) const
 // DISHONORED(bringup): EPathFindingError is the tree's (EngineClasses.h), not retail's (2012 PDB: MAXIMUMVISITEXCEEDED 3,
 // NOPATHFOUND 4, INVALIDNAVMESH 5, MAX 6): retail's goal group {GOALPOLYNOTFOUND, MAXIMUMVISITEXCEEDED, NOPATHFOUND} is the
 // tree's {GOALPOLYNOTFOUND, NOPATHFOUND}; the tree's path-following errors (4..6) fall to the default like retail's
-// INVALIDNAVMESH. Retail's PointReachable takes an Arkane out-list of the edges the straight line crosses and the scheduler
-// hands every crossed special-move / cross-pylon edge to its path object or pylon (vtable +16 / +956); the reference
-// PointReachable has no out-list, so the straight-line path carries no raw edges and no edge is reserved (the reservation
-// system is unported, see ResetPathProperties). Retail's radius doubling has no upper bound; this stops at 2400 uu.
+// INVALIDNAVMESH. Retail's PointReachable (agent JD: Arkane's, with its out-list) hands the scheduler the edges the straight line
+// crosses, which become the raw edges; retail then gives every crossed special-move / cross-pylon edge to its path object or
+// pylon (vtable +16 / +956) - that reservation system is unported (see ResetPathProperties), so no edge is reserved. Retail's radius doubling has no upper bound; this stops at 2400 uu.
 void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeStep, UBOOL _bForcePFComputation, const FVector* const _pSpecificStartLoc )
 {
 	if( !m_ReqMgr.HasRequest() || !m_pPawnOwner || !m_pConfig )
@@ -570,7 +612,7 @@ void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeSte
 						if( Abs( ToPathPoint.Size2D() * appSin( (FLOAT)PathYawOff * 0.000095873802f ) ) > 5.f )
 						{
 							UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
-							if( pNavHandle && !pNavHandle->PointReachable( m_PathPoints( m_CurPathPointIdx ).m_Point, m_CurPawnLocation, TRUE ) )
+							if( pNavHandle && !pNavHandle->PointReachable( m_PathPoints( m_CurPathPointIdx ).m_Point, m_CurPawnLocation, TRUE, NULL, NULL ) )
 							{
 								bRepath = TRUE;
 							}
@@ -696,10 +738,13 @@ void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeSte
 			UBOOL bSearched = FALSE;
 			m_EndLocationUsedToAskPath = ComputeTargetedLocationForPath( _fTimeStep, TRUE );
 			UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
-			if( pNavHandle && pNavHandle->PointReachable( m_EndLocationUsedToAskPath, FVector( 0.f, 0.f, 0.f ), TRUE ) )
+			TArray<FNavMeshEdgeBase*> CrossedEdges;
+			if( pNavHandle && pNavHandle->PointReachable( m_EndLocationUsedToAskPath, FVector( 0.f, 0.f, 0.f ), TRUE, &CrossedEdges, NULL ) )
 			{
 				ResetPathProperties();
 				m_bPathfindingUpToDate = TRUE;
+				m_RawPathFindingEdges.EdgeList = CrossedEdges;
+				m_PathFindingEdges.Reset();
 				bSearched = TRUE;
 				Reason = TEXT("searched: straight line");
 			}

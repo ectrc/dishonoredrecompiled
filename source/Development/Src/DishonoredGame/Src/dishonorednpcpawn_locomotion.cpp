@@ -18,6 +18,7 @@
 #include "dishonoredutilities.h"
 #include "disaicensus.h"
 #include "ibdiag.h"
+#include "jddiag.h"
 
 // DISHONORED(port): 2013 rva 0x74b3d0 (2012 0x7ab8c0): seven bytes, the member.
 FArkComponentLocomotion* ADishonoredNPCPawn::GetComponentLocomotion() const
@@ -155,13 +156,94 @@ void ADishonoredNPCPawn::physWalking( FLOAT DeltaTime, INT Iterations )
 	}
 }
 
-// DISHONORED(port): 2013 rva 0x77cd10 (2012 0x7b84a0, 841 bytes).
-// DISHONORED(bringup): the whole body is avoidance bookkeeping - the radius the NPC claims in the crowd (bigger when
-// running or fighting), its force multiplier, and whether its steering force is pointing far enough away from its path to
-// count as an avoidance push. UArkAvoidable has no ported methods, so there is nothing to tell. Left as retail's site,
-// named, so the avoidance package has somewhere to land.
+// DISHONORED(port, agent JD): 2013 rva 0x77cd10 (2012 0x7b84a0, 841 bytes): a live NPC with a locomotion component tells its
+// avoidable the radius it claims in the crowd (the tweaks' fighting radius in combat, the running one at run transit speed, else
+// the default) and its force multiplier (the root-motion one while root motion owns the pawn or m_bShouldUseRootMotionForceMultiplier
+// is set, else the default); property flags 5 when its steering force points more than m_fAvoidanceSteeringMaxAngle away from its
+// path move, else 0; and the locomotion may teleport it back onto the mesh unless m_bDisableTeleportOnNavmesh.
+// DISHONORED(bringup): "in combat" is the brain's awareness EAIAwareness_InCombat read here (2012 0x7c1620's body) because the
+// pawn virtual IsInCombat is not declared in this tree.
 void ADishonoredNPCPawn::UpdateLocomotion()
 {
+	FArkComponentLocomotion* pLoco = GetComponentLocomotion();
+	if( IsDead() || !pLoco || !m_pAvoidable )
+	{
+		return;
+	}
+	UDisTweaks_NPCPawn* NPCTweaks = Cast<UDisTweaks_NPCPawn>( GetTweaks_Derived() );
+	if( !NPCTweaks )
+	{
+		NPCTweaks = UDisTweaks_NPCPawn::StaticClass()->GetDefaultObject<UDisTweaks_NPCPawn>();
+	}
+	ADishonoredNPCController* pController = Cast<ADishonoredNPCController>( Controller );
+	const UBOOL bInCombat = pController && pController->m_pAIBrain && pController->m_pAIBrain->IsBrainInitialized()
+		&& pController->m_pAIBrain->GetAwarenessLevel() == EAIAwareness_InCombat;
+	FLOAT fRadius = NPCTweaks->m_fAvoidanceDefaultRadius;
+	if( bInCombat )
+	{
+		fRadius = NPCTweaks->m_fAvoidanceFightingRadius;
+	}
+	else if( GetCurrentTransitSpeed() == ETransitSpeed_Run )
+	{
+		fRadius = NPCTweaks->m_fAvoidanceRunningRadius;
+	}
+	m_pAvoidable->SetRadius( fRadius );
+	m_pAvoidable->SetForceMultiplier( ( pLoco->IsRootMotion() || m_bShouldUseRootMotionForceMultiplier ) ? NPCTweaks->m_fAvoidanceRootMotionForceMultiplier : NPCTweaks->m_fAvoidanceDefaultForceMultiplier );
+	const FVector& SteeringForce = pLoco->GetSteeringForce();
+	INT PropertyFlags = 0;
+	if( !SteeringForce.IsZero() )
+	{
+		const FVector PathMoveDir = FVector( pLoco->GetPathMove().X, pLoco->GetPathMove().Y, 0.f ).SafeNormal();
+		const FVector SteeringDir = FVector( SteeringForce.X, SteeringForce.Y, 0.f ).SafeNormal();
+		if( m_fCosAvoidanceSteeringMaxAngle > ( SteeringDir | PathMoveDir ) )
+		{
+			PropertyFlags = 5;
+		}
+	}
+	m_pAvoidable->SetPropertyFlags( PropertyFlags );
+	pLoco->EnableTeleportWhenOutsideOfNavmesh( !m_bDisableTeleportOnNavmesh );
+}
+
+// DISHONORED(port, agent JD): 2013 rva 0x7796b0 (2012 0x7c1ab0, 126 B): a live NPC's avoidable takes the tweaks' default radius
+// and force multiplier and its group flags, and registers with the game's avoidance component.
+void ADishonoredNPCPawn::RegisterAvoidable()
+{
+	if( IsDead() || !m_pAvoidable )
+	{
+		return;
+	}
+	UDisTweaks_NPCPawn* NPCTweaks = Cast<UDisTweaks_NPCPawn>( GetTweaks_Derived() );
+	if( !NPCTweaks )
+	{
+		NPCTweaks = UDisTweaks_NPCPawn::StaticClass()->GetDefaultObject<UDisTweaks_NPCPawn>();
+	}
+	m_pAvoidable->SetRadius( NPCTweaks->m_fAvoidanceDefaultRadius );
+	m_pAvoidable->SetForceMultiplier( NPCTweaks->m_fAvoidanceDefaultForceMultiplier );
+	UpdateAvoidableCollisionGroupFlags();
+	m_pAvoidable->RegisterAvoidable( this );
+	if( DisJDDiag( TEXT("avoid") ) )
+	{
+		debugf( TEXT("DISHONORED(bringup): jddiag avoidable %s %s registered %d radius %.1f force %.2f groups %d"), *GetName(), *m_pAvoidable->GetName(),
+			(INT)m_pAvoidable->IsRegistered(), NPCTweaks->m_fAvoidanceDefaultRadius, NPCTweaks->m_fAvoidanceDefaultForceMultiplier, m_pAvoidable->GetGroupFlags() );
+	}
+}
+
+// DISHONORED(port, agent JD): 2013 rva 0x759c50 (2012 0x7c0450, 142 B): group 2 for every NPC, 1 more when its current behaviour
+// lets the player push it, 4 more in combat (the brain's awareness, as UpdateLocomotion).
+void ADishonoredNPCPawn::UpdateAvoidableCollisionGroupFlags()
+{
+	ADishonoredNPCController* pController = Cast<ADishonoredNPCController>( Controller );
+	UDishonoredAIBrain* pBrain = ( !IsDead() && pController && pController->m_pAIBrain && pController->m_pAIBrain->IsBrainInitialized() ) ? pController->m_pAIBrain : NULL;
+	INT GroupFlags = 2;
+	if( pBrain && pBrain->m_pCurrentBehavior && pBrain->m_pCurrentBehavior->IsPlayerAllowedToPushMe() )
+	{
+		GroupFlags = 3;
+	}
+	if( pBrain && pBrain->GetAwarenessLevel() == EAIAwareness_InCombat )
+	{
+		GroupFlags |= 4;
+	}
+	m_pAvoidable->SetGroupFlags( GroupFlags );
 }
 
 /*-----------------------------------------------------------------------------

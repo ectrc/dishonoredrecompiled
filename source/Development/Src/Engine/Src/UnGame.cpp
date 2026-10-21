@@ -4539,3 +4539,23 @@ void AGameInfo::execSpawnPlayerController( FFrame& Stack, RESULT_DECL )
 	AActor* Spawned = PlayerControllerClass ? GWorld->SpawnActor( PlayerControllerClass, PlayerControllerClass->GetFName(), SpawnLocation, SpawnRotation ) : NULL;
 	*(APlayerController**)Result = Cast<APlayerController>( Spawned );
 }
+
+// DISHONORED(port): agent JD, 2012 0x2ec070 (31 B): the game info owns the crowd avoidance - AActor::PostBeginPlay, then the
+// FArkComponentAvoidance is added to the game info's container and the container started.
+// DISHONORED(bringup): retail instantiates AddNewComponent<FArkComponentAvoidance>; the component is defined in DishonoredGame
+// (Engine/Inc/arkcomponentavoidance.h), so the Engine creates it through the creator table by its id, which runs the same
+// constructor. The container is tested for NULL (retail is never without one).
+void AGameInfo::PostBeginPlay()
+{
+	Super::PostBeginPlay();
+	if( m_ComponentContainer )
+	{
+		m_ComponentContainer->AddNewComponentByID( ArkCpntType_Avoidance );
+		m_ComponentContainer->StartAllComponents();
+	}
+	if( appStrfind( appCmdLine(), TEXT("jddiag") ) )
+	{
+		debugf( TEXT("DISHONORED(bringup): jddiag gameinfo %s container %s components %d"), *GetName(),
+			m_ComponentContainer ? TEXT("yes") : TEXT("no"), m_ComponentContainer ? m_ComponentContainer->m_Components.Num() : 0 );
+	}
+}

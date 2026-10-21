@@ -29,15 +29,16 @@
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
 #include "arkcomponentfaceto.h"
+#include "jddiag.h"
 
 static INT DisLocoAffectorCount( const UArkAvoidable* _pAvoidable )
 {
-	return _pAvoidable ? _pAvoidable->m_AffectorCount : 0;
+	return _pAvoidable ? _pAvoidable->GetAffectorCount() : 0;
 }
 
 static FVector DisLocoAvoidanceForce( const UArkAvoidable* _pAvoidable )
 {
-	return _pAvoidable ? _pAvoidable->m_Force : FVector( 0.f, 0.f, 0.f );
+	return _pAvoidable ? _pAvoidable->GetForce() : FVector( 0.f, 0.f, 0.f );
 }
 
 // The shortest signed way from one unreal-unit yaw to another; retail inlines it everywhere in these fifteen functions.
@@ -334,7 +335,8 @@ void FArkComponentLocomotion::EvaluateStaticTurn()
 	const INT Delta = DisLocoYawDelta( m_pPawnOwner->Rotation.Yaw, TargetYaw );
 	if( Abs( DisLocoYawToDegrees( Delta ) ) > 15.f )
 	{
-		RequestTurn( m_pPawnOwner->Rotation.Yaw, TargetYaw, 0.f, m_pPawnOwner->Location );
+		const UBOOL bRequested = RequestTurn( m_pPawnOwner->Rotation.Yaw, TargetYaw, 0.f, m_pPawnOwner->Location );
+		JDDiagTurn( bRequested ? TEXT("static") : TEXT("static-refused"), m_pPawnOwner->Rotation.Yaw, TargetYaw, bRequested );
 	}
 }
 
@@ -349,7 +351,8 @@ void FArkComponentLocomotion::EvaluateStartPathTurn()
 	const INT Delta = DisLocoYawDelta( m_pPawnOwner->Rotation.Yaw, m_CurPathYaw );
 	if( Abs( DisLocoYawToDegrees( Delta ) ) > 15.f && IsTurnNotTooCloseFromPathEnd( 0 ) )
 	{
-		RequestTurn( m_pPawnOwner->Rotation.Yaw, m_CurPathYaw, m_fRealScaledSpeed, m_pPawnOwner->Location );
+		const UBOOL bRequested = RequestTurn( m_pPawnOwner->Rotation.Yaw, m_CurPathYaw, m_fRealScaledSpeed, m_pPawnOwner->Location );
+		JDDiagTurn( bRequested ? TEXT("startpath") : TEXT("startpath-refused"), m_pPawnOwner->Rotation.Yaw, m_CurPathYaw, bRequested );
 	}
 }
 
@@ -360,12 +363,17 @@ void FArkComponentLocomotion::EvaluatePathTurn()
 	if( !m_bHasRequestWithPathComputed || m_FaceToRequestID == INDEX_NONE || !IsReadyToTurn()
 		|| DisLocoAffectorCount( m_pAvoidable ) > 0 || !IsLocoFaceToRequestActive() || !m_pFaceToCpnt->IsActiveRequestSnapped() || m_fRealScaledSpeed <= 0.f )
 	{
+		if( m_bHasRequestWithPathComputed && m_CurPathPointIdx >= 0 && Abs( DisLocoYawToDegrees( DisLocoYawDelta( m_CurPathYaw, m_NextPathYaw ) ) ) > 15.f )
+		{
+			JDDiagTurn( TEXT("path-gated"), m_CurPathYaw, m_NextPathYaw, FALSE );
+		}
 		return;
 	}
 	const INT Delta = DisLocoYawDelta( m_CurPathYaw, m_NextPathYaw );
 	if( Abs( DisLocoYawToDegrees( Delta ) ) > 15.f && IsTurnNotTooCloseFromPathEnd( m_CurPathPointIdx ) )
 	{
-		RequestTurn( m_CurPathYaw, m_NextPathYaw, m_fRealScaledSpeed, m_PathPoints( m_CurPathPointIdx ).m_Point );
+		const UBOOL bRequested = RequestTurn( m_CurPathYaw, m_NextPathYaw, m_fRealScaledSpeed, m_PathPoints( m_CurPathPointIdx ).m_Point );
+		JDDiagTurn( bRequested ? TEXT("path") : TEXT("path-refused"), m_CurPathYaw, m_NextPathYaw, bRequested );
 	}
 }
 

@@ -5604,53 +5604,84 @@ UBOOL UNavigationHandle::PointReachableZeroExtent( const FVector& EndPt, const F
 	return ( fHeight < 0.f ) ? ( fHeight > -CachedPathParams.SearchExtent.Z ) : ( ( pCurPoly->PolyHeight + CachedPathParams.SearchExtent.Z ) > fHeight );
 }
 
-UBOOL UNavigationHandle::PointReachable( FVector Point, FVector OverrideStartPoint/*=FVector(EC_EventParm)*/, UBOOL bAllowHitsInEndCollisionBox/*=TRUE*/ )
+// DISHONORED(port): agent JD, Arkane's UNavigationHandle::PointReachable, 2012 rva 0x2af580 (1,194 B). The start is the cached
+// search start, or the override when one is given (the cached start poly is then used only within 150 uu of the search start).
+// The four corners of the search extent's XY box at the start's Z each walk the navmesh with zero extent to the corner + the move
+// (PointReachableZeroExtent); a corner is skipped when every other corner lies ahead of it along the move (it is the rearmost and
+// cannot leave the swept box). The first refused walk answers FALSE with its hit; the crossed edges of every walk are collected
+// into the out-list. bAllowHitsInEndCollisionBox is not read (retail keeps the parameter).
+UBOOL UNavigationHandle::PointReachable( const FVector& Point, const FVector& OverrideStartPoint, UBOOL bAllowHitsInEndCollisionBox, TArray<FNavMeshEdgeBase*>* _pOutEdgeArray, FNavMeshCheckResult* _pHit )
 {
-	if(!PopulatePathfindingParamCache())
+	if( _pHit )
+	{
+		_pHit->m_HitLocation = FVector( 0.f, 0.f, 0.f );
+		_pHit->m_HitNormal = FVector( 0.f, 0.f, 0.f );
+		_pHit->m_bHit = FALSE;
+		_pHit->m_fHitTime = 1.f;
+	}
+	if( !PopulatePathfindingParamCache() )
 	{
 		return FALSE;
 	}
-
 	FVector StartPt = CachedPathParams.SearchStart;
-	if( !OverrideStartPoint.IsNearlyZero() )
+	UBOOL bUseCachedStartPoly = OverrideStartPoint.IsNearlyZero( 0.0001f );
+	if( !bUseCachedStartPoly )
 	{
+		bUseCachedStartPoly = ( OverrideStartPoint - StartPt ).SizeSquared() < 22500.f;
 		StartPt = OverrideStartPoint;
 	}
-	
-	FCheckResult Hit(1.f);
-	if( PointReachableLineCheck(GetOuter(),Hit,StartPt,Point,CachedPathParams.SearchExtent,FALSE,NULL,TRUE) )
+	const FVector Move = Point - StartPt;
+	const FVector& Extent = CachedPathParams.SearchExtent;
+	const FVector ExtentPoints[4] =
 	{
-		return TRUE;
+		FVector( StartPt.X + Extent.X, StartPt.Y + Extent.Y, StartPt.Z ),
+		FVector( StartPt.X + Extent.X, StartPt.Y - Extent.Y, StartPt.Z ),
+		FVector( StartPt.X - Extent.X, StartPt.Y - Extent.Y, StartPt.Z ),
+		FVector( StartPt.X - Extent.X, StartPt.Y + Extent.Y, StartPt.Z ),
+	};
+	UBOOL bResult = TRUE;
+	if( _pOutEdgeArray )
+	{
+		_pOutEdgeArray->Reset();
 	}
-	else
+	for( INT CornerIdx = 0; CornerIdx < 4; ++CornerIdx )
 	{
-		// bring hit location back down to entity height for this check (most hits will be halfway to maxheight of poly)
-		FNavMeshPolyBase* Poly = NULL;
-		APylon* Pylon = NULL;
-		if( !GetPylonAndPolyFromPos(Hit.Location,CachedPathParams.MinWalkableZ,Pylon,Poly) )
+		UBOOL bOtherCornerNotAhead = FALSE;
+		for( INT OtherOffset = 1; OtherOffset < 4 && !bOtherCornerNotAhead; ++OtherOffset )
 		{
-			// couldn't find walkable poly at hitloc, it's all bad
-			return FALSE;
+			bOtherCornerNotAhead = 0.0001f > ( ( ExtentPoints[( CornerIdx + OtherOffset ) % 4] - ExtentPoints[CornerIdx] ) | Move );
 		}
-
-		if( bAllowHitsInEndCollisionBox )
+		if( !bOtherCornerNotAhead )
 		{
-			FVector CheckLoc = Hit.Location;
-			Poly->AdjustPositionToDesiredHeightAbovePoly(CheckLoc,Max<FLOAT>(CachedPathParams.SearchExtent.X,CachedPathParams.SearchExtent.Z)-1.0f);
-			// if we hit something, but the collision point is within our collision extent call it good
-			FBox Box(0);
-			Box = FBox::BuildAABB(CheckLoc,CachedPathParams.SearchExtent);
-			if(Box.IsInside(Point))
+			continue;
+		}
+		const FVector EndPt = ExtentPoints[CornerIdx] + Move;
+		if( _pOutEdgeArray )
+		{
+			TArray<FNavMeshEdgeBase*> CornerEdges;
+			bResult = PointReachableZeroExtent( EndPt, ExtentPoints[CornerIdx], &CornerEdges, _pHit, bUseCachedStartPoly );
+			for( INT EdgeIdx = 0; EdgeIdx < CornerEdges.Num(); ++EdgeIdx )
 			{
-				return TRUE;
+				_pOutEdgeArray->AddUniqueItem( CornerEdges( EdgeIdx ) );
 			}
 		}
-
-		//GWorld->GetWorldInfo()->DrawDebugCoordinateSystem(Hit.Location,FRotator(0,0,0),50.f);
-		//GWorld->GetWorldInfo()->DrawDebugBox(Hit.Location,Interface->GetSearchExtent(),255,0,0,TRUE);
+		else
+		{
+			bResult = PointReachableZeroExtent( EndPt, ExtentPoints[CornerIdx], NULL, _pHit, bUseCachedStartPoly );
+		}
+		if( !bResult )
+		{
+			return bResult;
+		}
+	}
+	return bResult;
 }
 
-	return FALSE;
+// DISHONORED(port): agent JD. Retail has the one PointReachable above; this reference-signature virtual stays as the entry of
+// execPointReachable and of the reference callers in this unit and answers with it (the reference's extent line check is gone).
+UBOOL UNavigationHandle::PointReachable( FVector Point, FVector OverrideStartPoint/*=FVector(EC_EventParm)*/, UBOOL bAllowHitsInEndCollisionBox/*=TRUE*/ )
+{
+	return PointReachable( Point, OverrideStartPoint, bAllowHitsInEndCollisionBox, NULL, NULL );
 }
 
 void UNavigationHandle::BeginDestroy()

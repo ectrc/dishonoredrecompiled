@@ -15,6 +15,7 @@
 #include "disdesirestructs.h"
 #include "disaicensus.h"
 #include "ibdiag.h"
+#include "jddiag.h"
 #include "arkcomponentmeshoffset.h"
 
 ARKCOMPONENT_IMPLEMENT_TYPE( FArkComponentLocomotion )
@@ -615,6 +616,13 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 	}
 	m_bPrevHidden = bHidden;
 
+	// DISHONORED(port, agent JD): 2012 0x58d5f0: someone wants to push this pawn while its avoidable has a force and the stronger
+	// collision's avoidable has property flag 8 (the player's HandleAvoidance sets it).
+	// DISHONORED(bringup): the FArkGameEventDispatcher event retail raises on the rising edge (type 1, the stronger avoidable as
+	// its parameter, the pawn as instigator) has no listener in this tree and is not raised.
+	m_bSomeoneWantsToPushMe = m_pAvoidable && !m_pAvoidable->GetForce().IsZero() && m_pAvoidable->GetStrongerColAvoidable()
+		&& ( m_pAvoidable->GetStrongerColAvoidable()->GetPropertyFlags() & 8 ) != 0;
+
 	if( ms_TickCountBeforePath > 0 )
 	{
 		--ms_TickCountBeforePath;
@@ -661,7 +669,15 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 	// DISHONORED(port, agent IO): 2013 VA 0x94caa0: the pawn's velocity before the dynamics write this frame's is what
 	// UpdateFaceTo hands the face-to component as the real velocity.
 	const FVector VelocityBeforeDynamic = m_pPawnOwner->Velocity;
+	// agent JD: the component at index 0 recomputes the crowd priorities once a frame (2012 0x58d5f0)
+	if( m_LocoCpntIdx == 0 )
+	{
+		ComputePriorityOfNPCsFromSharedProps();
+	}
 	ComputeDynamic( _fTimeStep );
+	// agent JD: retail clears the new-path bit after the dynamics (2012 0x58d5f0, +252 &= ~0x10); it stayed raised for the whole
+	// path here, so EvaluateStartPathTurn could fire anywhere along it
+	m_bStartingNewPath = FALSE;
 
 	// DISHONORED(port, agent IO): 2013 VA 0x94caa0: unless the pawn is a rigid body, the body leans into its turns - the
 	// target pitch / roll from the real speed, the move rotation speed and the face-to angle, smoothed, then written to the
@@ -1251,4 +1267,200 @@ void FArkComponentLocomotion::NotifyActiveRequest( BYTE _Event )
 		rRequest.m_Data.m_CommonProps.m_LocoEventCallback(
 			rRequest.m_Data.m_CommonProps.m_pCallbackOwner, rRequest.m_ID, _Event );
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	-jddiag (agent JD, PHASE24 JD)
+-----------------------------------------------------------------------------*/
+
+UBOOL DisJDDiag( const TCHAR* _Topic )
+{
+	static INT Enabled = -1;
+	static FString Topics;
+	if( Enabled < 0 )
+	{
+		FString Value;
+		if( Parse( appCmdLine(), TEXT("jddiag="), Value ) )
+		{
+			Enabled = 1;
+			Topics = FString( TEXT(",") ) + Value + TEXT(",");
+		}
+		else
+		{
+			Enabled = ParseParam( appCmdLine(), TEXT("jddiag") ) ? 2 : 0;
+		}
+	}
+	if( Enabled == 2 )
+	{
+		return TRUE;
+	}
+	return Enabled == 1 && appStrstr( *Topics, *( FString( TEXT(",") ) + _Topic + TEXT(",") ) ) != NULL;
+}
+
+UBOOL DisJDSwitch( const TCHAR* _Switch )
+{
+	static TMap<FString, UBOOL> Switches;
+	const UBOOL* pFound = Switches.Find( _Switch );
+	if( pFound )
+	{
+		return *pFound;
+	}
+	const UBOOL bOn = ParseParam( appCmdLine(), _Switch );
+	Switches.Set( _Switch, bOn );
+	return bOn;
+}
+
+UBOOL DisJDWatched( const AActor* _pActor )
+{
+	static FName Extra = NAME_None;
+	static UBOOL bParsed = FALSE;
+	if( !bParsed )
+	{
+		bParsed = TRUE;
+		FString Value;
+		if( Parse( appCmdLine(), TEXT("jdwatch="), Value ) )
+		{
+			Extra = FName( *Value );
+		}
+	}
+	if( !_pActor )
+	{
+		return FALSE;
+	}
+	const FName Name = _pActor->GetFName();
+	return Name == FName( TEXT("DishonoredNPCPawn_26") ) || Name == FName( TEXT("DishonoredNPCPawn_3") ) || ( Extra != NAME_None && Name == Extra );
+}
+
+static FString JDDiagPylonOf( const FVector& _Point )
+{
+	APylon* pPylon = NULL;
+	FNavMeshPolyBase* pPoly = NULL;
+	if( !UNavigationHandle::GetPylonAndPolyFromPos( _Point, -1.f, pPylon, pPoly ) || !pPylon )
+	{
+		return TEXT("none");
+	}
+	return FString::Printf( TEXT("%s(%s)"), *pPylon->GetName(), *pPylon->GetClass()->GetName() );
+}
+
+// Every pylon of the loaded world: class, level, the imported / disabled bits, the walkable mesh's poly count and box, the
+// obstacle mesh's poly count; dynamic pylons also their disconnected bit and ceiling height. Once, at the first watched frame.
+void DisJDCensus()
+{
+	INT Count = 0;
+	INT DynamicCount = 0;
+	for( FActorIterator It; It; ++It )
+	{
+		APylon* pPylon = Cast<APylon>( *It );
+		if( !pPylon )
+		{
+			continue;
+		}
+		++Count;
+		const UNavigationMeshBase* pMesh = pPylon->NavMeshPtr;
+		const FBox Box = pMesh ? pMesh->BoxBounds : FBox( 0 );
+		FString Extra;
+		AArkDynamicPylon* pDynamic = Cast<AArkDynamicPylon>( pPylon );
+		if( pDynamic )
+		{
+			++DynamicCount;
+			Extra = FString::Printf( TEXT(" dynamic disconnected %d ceiling %.0f previous %.0f/%.0f/%.0f moving %d"), (INT)pDynamic->m_bIsDisconnected,
+				pDynamic->m_fCeilingHeight, pDynamic->m_PreviousPosition.X, pDynamic->m_PreviousPosition.Y, pDynamic->m_PreviousPosition.Z, pDynamic->m_PawnsMovingThruPylon.Num() );
+		}
+		debugf( TEXT("DISHONORED(bringup): jddiag census pylon %s class %s level %s at %.0f/%.0f/%.0f base %s imported %d disabled %d polys %d box %.0f/%.0f/%.0f..%.0f/%.0f/%.0f obstacle polys %d%s"),
+			*pPylon->GetName(), *pPylon->GetClass()->GetName(), pPylon->GetOuter() && pPylon->GetOuter()->GetOuter() ? *pPylon->GetOuter()->GetOuter()->GetName() : TEXT("?"),
+			pPylon->Location.X, pPylon->Location.Y, pPylon->Location.Z, pPylon->Base ? *pPylon->Base->GetName() : TEXT("none"),
+			(INT)pPylon->bImportedMesh, (INT)pPylon->bDisabled, pMesh ? pMesh->Polys.Num() : -1,
+			Box.Min.X, Box.Min.Y, Box.Min.Z, Box.Max.X, Box.Max.Y, Box.Max.Z, pPylon->ObstacleMesh ? pPylon->ObstacleMesh->Polys.Num() : -1, *Extra );
+	}
+	debugf( TEXT("DISHONORED(bringup): jddiag census %d pylons, %d dynamic"), Count, DynamicCount );
+}
+
+struct FJDDiagState
+{
+	INT		PathPoints;
+	FVector	LastPathPoint;
+	FLOAT	NextTurnReport;
+	FJDDiagState() : PathPoints( -1 ), LastPathPoint( 0.f, 0.f, 0.f ), NextTurnReport( 0.f ) {}
+};
+static TMap<const FArkComponentLocomotion*, FJDDiagState> GJDDiagStates;
+
+void FArkComponentLocomotion::JDDiagWalk() const
+{
+	if( !DisJDDiag( TEXT("walk") ) && !DisJDDiag( TEXT("census") ) )
+	{
+		return;
+	}
+	if( !GWorld || !DisJDWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	static UBOOL bCensusDone = FALSE;
+	if( !bCensusDone && DisJDDiag( TEXT("census") ) )
+	{
+		bCensusDone = TRUE;
+		DisJDCensus();
+	}
+	FJDDiagState& State = GJDDiagStates.FindOrAdd( this );
+	if( m_bHasRequestWithPathComputed && m_PathPoints.Num() > 0 && ( State.PathPoints != m_PathPoints.Num() || State.LastPathPoint != m_LastPathPoint ) )
+	{
+		State.PathPoints = m_PathPoints.Num();
+		State.LastPathPoint = m_LastPathPoint;
+		FString Points;
+		for( INT PointIdx = 0; PointIdx < m_PathPoints.Num(); PointIdx++ )
+		{
+			const FArkCpntLocoPathPoint& rPoint = m_PathPoints( PointIdx );
+			Points += FString::Printf( TEXT(" %.0f/%.0f/%.0f e%d %s"), rPoint.m_Point.X, rPoint.m_Point.Y, rPoint.m_Point.Z, rPoint.m_EdgeIndex, *JDDiagPylonOf( rPoint.m_Point ) );
+		}
+		debugf( TEXT("DISHONORED(bringup): jddiag route %s world %.3f raw edges %d adjusted %d points %d:%s"), *m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(),
+			m_RawPathFindingEdges.EdgeList.Num(), m_PathFindingEdges.Num(), m_PathPoints.Num(), *Points );
+	}
+	if( !DisJDDiag( TEXT("walk") ) )
+	{
+		return;
+	}
+	const FVector& Velocity = m_pPawnOwner->Velocity;
+	const INT VelYaw = Velocity.Size2D() > 1.f ? ( appTrunc( appAtan2( Velocity.Y, Velocity.X ) * 10430.219f * 2.f + 0.5f ) >> 1 ) : -200000;
+	const FVector Force = m_pAvoidable ? m_pAvoidable->GetForce() : FVector( 0.f, 0.f, 0.f );
+	const FString Avoid = FString::Printf( TEXT("avoid %d %.2f/%.2f ignore %d push %d/%d hit %.2f/%.2f"),
+		m_pAvoidable ? m_pAvoidable->GetAffectorCount() : -1, Force.X, Force.Y,
+		( m_LocoCpntIdx >= 0 && m_LocoCpntIdx < ms_LocoCpntSharedProps.Num() ) ? (INT)ms_LocoCpntSharedProps( m_LocoCpntIdx ).m_bMustIgnoreAvoidance : -1,
+		(INT)m_bInPushPeriod, (INT)m_bSomeoneWantsToPushMe, m_MoveHitNormal.X, m_MoveHitNormal.Y );
+	const FString Path = FString::Printf( TEXT("path %d/%d end %d curyaw %d nextyaw %d point %.0f/%.0f root %d snapped %d faceto %d"),
+		m_CurPathPointIdx, m_PathPoints.Num(), (INT)m_bPathAtEnd, m_CurPathYaw, m_NextPathYaw, m_PathPoint.X, m_PathPoint.Y, (INT)m_RootState,
+		m_pFaceToCpnt ? (INT)m_pFaceToCpnt->IsActiveRequestSnapped() : -1, m_FaceToRequestID );
+	extern INT GJDModerateMoves;
+	extern INT GJDFullMoves;
+	debugf( TEXT("DISHONORED(bringup): jddiag walk %s world %.3f at %.1f/%.1f/%.1f speed %.1f vel %d body %d move %d target %d rotspeed %.0f %s %s moves %d/%d"),
+		*m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(), m_pPawnOwner->Location.X, m_pPawnOwner->Location.Y, m_pPawnOwner->Location.Z,
+		Velocity.Size2D(), VelYaw, m_pPawnOwner->Rotation.Yaw, m_CurMoveYaw, m_TargetMoveYaw, m_fCurMoveRotationSpeed, *Path, *Avoid, GJDModerateMoves, GJDFullMoves );
+}
+
+void FArkComponentLocomotion::JDDiagCorner() const
+{
+	if( !DisJDDiag( TEXT("walk") ) || !GWorld || !DisJDWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	debugf( TEXT("DISHONORED(bringup): jddiag corner %s world %.3f at %.1f/%.1f now %d/%d point %.0f/%.0f curyaw %d nextyaw %d end %d"),
+		*m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(), m_pPawnOwner->Location.X, m_pPawnOwner->Location.Y, m_CurPathPointIdx, m_PathPoints.Num(),
+		m_PathPoint.X, m_PathPoint.Y, m_CurPathYaw, m_NextPathYaw, (INT)m_bPathAtEnd );
+}
+
+void FArkComponentLocomotion::JDDiagTurn( const TCHAR* _Event, INT _StartYaw, INT _EndYaw, UBOOL _bRequested ) const
+{
+	if( !DisJDDiag( TEXT("turn") ) || !GWorld || !DisJDWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	FJDDiagState& State = GJDDiagStates.FindOrAdd( this );
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	if( !_bRequested && Now < State.NextTurnReport )
+	{
+		return;
+	}
+	State.NextTurnReport = Now + 0.25f;
+	debugf( TEXT("DISHONORED(bringup): jddiag turn %s world %.3f %s %d -> %d (%.1f deg) requested %d root %d ready %d speed %.1f path %d/%d snapped %d faceto %d affectors %d"),
+		*m_pPawnOwner->GetName(), Now, _Event, _StartYaw, _EndYaw, (FLOAT)(INT)(SWORD)(WORD)( _EndYaw - _StartYaw ) * 0.0054931641f, (INT)_bRequested,
+		(INT)m_RootState, (INT)IsReadyToTurn(), m_fRealScaledSpeed, m_CurPathPointIdx, m_PathPoints.Num(),
+		m_pFaceToCpnt ? (INT)m_pFaceToCpnt->IsActiveRequestSnapped() : -1, m_FaceToRequestID, m_pAvoidable ? m_pAvoidable->GetAffectorCount() : -1 );
 }

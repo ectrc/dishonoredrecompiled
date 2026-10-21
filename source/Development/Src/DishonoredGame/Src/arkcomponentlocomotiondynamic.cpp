@@ -35,6 +35,11 @@
 #include "arkcomponentfaceto.h"
 #include "ibdiag.h"
 #include "arknavmeshbuildutils.h"
+#include "arkcomponentavoidance.h"
+#include "jddiag.h"
+
+INT GJDModerateMoves = 0;
+INT GJDFullMoves = 0;
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
@@ -85,7 +90,7 @@ UBOOL FArkComponentLocomotion::IsThereAnotherForceThanPath() const
 	UBOOL bAvoidance = FALSE;
 	if( m_LocoCpntIdx >= 0 && m_LocoCpntIdx < ms_LocoCpntSharedProps.Num() && !ms_LocoCpntSharedProps( m_LocoCpntIdx ).m_bMustIgnoreAvoidance && m_pAvoidable )
 	{
-		const FVector& Force = m_pAvoidable->m_Force;
+		const FVector Force = m_pAvoidable->GetForce();
 		bAvoidance = Abs( Force.X ) >= 0.05f || Abs( Force.Y ) >= 0.05f || Abs( Force.Z ) >= 0.05f;
 	}
 	return bSteering || bAvoidance;
@@ -121,8 +126,10 @@ UBOOL FArkComponentLocomotion::ComputeIsArrivedFlagAndSq2DDistToPathEnd( FLOAT& 
 	return FALSE;
 }
 
-// DISHONORED(port): 2013 rva 0x546260 (2012 0x586f60): the component's row in the static shared table, which is what the
-// crowd rule would read.
+// DISHONORED(port, agent JD): 2013 rva 0x546260 (2012 0x586f60, 228 B): the component's row in the shared table - close to its
+// final location (a computed path whose last point is within m_fSecurityRadiusAroundPathPoint in 2D), and then the asked target
+// as that location; the ignore-avoidance flag is cleared (ComputePriorityOfNPCsFromSharedProps raises it for the next frame).
+// DN's version wrote m_LastPathPoint / m_bIsArrived / m_bInPushPeriod there.
 void FArkComponentLocomotion::UpdateSharedProperties()
 {
 	if( m_LocoCpntIdx < 0 || m_LocoCpntIdx >= ms_LocoCpntSharedProps.Num() )
@@ -131,9 +138,214 @@ void FArkComponentLocomotion::UpdateSharedProperties()
 	}
 	FLocoCpntSharedProps& rRow = ms_LocoCpntSharedProps( m_LocoCpntIdx );
 	rRow.m_pLocoCpnt = this;
-	rRow.m_FinalLocation = m_LastPathPoint;
-	rRow.m_bCloseToFinalLocation = m_bIsArrived;
-	rRow.m_bMustIgnoreAvoidance = m_bInPushPeriod;
+	rRow.m_bMustIgnoreAvoidance = FALSE;
+	rRow.m_bCloseToFinalLocation = FALSE;
+	if( m_bHasRequestWithPathComputed )
+	{
+		const FLOAT fDX = m_LastPathPoint.X - m_CurPawnLocation.X;
+		const FLOAT fDY = m_LastPathPoint.Y - m_CurPawnLocation.Y;
+		rRow.m_bCloseToFinalLocation = m_pConfig->m_fSecurityRadiusAroundPathPoint * m_pConfig->m_fSecurityRadiusAroundPathPoint > fDX * fDX + fDY * fDY;
+	}
+	if( rRow.m_bCloseToFinalLocation )
+	{
+		rRow.m_FinalLocation = GetAskedTargetLocOfActiveRequest();
+	}
+}
+
+// DISHONORED(port, agent JD): 2013 rva 0x5491b0 (2012 0x589e00, 1,737 B), run by the component at index 0 once a frame. Every
+// row's ignore-avoidance flag is cleared; then, from the avoidance component's cached pairs (last to first), each pair of pawns
+// with started locomotion components that are both close to their final locations, the two final locations within 30 uu, is
+// grouped with the earlier pairs heading to the same place (the first pair's location within 30 uu); in each group the
+// component with the lowest index among all its members ignores avoidance this frame - so a crowd converging on one spot lets
+// one of them through instead of pushing each other off it.
+void FArkComponentLocomotion::ComputePriorityOfNPCsFromSharedProps()
+{
+	for( INT RowIdx = 0; RowIdx < ms_ComponentCount; ++RowIdx )
+	{
+		ms_LocoCpntSharedProps( RowIdx ).m_bMustIgnoreAvoidance = FALSE;
+	}
+	const FArkComponentAvoidance* pAvoidance = FArkComponentAvoidance::GetAvoidanceComponent( GWorld->GetWorldInfo()->Game );
+	if( !pAvoidance || ms_ComponentCount <= 1 )
+	{
+		return;
+	}
+	struct FLocoCpntAvoidProps
+	{
+		const AActor*					m_pActor1;
+		const AActor*					m_pActor2;
+		INT								m_LocoCpntIdx1;
+		INT								m_LocoCpntIdx2;
+		const FLocoCpntSharedProps*		m_pSharedProps1;
+		const FLocoCpntSharedProps*		m_pSharedProps2;
+		INT								m_GroupIdx;
+	};
+	FMemMark Mark( GMainThreadMemStack );
+	TArray<FLocoCpntAvoidProps, TMemStackAllocator<GMainThreadMemStack> > RichAvoidProps;
+	INT GroupCount = 0;
+	const TArray<FArkComponentAvoidance::FArkCpntAvoidCacheProps>& AvoidProxyCache = pAvoidance->GetProxyCache();
+	for( INT AvoidPropsIdx = AvoidProxyCache.Num() - 1; AvoidPropsIdx >= 0; --AvoidPropsIdx )
+	{
+		const FArkComponentAvoidance::FArkCpntAvoidCacheProps& rPair = AvoidProxyCache( AvoidPropsIdx );
+		const APawn* pPawn1 = ConstCast<APawn>( rPair.m_pAvoidable1->GetOwner() );
+		const APawn* pPawn2 = ConstCast<APawn>( rPair.m_pAvoidable2->GetOwner() );
+		if( !pPawn1 || !pPawn2 || !pPawn1->m_ComponentContainer )
+		{
+			continue;
+		}
+		const FArkComponentLocomotion* pLoco1 = pPawn1->m_ComponentContainer->GetFirstComponent<FArkComponentLocomotion>( TRUE );
+		if( !pLoco1 )
+		{
+			continue;
+		}
+		const FLocoCpntSharedProps& rSharedProps1 = ms_LocoCpntSharedProps( pLoco1->m_LocoCpntIdx );
+		if( !rSharedProps1.m_bCloseToFinalLocation || !pPawn2->m_ComponentContainer )
+		{
+			continue;
+		}
+		const FArkComponentLocomotion* pLoco2 = pPawn2->m_ComponentContainer->GetFirstComponent<FArkComponentLocomotion>( TRUE );
+		if( !pLoco2 )
+		{
+			continue;
+		}
+		const FLocoCpntSharedProps& rSharedProps2 = ms_LocoCpntSharedProps( pLoco2->m_LocoCpntIdx );
+		if( !rSharedProps2.m_bCloseToFinalLocation || !rSharedProps1.m_FinalLocation.Equals( rSharedProps2.m_FinalLocation, 30.f ) )
+		{
+			continue;
+		}
+		INT GroupIdx = INDEX_NONE;
+		for( INT RichIdx = 0; RichIdx < RichAvoidProps.Num(); ++RichIdx )
+		{
+			if( rSharedProps1.m_FinalLocation.Equals( RichAvoidProps( RichIdx ).m_pSharedProps1->m_FinalLocation, 30.f ) )
+			{
+				GroupIdx = RichAvoidProps( RichIdx ).m_GroupIdx;
+				break;
+			}
+		}
+		FLocoCpntAvoidProps& rNew = RichAvoidProps( RichAvoidProps.Add() );
+		rNew.m_pActor1 = rPair.m_pAvoidable1->GetOwner();
+		rNew.m_pActor2 = rPair.m_pAvoidable2->GetOwner();
+		rNew.m_LocoCpntIdx1 = pLoco1->m_LocoCpntIdx;
+		rNew.m_pSharedProps1 = &rSharedProps1;
+		rNew.m_pSharedProps2 = &rSharedProps2;
+		rNew.m_LocoCpntIdx2 = pLoco2->m_LocoCpntIdx;
+		rNew.m_GroupIdx = ( GroupIdx == INDEX_NONE ) ? GroupCount++ : GroupIdx;
+	}
+	if( RichAvoidProps.Num() <= 0 )
+	{
+		return;
+	}
+	TArray<INT, TMemStackAllocator<GMainThreadMemStack> > PriorityLocoIdx;
+	PriorityLocoIdx.Add( GroupCount );
+	for( INT GroupIdx = 0; GroupIdx < GroupCount; ++GroupIdx )
+	{
+		PriorityLocoIdx( GroupIdx ) = ms_ComponentCount;
+	}
+	for( INT RichIdx = 0; RichIdx < RichAvoidProps.Num(); ++RichIdx )
+	{
+		const FLocoCpntAvoidProps& rProps = RichAvoidProps( RichIdx );
+		PriorityLocoIdx( rProps.m_GroupIdx ) = Min( PriorityLocoIdx( rProps.m_GroupIdx ), Min( rProps.m_LocoCpntIdx1, rProps.m_LocoCpntIdx2 ) );
+	}
+	for( INT GroupIdx = 0; GroupIdx < GroupCount; ++GroupIdx )
+	{
+		ms_LocoCpntSharedProps( PriorityLocoIdx( GroupIdx ) ).m_bMustIgnoreAvoidance = TRUE;
+	}
+}
+
+// DISHONORED(port, agent JD): 2012 0x582e00 (170 B): a go-to-location request with every property at its default but the
+// location and the callback - threshold 20, funnel 1, speed x 1, the fastest speed mode as the maximum, stop at speed 0,
+// accurate stop, no orientation.
+void FArkCpntLocoGoToLocationProp::InitAllByDefaultExcept( const FArkComponentLocomotion* const _pLocoCpnt, const FVector& _Location, UObject* const _pCallbackOwner, ArkCpntLocoEventCallbackType _EventCallback )
+{
+	m_CommonProps.m_pCallbackOwner = _pCallbackOwner;
+	m_CommonProps.m_LocoEventCallback = _EventCallback;
+	m_CommonProps.m_fEndLocationThreshold = 20.f;
+	m_CommonProps.m_fMaxFunnelRadiusMultiplier = 1.f;
+	m_CommonProps.m_fSpeedMultiplier = 1.f;
+	m_pLocoCpnt = _pLocoCpnt;
+	m_CommonProps.m_fStopBeforeEndDist = 0.f;
+	m_CommonProps.m_bAccurateStop = TRUE;
+	m_bInitialized = TRUE;
+	m_CommonProps.m_MaxSpeedIdx = _pLocoCpnt->GetConfig()->m_SpeedNames.Num() - 1;
+	m_CommonProps.m_EndSpeedIdx = 0;
+	m_CommonProps.m_bSpeedIsLookAtDependent = FALSE;
+	m_LocationProps.m_Location.Set( _Location );
+	m_LocationProps.m_Orientation.Set( FVector( 0.f, 0.f, 0.f ) );
+	m_LocationProps.m_fEndOrientationThreshold = 0.f;
+}
+
+// DISHONORED(port, agent JD): 2013 rva 0x548b90 (2012 0x589940, 1,216 B): how much of the avoidance force this frame takes.
+// Outside a push period: 1, and a push period starts when someone wants to push this pawn (m_bSomeoneWantsToPushMe, raised in
+// PreAsyncWorkTick when the stronger collision's avoidable has property flag 8) while it walks a computed path - the pawn's
+// projection on the segment it walks is remembered, a return point m_fPushMaxDist + m_fPushReturnOnPathAddDist further along
+// the path (or that far back along the current segment) becomes a go-to request at the active request's priority and speeds,
+// and the ratio is still 1. In a push period: once the active request is no longer that one, or the pawn is within
+// m_fPushReturnOnPathAddDist of the return point, the request is removed and the period ends (1); otherwise the ratio fades
+// from 1 to 0 over the last 20% of m_fPushMaxDist from where the push started (x 5 of what is left).
+FLOAT FArkComponentLocomotion::HandlePushPeriod()
+{
+	FLOAT fAvoidanceRatio = 1.f;
+	if( !m_bInPushPeriod )
+	{
+		if( m_bHasRequestWithPathComputed && m_bSomeoneWantsToPushMe )
+		{
+			m_bInPushPeriod = TRUE;
+			const FVector& PreviousPathPoint = m_PathPoints( m_CurPathPointIdx - 1 ).m_Point;
+			const FVector& PathPoint = m_PathPoints( m_CurPathPointIdx ).m_Point;
+			PointDistToSegment( m_CurPawnLocation, PreviousPathPoint, PathPoint, m_PushStartLocOnPath );
+			const FLOAT fToPathPointX = PathPoint.X - m_PushStartLocOnPath.X;
+			const FLOAT fToPathPointY = PathPoint.Y - m_PushStartLocOnPath.Y;
+			FLOAT fLeftDist = m_pConfig->m_fPushReturnOnPathAddDist + m_pConfig->m_fPushMaxDist - appSqrt( fToPathPointY * fToPathPointY + fToPathPointX * fToPathPointX );
+			if( fLeftDist > 0.f )
+			{
+				m_PushReturnOnPathLoc = PathPoint;
+				for( INT PathPointIdx = m_CurPathPointIdx + 1; fLeftDist > 0.f && PathPointIdx < m_PathPoints.Num(); ++PathPointIdx )
+				{
+					const FVector& NextPathPoint = m_PathPoints( PathPointIdx ).m_Point;
+					const FVector ToNextPathPoint = NextPathPoint - m_PushReturnOnPathLoc;
+					const FLOAT fSegmentDist = ToNextPathPoint.Size2D();
+					if( fSegmentDist > 0.f )
+					{
+						fLeftDist -= fSegmentDist;
+						m_PushReturnOnPathLoc = ( fLeftDist <= 0.f ) ? NextPathPoint + ToNextPathPoint * ( 1.f / fSegmentDist ) * fLeftDist : NextPathPoint;
+					}
+				}
+			}
+			else
+			{
+				m_PushReturnOnPathLoc = PathPoint + m_CurPathDir * fLeftDist;
+			}
+			const FArkRequestManager<FLocoRequestData>::FRequest& rFirstRequest = m_ReqMgr.GetFirstRequest();
+			FArkCpntLocoGoToLocationProp GoToLocationProps;
+			GoToLocationProps.InitAllByDefaultExcept( this, m_PushReturnOnPathLoc, NULL, NULL );
+			GoToLocationProps.m_CommonProps.m_MaxSpeedIdx = rFirstRequest.m_Data.m_CommonProps.m_MaxSpeedIdx;
+			GoToLocationProps.m_CommonProps.m_EndSpeedIdx = GoToLocationProps.m_CommonProps.m_MaxSpeedIdx;
+			GoToLocationProps.m_CommonProps.m_fSpeedMultiplier = Max( rFirstRequest.m_Data.m_CommonProps.m_fSpeedMultiplier, 0.01f );
+			m_PushReturnOnPathRequestIdx = StartLocoToLocation( this, GetInternalName(), rFirstRequest.m_Priority, GoToLocationProps );
+		}
+		return fAvoidanceRatio;
+	}
+	const FLOAT fToReturnX = m_PushReturnOnPathLoc.X - m_CurPawnLocation.X;
+	const FLOAT fToReturnY = m_PushReturnOnPathLoc.Y - m_CurPawnLocation.Y;
+	if( m_ReqMgr.GetFirstRequest().m_ID != m_PushReturnOnPathRequestIdx
+		|| m_pConfig->m_fPushReturnOnPathAddDist * m_pConfig->m_fPushReturnOnPathAddDist > fToReturnY * fToReturnY + fToReturnX * fToReturnX )
+	{
+		const INT RequestIdx = m_ReqMgr.GetRequestIdxByID( m_PushReturnOnPathRequestIdx );
+		if( RequestIdx != INDEX_NONE )
+		{
+			m_ReqMgr.RemoveRequestByIdx( RequestIdx );
+		}
+		m_bInPushPeriod = FALSE;
+		m_PushReturnOnPathRequestIdx = INDEX_NONE;
+		return fAvoidanceRatio;
+	}
+	const FLOAT fToStartX = m_PushStartLocOnPath.X - m_CurPawnLocation.X;
+	const FLOAT fToStartY = m_PushStartLocOnPath.Y - m_CurPawnLocation.Y;
+	const FLOAT fPushedRatio = appSqrt( fToStartX * fToStartX + fToStartY * fToStartY ) / m_pConfig->m_fPushMaxDist;
+	if( fPushedRatio <= 0.8f )
+	{
+		return fAvoidanceRatio;
+	}
+	return Max( 1.f - fPushedRatio, 0.f ) * 5.f;
 }
 
 /*-----------------------------------------------------------------------------
@@ -277,15 +489,69 @@ static INT ArkLocoYawDelta( INT _From, INT _To )
 	return (INT)(SWORD)(WORD)( _To - _From );
 }
 
-// DISHONORED(port, agent IO2): 2012 rva 0x584f10 (1,053 B). Retail asks the game's FArkComponentAvoidance for its avoidable pairs and,
-// for each pair holding this pawn whose other actor is ahead (along the pawn -> path point direction), predicts both over
-// fPreAvoidDuration and reports the closest predicted other location within (this radius + its m_fPreAvoidanceRadius) of the pawn's
-// predicted segment that is not already at the path point.
-// DISHONORED(bringup): FArkComponentAvoidance (2012 0x574750..0x578ec0) is a comment-only stub in this tree - GetAvoidanceComponent has
-// nothing to return, which is retail's "no avoidance component" exit: FALSE.
+// DISHONORED(port, agent JD): 2012 rva 0x584f10 (1,053 B), whole (agent IO2 had retail's "no avoidance component" exit only).
+// The pawn is predicted fPreAvoidDuration (1 s) ahead at its real speed along the 2D direction to the path point. Every cached
+// avoidance pair holding this pawn whose other actor is ahead of it (along the pawn -> path point direction) is predicted as
+// far along its own velocity; that actor's radius is its locomotion config's m_fPreAvoidanceRadius (an inertia-disabled pawn is
+// skipped) or its cylinder radius. The closest prediction within this config's m_fPreAvoidanceRadius + that radius of the
+// pawn's predicted segment - and not already within that sum of the path point - is the impact location.
 UBOOL FArkComponentLocomotion::DetectPreAvoidanceCollision( const FVector _PathPointWithPawnZ, const FVector& _PawnToPathPoint, FVector& _ImpactLoc ) const
 {
-	return FALSE;
+	static const FLOAT fPreAvoidDuration = 1.f;
+	const FArkComponentAvoidance* pAvoidance = FArkComponentAvoidance::GetAvoidanceComponent( GWorld->GetWorldInfo()->Game );
+	if( !pAvoidance )
+	{
+		return FALSE;
+	}
+	const TArray<FArkComponentAvoidance::FArkCpntAvoidCacheProps>& AvoidProxyCache = pAvoidance->GetProxyCache();
+	const FVector PawnToPathPointDir = FVector( _PawnToPathPoint.X, _PawnToPathPoint.Y, 0.f ).SafeNormal();
+	const FVector PawnPreAvoidEnd = m_CurPawnLocation + PawnToPathPointDir * ( m_fRealSpeed * fPreAvoidDuration );
+	FLOAT fBestDist = BIG_NUMBER;
+	UBOOL bFound = FALSE;
+	for( INT PairIdx = 0; PairIdx < AvoidProxyCache.Num(); ++PairIdx )
+	{
+		const AActor* pOwner1 = AvoidProxyCache( PairIdx ).m_pAvoidable1->GetOwner();
+		const AActor* pOwner2 = AvoidProxyCache( PairIdx ).m_pAvoidable2->GetOwner();
+		if( pOwner1 != m_pPawnOwner && pOwner2 != m_pPawnOwner )
+		{
+			continue;
+		}
+		const AActor* pOther = ( pOwner1 == m_pPawnOwner ) ? pOwner2 : pOwner1;
+		if( ( ( pOther->Location - m_CurPawnLocation ) | _PawnToPathPoint ) <= 0.f )
+		{
+			continue;
+		}
+		FLOAT fOtherRadius;
+		const APawn* pOtherPawn = ConstCast<APawn>( pOther );
+		const FArkComponentLocomotion* pOtherLoco = ( pOtherPawn && pOtherPawn->m_ComponentContainer ) ? pOtherPawn->m_ComponentContainer->GetFirstComponent<FArkComponentLocomotion>( TRUE ) : NULL;
+		if( pOtherLoco )
+		{
+			if( pOtherLoco->m_bInertiaDisabled )
+			{
+				continue;
+			}
+			fOtherRadius = pOtherLoco->m_pConfig->m_fPreAvoidanceRadius;
+		}
+		else
+		{
+			fOtherRadius = pOther->GetCylinderExtent().X;
+		}
+		if( fOtherRadius <= 0.f )
+		{
+			continue;
+		}
+		const FVector OtherPreAvoidEnd = pOther->Location + pOther->Velocity * fPreAvoidDuration;
+		FVector ClosestPoint;
+		const FLOAT fDistToSeg = PointDistToSegment( OtherPreAvoidEnd, m_CurPawnLocation, PawnPreAvoidEnd, ClosestPoint );
+		const FLOAT fRadiusSum = m_pConfig->m_fPreAvoidanceRadius + fOtherRadius;
+		if( fRadiusSum > fDistToSeg && fBestDist > fDistToSeg && ( OtherPreAvoidEnd - _PathPointWithPawnZ ).SizeSquared() > fRadiusSum * fRadiusSum )
+		{
+			_ImpactLoc = OtherPreAvoidEnd;
+			fBestDist = fDistToSeg;
+			bFound = TRUE;
+		}
+	}
+	return bFound;
 }
 
 // DISHONORED(port, agent IK): 2013 VA 0x947950 (2012 0x588700, 1,766 / 1,790 B). By root state: NONE and the START states aim
@@ -293,8 +559,8 @@ UBOOL FArkComponentLocomotion::DetectPreAvoidanceCollision( const FVector _PathP
 // the pawn walks back onto the mesh, else keep the current yaw; the turn states answer the turn's start / end yaw.
 // Agent IO2: the avoidance half of the path branch - beyond m_fAvoidanceUnstuckMinDist of the path end, with a move-hit normal
 // the path and the velocity both point into, the yaw swings by +-m_fAvoidanceAngle to the side a zero-extent navmesh probe from the
-// cylinder's leading corner reaches (UNavigationHandle::PointReachableZeroExtent); otherwise towards the side away from a
-// pre-avoidance collision (DetectPreAvoidanceCollision, FALSE while FArkComponentAvoidance is a stub).
+// cylinder's leading corner reaches (UNavigationHandle::PointReachableZeroExtent); otherwise (agent JD) to the side a single
+// avoidance affector pushes to, or away from a pre-avoidance collision (DetectPreAvoidanceCollision).
 INT FArkComponentLocomotion::ComputeTargetMoveYaw() const
 {
 	switch( m_RootState )
@@ -332,12 +598,21 @@ INT FArkComponentLocomotion::ComputeTargetMoveYaw() const
 					AvoidSide = ( pNavHandle && pNavHandle->PointReachableZeroExtent( EndRight, StartRight, NULL, NULL, FALSE ) ) ? 1 : -1;
 				}
 			}
+			// agent JD: retail's single-affector branch (2012 0x588700): exactly one avoidance affector whose avoidable (the stronger
+			// collision) does not carry property flag 1, pushing more than 90 degrees off the path: swing to the side it pushes to.
+			// The folded accessors are UArkAvoidable::GetStrongerColAvoidable (+84) and GetPropertyFlags (+116).
+			if( AvoidSide == 0 && m_pAvoidable && m_pAvoidable->GetAffectorCount() == 1 && !( m_pAvoidable->GetStrongerColAvoidable()->GetPropertyFlags() & 1 ) )
+			{
+				const FVector Force = m_pAvoidable->GetForce();
+				const INT ForceYawDelta = ArkLocoYawDelta( PathYaw, ArkLocoVectorYaw( Force.X, Force.Y ) );
+				if( Abs( ForceYawDelta ) > 0x4000 )
+				{
+					AvoidSide = ( ForceYawDelta < 0 ) ? -1 : 1;
+				}
+			}
 			if( AvoidSide == 0 )
 			{
-				// DISHONORED(bringup): retail's single-affector branch (one UArkAvoidable affector whose owner tweaks do not opt out,
-				// its force more than 90 degrees off the path) reads the avoidable's owner tweaks through a folded accessor that is
-				// not resolved; with FArkComponentAvoidance unported no pawn has an affector, so the branch is never reached here.
-				const UBOOL bHaveAvoidanceAffector = m_pAvoidable && m_pAvoidable->m_AffectorCount > 0;
+				const UBOOL bHaveAvoidanceAffector = m_pAvoidable && m_pAvoidable->GetAffectorCount() > 0;
 				if( !m_MoveHitNormal.IsZero() || ( bHaveAvoidanceAffector && m_fRealScaledSpeed <= m_pConfig->m_fVelocityToStopMoving ) )
 				{
 					return PathYaw;
@@ -475,68 +750,108 @@ INT FArkComponentLocomotion::UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpe
 	the move vector
 -----------------------------------------------------------------------------*/
 
-// DISHONORED(port): 2013 rva 0x548410 (2012 0x5891c0, 913 bytes). The frame's path move is the move yaw's direction times
-// the current speed times the time step; within m_fSecurityRadiusAroundPathPoint of the current corner retail blends that
-// direction towards the direction to the corner itself, weighted by how close the pawn is, which is what stops an NPC
-// cutting a corner it is about to turn at.
+// DISHONORED(port, agent JD): 2013 rva 0x548410 (2012 0x5891c0, 913 bytes), whole. The frame's path move is the move yaw's
+// direction x the current speed x the time step. Only on the LAST stretch of a computed path (m_bPathAtEnd), without a stop
+// animation handling the stop and not yet arrived, and within m_fSecurityRadiusAroundPathPoint of the end point (or the length
+// of the last segment when that is shorter and the pawn is inside it) is the direction blended towards the end point, weighted
+// by how close the pawn is, and the move yaw is set to the blend - that lands the pawn on its mark. DN blended on every
+// intermediate corner instead (retail tests the path-at-end bit, both databases: 2012 +252 / 2013 +260 bit 0x20), which pulled
+// the pawn into each corner of the funnel.
 FVector FArkComponentLocomotion::ComputePathMove( FLOAT _fTimeStep )
 {
 	if( m_CurMoveYaw == -200000 )
 	{
 		return FVector( 0.f, 0.f, 0.f );
 	}
-	FRotator MoveRotator( 0, m_CurMoveYaw, 0 );
-	FVector MoveDir = MoveRotator.Vector();
-	MoveDir.Z = 0.f;
-	MoveDir = MoveDir.SafeNormal();
-
-	if( m_bHasRequestWithPathComputed && !m_bPathAtEnd && !m_bHandleStop && !IsArrived()
-		&& m_pConfig && m_CurPathPointIdx >= 0 && m_CurPathPointIdx < m_PathPoints.Num() )
+	FVector MoveDir = FRotator( 0, m_CurMoveYaw, 0 ).Vector();
+	if( m_bHasRequestWithPathComputed && m_bPathAtEnd && !m_bHandleStop && !IsArrived() )
 	{
 		FLOAT fSecurityRadius = m_pConfig->m_fSecurityRadiusAroundPathPoint;
-		FVector PawnToPathPoint = m_PathPoints( m_CurPathPointIdx ).m_Point - m_CurPawnLocation;
-		const FLOAT fSq2D = PawnToPathPoint.X * PawnToPathPoint.X + PawnToPathPoint.Y * PawnToPathPoint.Y;
-		if( ( m_fDistBetweenPathPoints * m_fDistBetweenPathPoints ) > fSq2D && fSecurityRadius > m_fDistBetweenPathPoints )
+		const FVector PawnToPathPoint = m_PathPoints( m_CurPathPointIdx ).m_Point - m_CurPawnLocation;
+		const FLOAT fSq2D = PawnToPathPoint.Y * PawnToPathPoint.Y + PawnToPathPoint.X * PawnToPathPoint.X;
+		if( m_fDistBetweenPathPoints * m_fDistBetweenPathPoints > fSq2D && fSecurityRadius > m_fDistBetweenPathPoints )
 		{
 			fSecurityRadius = m_fDistBetweenPathPoints;
 		}
-		if( fSecurityRadius > 0.f && ( fSecurityRadius * fSecurityRadius ) > fSq2D )
+		if( fSecurityRadius * fSecurityRadius > fSq2D )
 		{
 			const FLOAT fInfluence = appSqrt( fSq2D ) / fSecurityRadius;
-			PawnToPathPoint.Z = 0.f;
-			const FVector ToCorner = PawnToPathPoint.SafeNormal();
-			MoveDir = ( MoveDir * fInfluence + ToCorner * ( 1.f - fInfluence ) ).SafeNormal();
+			const FVector PawnToPathPointDir = FVector( PawnToPathPoint.X, PawnToPathPoint.Y, 0.f ).SafeNormal();
+			if( !PawnToPathPointDir.IsNearlyZero( 0.0001f ) )
+			{
+				FVector NewMoveDir = ( MoveDir - PawnToPathPointDir ) * fInfluence + PawnToPathPointDir;
+				if( NewMoveDir.Normalize() )
+				{
+					MoveDir = NewMoveDir;
+					m_CurMoveYaw = appTrunc( appAtan2( MoveDir.Y, MoveDir.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+				}
+			}
 		}
 	}
 	return MoveDir * ( m_fCurMoveSpeed * _fTimeStep );
 }
 
-// DISHONORED(port): 2013 rva 0x54a630 (2012 0x58b110, 1,044 bytes). The steering force of this frame is blended into the
-// path move with the previous frame's force, so an avoidance push decays rather than snapping; the result is clamped so
-// steering can never make the pawn faster than the path would.
-FVector FArkComponentLocomotion::ApplySteering( FLOAT _fTimeStep, const FVector& _PathMove )
+// DISHONORED(port, agent JD): 2013 rva 0x54a630 (2012 0x58b110, 1,044 bytes), whole (DN's was a reconstruction without the
+// avoidance force). Forces are in units of the fastest speed mode's forward speed: the path move becomes a force (move / dt /
+// that speed); the steering is this frame's steering force plus - for a pawn with an avoidable whose shared row does not ignore
+// avoidance - the avoidance force x HandlePushPeriod's ratio, except when the pawn walks into something (a move hit normal) near
+// the end of its path (inside m_fAvoidanceUnstuckMinDist) towards an oriented location request, unless its avoidable's property
+// flag 4 is set or its stronger collision has flag 8 (being pushed). Unless inertia or steering is disabled, the steering x the
+// steering multiplier (which recovers at m_fRestartSteeringSmoothSpeed per second after a disable), capped at 1, is added to the
+// path force, the sum capped at 1 and turned back into a move. The path force is kept as m_PreviousPathForce.
+FVector FArkComponentLocomotion::ApplySteering( FLOAT _fTimeStep, const FVector& _MoveBeforeSteering )
 {
-	if( m_bSteeringDisabled || m_CurSteeringForce.IsZero() )
+	FVector Result = _MoveBeforeSteering;
+	if( !m_bSteeringDisabled )
 	{
-		m_PreviousSteeringForce = FVector( 0.f, 0.f, 0.f );
-		m_PreviousPathForce = _PathMove;
-		m_CurSteeringForce = FVector( 0.f, 0.f, 0.f );
-		return _PathMove;
+		m_fSteeringMultiplier = Min( m_pConfig->m_fRestartSteeringSmoothSpeed * _fTimeStep + m_fSteeringMultiplier, 1.f );
 	}
-	FVector Steering = m_CurSteeringForce * ( m_fSteeringMultiplier * _fTimeStep );
-	Steering.Z = 0.f;
-	const FLOAT fPathSize = _PathMove.Size2D();
-	FVector Move = _PathMove + ( Steering + m_PreviousSteeringForce ) * 0.5f;
-	Move.Z = _PathMove.Z;
-	const FLOAT fMoveSize = Move.Size2D();
-	if( fPathSize > 0.f && fMoveSize > fPathSize )
+	const FLOAT fReferenceSpeed = m_pConfig->GetForwardSpeedOfSpeedMode( m_pConfig->m_SpeedNames.Num() - 1, m_CurModifierIdx );
+	m_PreviousPathForce = FVector( 0.f, 0.f, 0.f );
+	if( fReferenceSpeed <= 0.f )
 	{
-		Move *= ( fPathSize / fMoveSize );
+		return Result;
 	}
-	m_PreviousSteeringForce = Steering;
-	m_PreviousPathForce = _PathMove;
-	m_CurSteeringForce = FVector( 0.f, 0.f, 0.f );
-	return Move;
+	const FVector ForceBeforeSteering = _MoveBeforeSteering * ( 1.f / _fTimeStep ) * ( 1.f / fReferenceSpeed );
+	FVector TotalSteering = m_CurSteeringForce;
+	if( m_pAvoidable && !ms_LocoCpntSharedProps( m_LocoCpntIdx ).m_bMustIgnoreAvoidance )
+	{
+		const FLOAT fAvoidanceRatio = HandlePushPeriod();
+		if( fAvoidanceRatio > 0.f )
+		{
+			const FVector Force = m_pAvoidable->GetForce();
+			const UBOOL bAvoidableForcesAvoidance = ( m_pAvoidable->GetPropertyFlags() & 4 ) != 0;
+			const UBOOL bPushed = !Force.IsZero() && ( m_pAvoidable->GetStrongerColAvoidable()->GetPropertyFlags() & 8 ) != 0;
+			UBOOL bAddAvoidance = TRUE;
+			if( !bAvoidableForcesAvoidance && !bPushed && m_bBuiltPathUpToDate && !Force.IsZero() && !m_MoveHitNormal.IsZero() && !_MoveBeforeSteering.IsZero()
+				&& m_pConfig->m_fAvoidanceUnstuckMinDist * m_pConfig->m_fAvoidanceUnstuckMinDist > GetSq2DDistToPathEnd() && m_ReqMgr.HasRequest() )
+			{
+				const FLocoRequestData& rFirstRequestData = m_ReqMgr.GetFirstRequest().m_Data;
+				bAddAvoidance = m_CurReqWorkData.m_bDisabled || rFirstRequestData.m_Type != CPNT_LOCO_REQUEST_TYPE_LOCATION
+					|| *(const DWORD*)&rFirstRequestData.m_LocationProps.m_Orientation.m_fX == 0;
+			}
+			if( bAddAvoidance )
+			{
+				TotalSteering += Force * fAvoidanceRatio;
+			}
+		}
+	}
+	if( !m_bInertiaDisabled && !m_bSteeringDisabled && !TotalSteering.IsNearlyZero( 0.0001f ) )
+	{
+		FVector FinalForce = TotalSteering * m_fSteeringMultiplier;
+		if( FinalForce.SizeSquared2D() > 1.f )
+		{
+			FinalForce.Normalize();
+		}
+		FinalForce += ForceBeforeSteering;
+		if( FinalForce.SizeSquared2D() > 1.f )
+		{
+			FinalForce.Normalize();
+		}
+		Result = FinalForce * fReferenceSpeed * _fTimeStep;
+	}
+	m_PreviousPathForce = ForceBeforeSteering;
+	return Result;
 }
 
 // DISHONORED(port): 2013 rva 0x544490 (2012 0x585430, 752 bytes). The move is clamped so the pawn cannot overshoot the
@@ -709,12 +1024,14 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 			m_CurMove = m_pPawnOwner->Mesh->RootMotionDelta.GetTranslation();
 			m_CurMove.Z = 0.f;
 		}
+		m_fSteeringMultiplier = 0.f;
 	}
 	else
 	{
 		m_fRealSpeed = m_pPawnOwner->Velocity.Size();
 		m_fRealScaledSpeed = m_fRealSpeed / GetFinalSpeedMultiplier();
-		if( !m_PreviousVelocity.IsZero() && m_pConfig )
+		// agent JD: retail's stuck test runs only when the last move hit something and no avoidance force pushes (2012 0x58ca10)
+		if( !m_MoveHitNormal.IsZero() && ( !m_pAvoidable || m_pAvoidable->GetForce().IsNearlyZero( 0.0001f ) ) )
 		{
 			const FLOAT fPrevSq2D = m_PreviousVelocity.X * m_PreviousVelocity.X + m_PreviousVelocity.Y * m_PreviousVelocity.Y;
 			if( m_pConfig->m_fVelocityToStopMoving > m_fRealSpeed && fPrevSq2D > ( m_pConfig->m_fVelocityToStartToMove * m_pConfig->m_fVelocityToStartToMove ) )
@@ -770,9 +1087,9 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 			{
 				fMaxSpeed = 0.f;
 			}
-			if( Abs( fMaxSpeed ) >= 0.1f && ( m_fCurAdaptedAccel * _fTimeStep + m_fRealScaledSpeed ) < fMaxSpeed )
+			if( Abs( fMaxSpeed ) >= 0.1f && ( m_fCurAcceleration * _fTimeStep + m_fRealScaledSpeed ) < fMaxSpeed )
 			{
-				fMaxSpeed = m_fCurAdaptedAccel * _fTimeStep + m_fRealScaledSpeed;
+				fMaxSpeed = m_fCurAcceleration * _fTimeStep + m_fRealScaledSpeed;
 			}
 			FVector Dir = m_CurMove;
 			Dir.Z = 0.f;
@@ -815,17 +1132,26 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 		m_pPawnOwner->Acceleration = m_pPawnOwner->Velocity * fInvTimeStep;
 	}
 	m_PreviousVelocity = m_pPawnOwner->Velocity;
+	m_PreviousSteeringForce = m_CurSteeringForce;
+	m_CurSteeringForce = FVector( 0.f, 0.f, 0.f );
 	UpdateSharedProperties();
 	IKDiagDynamic( bAnimationOwnsThePawn, RootMotionRead );
+	JDDiagWalk();
 }
 
 /*-----------------------------------------------------------------------------
 	the translation
 -----------------------------------------------------------------------------*/
 
-// DISHONORED(port): 2013 rva 0x543d00 (2012 0x584ca0). Faithful: below the time-step floor nothing happens; the moderate
-// move is taken only when the pawn is on a valid base, is not on a start poly-less navigation handle, is not being
-// previewed and the moderate move itself accepts the frame - otherwise the full move runs.
+// DISHONORED(port): 2013 rva 0x543d00 (2012 0x584ca0, 160 B). Below the time-step floor nothing happens; the moderate move is
+// taken only for a pawn whose inertia is DISABLED, not just teleported (bJustTeleported), on a valid base (no collision component,
+// or one that blocks rigid bodies: 2012 +280 bit 0x400 = BlockRigidBody), with a start poly on its navigation handle, not being
+// previewed, and when the moderate move itself accepts the frame - otherwise the full move runs.
+// Agent JD: DN had the inertia test inverted (moderate for every walking NPC) and BlockActors as the base test; with the moderate
+// move ported (build 2) that put the post-ride captain on the navmesh plane 45 uu inside the boat's deck (run JD2a, world 152).
+// DISHONORED(bringup): this correction is NOT BUILT (agent JD's two builds were spent). The inertia test makes every
+// inertia-enabled NPC take the full move, i.e. build 2 run with -jdnomoderate (run JD2b, measured); the base test also changes
+// the _bOnValidBase FullMovePawn receives on a base whose component blocks actors but not rigid bodies - not measured.
 void FArkComponentLocomotion::MovePawn( FLOAT _fTimeStep, UBOOL _bPreview )
 {
 	if( _fTimeStep <= 0.0001f || !m_pPawnOwner )
@@ -839,33 +1165,98 @@ void FArkComponentLocomotion::MovePawn( FLOAT _fTimeStep, UBOOL _bPreview )
 	if( m_pPawnOwner->Base )
 	{
 		UPrimitiveComponent* pBaseCollision = m_pPawnOwner->Base->CollisionComponent;
-		bOnValidBase = ( pBaseCollision == NULL ) || pBaseCollision->BlockActors;
+		bOnValidBase = ( pBaseCollision == NULL ) || pBaseCollision->BlockRigidBody;
 	}
 
 	UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
 	const UBOOL bHasStartPoly = pNavHandle && pNavHandle->m_pStartPoly;
-	if( m_bInertiaDisabled || !bOnValidBase || !bHasStartPoly || _bPreview || !ModerateMovePawn( _fTimeStep ) )
+	if( m_pPawnOwner->bJustTeleported || !m_bInertiaDisabled || !bOnValidBase || !bHasStartPoly || _bPreview || !ModerateMovePawn( _fTimeStep ) )
 	{
 		FullMovePawn( _fTimeStep, bOnValidBase, _bPreview );
+		GJDFullMoves++;
+	}
+	else
+	{
+		GJDModerateMoves++;
 	}
 }
 
-// DISHONORED(port): 2013 rva 0x540d80 (2012 0x581d50, 1,447 bytes). The cheap move, used when the pawn is standing on
-// something solid and the navigation handle already knows which poly it is on: the frame's velocity is applied directly
-// and the Z is taken from the plane of that poly rather than from a trace, so a walking NPC costs no collision query.
-// Retail refuses the frame (returns FALSE, so the full move runs instead) when the destination is not reachable.
-// DISHONORED(bringup): retail also raises touch and bump events from a MultiPointCheck it does anyway
-// (SendTouchAndBumpEvents / UnTouchActors, 2013 rvas 0x53e0d0 / 0x53fa60) and projects the Z onto the poly's plane using
-// FNavMeshPolyBase's normal; this projects onto the poly's centre plane, which is the same thing for the flat polys the
-// mesh is mostly made of, and it leaves the touch events to the full move.
+// DISHONORED(port, agent JD): 2013 rva 0x540d80 (2012 0x581d50, 1,447 bytes), whole. The cheap move MovePawn takes on a valid base
+// with a start poly: the body yaw becomes Rotation.Yaw + the face-to component's delta; a moving pawn's move is Velocity x dt
+// (m_CurMove when that is not zero while the move speed is and no animation owns the pawn), flattened; the move is refused (FALSE,
+// FullMovePawn runs instead) unless the zero-extent navmesh walk from the pawn reaches the moved cylinder centre raised by
+// MaxStepHeight. Accepted: the touches of a half-size multi-point check at the raised centre are sent (trace flags 0x20209F), the
+// feet go onto the plane of the navigation handle's start poly under the moved centre, the location and the collision bounds move
+// by the move, Velocity is the move / dt clamped to the speed it started with, and the touches no longer overlapping are left.
+// Moving or turning, the rotation is written, the attached actors follow and the components update. Always: the root-motion
+// translation is consumed, bJustTeleported is cleared (2012 AActor +296 bit 0x1000 - the flag agent IK3 left unidentified) and
+// the move hit normal is cleared. -jdnomoderate (agent JD's build-2 A/B) declines every frame as before.
+// DISHONORED(bringup): UWorld::MoveAttachedActors (2012 0x25f970, Arkane's 2,558 B) is FarMoveActor of the attached actors, as in
+// FullMovePawn.
 UBOOL FArkComponentLocomotion::ModerateMovePawn( FLOAT _fTimeStep )
 {
-	// DISHONORED(bringup): declined, always, so every frame takes FullMovePawn. Retail's cheap path writes the pawn's
-	// Location directly and takes the Z from the start poly's plane, which is only correct while the pawn is provably
-	// inside that poly - and the thing that keeps it provable is the multi-point check and the touch bookkeeping this
-	// package leaves to UWorld::MoveActor. Declining costs one swept move per NPC per frame (26 on L_Tower_P) and is the
-	// difference between "cheap and possibly through a wall" and "correct"; the counters say what it costs.
-	return FALSE;
+	static const UBOOL bJDNoModerate = DisJDSwitch( TEXT("jdnomoderate") );
+	if( bJDNoModerate )
+	{
+		return FALSE;
+	}
+	ADishonoredNPCPawn* pPawn = m_pPawnOwner;
+	const FRotator NewRotation( 0, (INT)(WORD)( pPawn->Rotation.Yaw + m_pFaceToCpnt->GetCurBodyYawDelta() + 0x7FFF ) - 0x7FFF, 0 );
+	const UBOOL bMoving = !pPawn->Velocity.IsZero();
+	if( bMoving || pPawn->Rotation.Yaw != NewRotation.Yaw )
+	{
+		UPrimitiveComponent* pCollision = pPawn->CollisionComponent;
+		const FVector RaisedCenter( pCollision->Bounds.Origin.X, pCollision->Bounds.Origin.Y, pCollision->Bounds.Origin.Z + pPawn->MaxStepHeight );
+		FVector Move( 0.f, 0.f, 0.f );
+		if( bMoving )
+		{
+			const FLOAT fStartSpeed = pPawn->Velocity.Size();
+			Move = pPawn->Velocity * _fTimeStep;
+			if( !Move.IsZero() && m_fCurMoveSpeed == 0.f && !IsRootMotion() )
+			{
+				Move = m_CurMove;
+			}
+			Move.Z = 0.f;
+			UNavigationHandle* pNavHandle = pPawn->GetNavigationHandle();
+			if( !pNavHandle->PointReachableZeroExtent( FVector( RaisedCenter.X + Move.X, RaisedCenter.Y + Move.Y, RaisedCenter.Z ), FVector( 0.f, 0.f, 0.f ), NULL, NULL, FALSE ) )
+			{
+				return FALSE;
+			}
+			const FNavMeshPolyBase* pPoly = (const FNavMeshPolyBase*)pNavHandle->m_pStartPoly;
+			const FVector PolyCenter = pPoly->GetPolyCenter( WORLD_SPACE );
+			const FVector PolyNormal = pPoly->GetPolyNormal( WORLD_SPACE );
+			FMemMark Mark( GMainThreadMemStack );
+			FCheckResult* pHits = GWorld->MultiPointCheck( GMainThreadMemStack, RaisedCenter, pCollision->Bounds.BoxExtent * 0.5f, 0x20209F );
+			SendTouchAndBumpEvents( pHits, FALSE );
+			FLOAT fFeetZ = RaisedCenter.Z + Move.Z;
+			if( Abs( PolyNormal.Z ) >= 0.0001f )
+			{
+				fFeetZ = PolyCenter.Z - ( ( RaisedCenter.X + Move.X - PolyCenter.X ) * PolyNormal.X + ( RaisedCenter.Y + Move.Y - PolyCenter.Y ) * PolyNormal.Y ) / PolyNormal.Z;
+			}
+			Move.Z = fFeetZ - ( pCollision->Bounds.Origin.Z - pCollision->Bounds.BoxExtent.Z );
+			pPawn->Location += Move;
+			pCollision->Bounds.Origin += Move;
+			pPawn->Velocity = ClampLength( Move * ( 1.f / _fTimeStep ), fStartSpeed );
+			UnTouchActors( pHits, FALSE );
+		}
+		pPawn->Rotation = NewRotation;
+		for( INT AttachedIdx = 0; AttachedIdx < pPawn->Attached.Num(); ++AttachedIdx )
+		{
+			AActor* pAttached = pPawn->Attached( AttachedIdx );
+			if( pAttached && !pAttached->bHardAttach && !Move.IsZero() )
+			{
+				GWorld->FarMoveActor( pAttached, pAttached->Location + Move, FALSE, TRUE, TRUE );
+			}
+		}
+		pPawn->ForceUpdateComponents( GWorld->InTick && !GWorld->bPostTickComponentUpdate, TRUE );
+	}
+	if( pPawn->Mesh )
+	{
+		pPawn->Mesh->RootMotionDelta.SetTranslation( FVector( 0.f, 0.f, 0.f ) );
+	}
+	pPawn->bJustTeleported = FALSE;
+	m_MoveHitNormal = FVector( 0.f, 0.f, 0.f );
+	return TRUE;
 }
 
 // DISHONORED(port, agent IK3): 2012 0x580ae0 (4,707 B) / 2013 VA 0x93fb00 (4,729 B), whole. Retail moves the pawn with its own
@@ -889,7 +1280,8 @@ UBOOL FArkComponentLocomotion::ModerateMovePawn( FLOAT _fTimeStep )
 //      nothing walkable is within 1.99 x MaxStepHeight below.
 // DISHONORED(bringup): UWorld::MoveAttachedActors (2012 0x25f970, Arkane's 2,558 B) is the location write plus the attached
 // actors' move; the attached actors follow the location only (FarMoveActor, as the reference's MoveActor would), not the
-// rotation. The pawn flag cleared at the end (2012: pawn +296 bit 0x1000) is not identified and not cleared.
+// rotation. The pawn flag cleared at the end (2012: pawn +296 bit 0x1000) is AActor::bJustTeleported (agent JD, the 2012 PDB's
+// bit 12 of that dword); it is cleared.
 void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBase, UBOOL _bPreview )
 {
 	if( !m_pPawnOwner || !m_pPawnOwner->CollisionComponent )
@@ -1115,6 +1507,7 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	{
 		pPawn->Mesh->RootMotionDelta.SetTranslation( FVector( 0.f, 0.f, 0.f ) );
 	}
+	pPawn->bJustTeleported = FALSE;
 	m_CurPawnLocation = pPawn->Location;
 	if( !bFalls && !bMoved && bCheckFall && !_bPreview )
 	{

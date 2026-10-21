@@ -129,6 +129,8 @@ struct FArkCpntLocoGoToProp
 struct FArkCpntLocoGoToLocationProp : public FArkCpntLocoGoToProp
 {
 	FArkCpntLocoRequestLocationProps m_LocationProps;	// @48
+
+	void InitAllByDefaultExcept( const class FArkComponentLocomotion* const _pLocoCpnt, const FVector& _Location, UObject* const _pCallbackOwner, ArkCpntLocoEventCallbackType _EventCallback );	// 2012 0x582e00
 };
 
 /** DISHONORED(layout): 2012 PDB FArkCpntLocoGoToActorProp, 64 bytes. */
@@ -356,6 +358,11 @@ public:
 	/** DISHONORED(diag): agent IO's -iodiag, once a second per moving NPC: body yaw against velocity yaw, the face-to request, the
 	    mesh rotation; and each new path's points. */
 	void IODiagReport() const;
+	/** DISHONORED(diag): agent JD's -jddiag (Inc/jddiag.h): every dynamics frame of the watched NPCs (walk), each corner passed
+	    (walk), each turn decision (turn). */
+	void JDDiagWalk() const;
+	void JDDiagCorner() const;
+	void JDDiagTurn( const TCHAR* _Event, INT _StartYaw, INT _EndYaw, UBOOL _bRequested ) const;
 
 private:
 	// the request-manager event thunk (see arkrequestmanager.h on why this is a static rather than a PMF)
@@ -402,6 +409,8 @@ private:
 	void HandleArrival( FLOAT _fTimeStep );							// 2013 0x5487b0
 	UBOOL ComputeIsArrivedFlagAndSq2DDistToPathEnd( FLOAT& _rSq2DDist ) const;	// 2013 0x544390
 	UBOOL IsThereAnotherForceThanPath() const;						// 2013 0x541a00
+	FLOAT HandlePushPeriod();										// 2013 0x548b90
+	void ComputePriorityOfNPCsFromSharedProps();					// 2013 0x5491b0
 	void UpdateSharedProperties();									// 2013 0x546260
 	FVector GetPawnGroundLocation() const;							// 2013 0x53dde0
 

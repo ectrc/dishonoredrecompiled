@@ -1580,6 +1580,10 @@ public:
 	    polys from the start poly along the 2D segment to EndPt, edge by edge; FALSE with the hit filled at a blocked edge or the mesh
 	    border, else whether EndPt is within the last poly's height band. */
 	UBOOL PointReachableZeroExtent(const FVector& EndPt, const FVector& OverrideStartPoint, TArray<struct FNavMeshEdgeBase*>* _pOutEdgeArray, struct FNavMeshCheckResult* _pHit, UBOOL _bUseCachedStartPoly);
+	/** DISHONORED(port): agent JD, Arkane's PointReachable, 2012 rva 0x2af580 (1,194 B): the pawn's extent box swept as the zero-extent
+	    walks of its corners (the rearmost corner along the move skipped), the crossed edges collected into the out-list. The reference
+	    virtual above (the script's and the reference callers' entry) answers with this one, no list and no hit. */
+	UBOOL PointReachable(const FVector& Point, const FVector& OverrideStartPoint, UBOOL bAllowHitsInEndCollisionBox, TArray<struct FNavMeshEdgeBase*>* _pOutEdgeArray, struct FNavMeshCheckResult* _pHit);
 	/**
 	 * GetAllPylonsFromPos
 	 * - will populate a list of all pylons which are valid (in terms of can a pawn walk from the possible pylon) for the given position

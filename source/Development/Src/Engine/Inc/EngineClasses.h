@@ -11670,6 +11670,8 @@ public:
     void SwapPlayerControllers(class APlayerController* OldPC,class APlayerController* NewPC);
     virtual void SetBandwidthLimit(FLOAT AsyncIOBandwidthLimit);
     virtual void EnableStandbyCheatDetection(UBOOL bIsEnabled);
+    // DISHONORED(port): agent JD, 2012 0x2ec070 (31 B): the game's avoidance component (UnGame.cpp)
+    virtual void PostBeginPlay();
     // DISHONORED(port): 2013 GameInfo.ReduceDamage is native (exec 0x1c6170, body 0x2cd830; agent AE)
     virtual void ReduceDamage(INT& Damage,class APawn* injured,class AController* InstigatedBy,FVector HitLocation,FVector& Momentum,class UClass* DamageType,class AActor* DamageCauser);
     DECLARE_FUNCTION(execReduceDamage);

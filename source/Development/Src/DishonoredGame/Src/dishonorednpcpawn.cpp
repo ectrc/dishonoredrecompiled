@@ -320,8 +320,8 @@ void ADishonoredNPCPawn::execTakeDamage( FFrame& Stack, RESULT_DECL )
 //   the ammo copy out of the tweaks' m_Ammo and SpawnInventoryLoadout_Items / EquipItemByType / AttachEquippedItem -
 //     UDishonoredInventory and UDisItemContext, agent AJ's third root (the same gap CG recorded for the melee draw);
 //   FDisComponentPlague, added when the tweaks' m_bHasPlague bit is set;
-//   ADishonoredNPCPawn::RegisterAvoidable (2013 rva 0x7796b0) and the FArkGameEventDispatcher registration of OnLODChanged - the
-//     dispatcher has no instance in this tree (agent CG hand-over 4);
+//   the FArkGameEventDispatcher registration of OnLODChanged - the dispatcher has no instance in this tree (agent CG hand-over 4);
+//   (agent JD: ADishonoredNPCPawn::RegisterAvoidable, 2013 rva 0x7796b0, is called - dishonorednpcpawn_locomotion.cpp)
 //   FDisComponentLODManager::StartLOD (2013 rva 0x870a80), so the NPC never enters the LOD state machine.
 void ADishonoredNPCPawn::PostBeginPlay()
 {
@@ -333,6 +333,7 @@ void ADishonoredNPCPawn::PostBeginPlay()
 	DesiredSpeed = 0.f;
 	m_iNumReactionDisableRequestsFromSoiree = 0;
 	m_iNumFakeDeathRequestsFromSoiree = 0;
+	RegisterAvoidable();
 }
 
 /**
@@ -348,7 +349,8 @@ void ADishonoredNPCPawn::PostBeginPlay()
  *   - UDisNPCTravelManager::OnPawnShutDown 0x720bc0, UDishonoredGlobalAIManager::OnPawnDestroyed 0x8cb480;
  *   - 2013 only: FArkGameEventDispatcher event 32 (the spring-razor interaction) when the master state is not Dead;
  *   - IDisConvSpeakerInterface::PostShutdown_Dialog 0x8a08e0, FDisPhysicsUtil::DisReleasePawnChannel 0x824590,
- *     UArkAvoidable::UnregisterAvoidable 0x526d80, the event 2 OnLODChanged unregister, UDisConversationComponent::Shutdown;
+ *     the event 2 OnLODChanged unregister, UDisConversationComponent::Shutdown (agent JD: UArkAvoidable::UnregisterAvoidable 0x526d80
+ *     is called);
  *   - 2013 only: m_pStealable is destroyed when the +2404 bit 0x400000 is set;
  *   - ADisTallboyNPCPawn::ShutPawnDown_Derived 0x7f2700 (the light, the particle system), not overridden here.
  */
@@ -363,6 +365,10 @@ void ADishonoredNPCPawn::ShutPawnDown_Derived()
 	if( m_pNPCMasterFSM )
 	{
 		m_pNPCMasterFSM->DestroyFSM();
+	}
+	if( m_pAvoidable )
+	{
+		m_pAvoidable->UnregisterAvoidable();
 	}
 	m_pCpntLocomotion = NULL;
 	m_pCpntFaceTo = NULL;
