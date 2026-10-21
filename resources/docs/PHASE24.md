@@ -251,3 +251,9 @@ constant offset (a = 13.57 - soirée-enter). Nobody touches `UnPlayer.cpp`/`UnCo
 3. JF: both the choice node and the Kismet action may exist in the level; step 0 says which fires here.
 4. JG: the sudden landing may be the land action's blend rather than the spring - the view trace is the measurement.
 5. JD: the arcs may be the unported turn-ahead alone; avoidance is then lower value and reported, not forced.
+
+## Outcomes (coordinator log)
+
+| Package | Commit | Landed | Where the brief was wrong |
+|---|---|---|---|
+| JA | `810f13a` | `GFxValue::SetText/GetText` as retail (type-tested dispatch: an edit text through the field's virtual `SetText` -> `SetTextValue`, else `SetMember`); `GFxEditTextCharacter::SetText(wchar_t)`/`GetText`; `-jadiag`; the marker reads 'Empress Jessamine [62m]'; options AS2 errors 39 = head_rel; gate stages green (re-run 18/18) | the marker appears only after the ride (world 150.6) and its description only when focused - as retail; 0x9afdb0 is 2012 (2013 0x9a8dd0) and type-tests rather than calling `SetTextValue` directly; `crosshairInfosTxt_mc` uses an AS2 Invoke (never affected); no other `SetText` path runs on the routes; `UGFxObject::SetText`'s translator branch left as a boundary |
