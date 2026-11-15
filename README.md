@@ -1,106 +1,103 @@
 # Dishonored Recompilation
 
-**It boots to its own main menu, plays into the first mission, and the first cutscene plays.** From
-the shipped executable: NEW GAME, a difficulty, the brightness screen, YES — and Corvo is on the boat
-at Dunwall Tower with its two NPCs aboard, the letterbox bars drawn, the HUD up, and about a minute in
-**the boat ride starts on its own**, through the game's real conversation system, and carries him up
-to the water-lock. The interface is most of the way to matching retail's; what is still wrong is
-listed in `resources/docs/STATUS.md`.
+A functional (non-matching) rebuild of Dishonored's Win32 executable from the UE3 source tree, targeting the
+**retail 2013 build** (`Dishonored.exe`, engine 9411, DLC05–07). It runs against your own copy of the game's content:
+build it, drop the executable into the retail `Binaries\Win32` folder, and it comes up on the game's own main menu.
 
 [![The first cutscene playing in the recompiled build](https://img.youtube.com/vi/OjsDzG64K9w/maxresdefault.jpg)](https://www.youtube.com/watch?v=OjsDzG64K9w)
 
 *Video: the opening boat ride running in the recompiled build.*
 
-Functional (non-matching) rebuild of Dishonored's Win32 native executable, targeting the **retail
-2013 build** (`Dishonored.exe`, engine 9411, DLC05–07): its layouts, serialization and behavior are
-the contract. The symbolized 2012 QA build only supplies names and decompiles; its structs differ
-from 2013 in many places and are never the final word. The base is the UE3 build 10897 source tree at `../UnrealEngine3`
-(CodeRedModding/UnrealEngine3), a very close engine build to Dishonored's 9014/9411; see
-`resources/docs/engine_reference.md`. Inputs: the retail 2013 build (`../Dishonored_Latest2026`,
-the target) and the symbolized 2012 QA build (`../Dishonored_Debug2012`, the helping hand for
-names and decompiles). Game binaries, PDBs, content, IDA databases and the reference tree stay
-outside the repo.
-
-Start with [resources/docs/STATUS.md](resources/docs/STATUS.md) — what works, what does not, and the
-pitfalls that cost a wave each to learn. [PLAN.md](PLAN.md) has the overall strategy and phases;
-`resources/docs/PHASE1.md`–`PHASE21.md` are the per-wave trackers, and `resources/docs/agents/` holds
-every package's own report and measurements. Symbol exports live in `resources/docs/symbols/` and
-`resources/docs/types/`; scripts that produce them are under `resources/tools/`.
-
-## Where it is
+## What works
 
 | | |
 |---|---|
-| Engine, renderer, script VM | up; the first mission map renders under D3D9 and the pawn walks it |
-| Main menu | draws, navigates by mouse and keyboard, and starts the game. Its modal text, option rows, difficulty portrait and scrolling lists are measured against retail's |
-| Opening scene | **the boat ride starts and plays on its own** - the conversation system's direct path is in - with the guard aboard animating and heads that aim; HUD, letterbox and cursor where retail puts them. **The Empress scene does not start yet: retail needs the player to walk up through two scenes first, and that walk is the current wave** |
-| In-game HUD | health and mana vials and the stance icon, fed from the live pawn |
-| AI | a guard adopts a patrol route and walks it |
-| Save/load | all 51 retail saves load; **86.7 %** of `Dishonored0.sav`'s object stream restores |
-| Audio | deliberately last — the silent backend loads the real banks and resolves the real events |
+| Engine, renderer, script VM | up; the first mission renders under D3D9 and plays |
+| Main menu | draws, navigates by mouse and keyboard, UI sounds, starts the game |
+| Opening of mission 1 | the boat ride, the Emily greeting with its hide-and-seek choice, the Empress scene with Emily running in, markers, the interaction prompt and highlight glow |
+| Player | walk, sprint, crouch, jump with the landing spring, swim, mantle; retail's speeds and attributes |
+| NPCs | path following with turn-ahead and avoidance, scene placement through root motion and FaceTo, conversations |
+| Audio | real: Wwise 2012.1 reimplemented from the decompile (music, effects, voice), FaceFX lip-sync |
+| Save/load | all 51 retail saves load; 86.7 % of `Dishonored0.sav`'s object stream restores |
 | Full campaign | not yet |
 
-Every merge is gated on a clean checkout of its own commit by a 47-check regression harness
-(`resources/tools/run_regression.py`): build, layout `static_assert`s against retail's offsets, a null-RHI
-smoke, a D3D9 render census, a scripted input run, a New Game from the menu and an Options tab sweep.
-**It reads 47 of 47 on HEAD.** It was red on purpose for one wave over a crash it had been unable to
-see for nineteen - a pointer walk this tree had invented - and the bound was not relaxed to get there;
-`resources/docs/STATUS.md` has the story.
+Every merge is gated on a clean checkout by a 47-check regression harness (`resources/tools/run_regression.py`): build,
+layout `static_assert`s against retail's offsets, a null-RHI smoke, a D3D9 render census, a scripted input run, a New
+Game from the menu and an Options sweep. It reads 47 of 47 on HEAD. `resources/docs/STATUS.md` has what is still wrong.
 
-## Running it
+## Build it and run it in your retail install
 
-The playable build is one command. From the repo root, in any shell:
+What you need:
+
+- Windows 10/11, 64-bit.
+- **Visual Studio 2022 Community** with the "Desktop development with C++" workload, including the **C++ CMake tools
+  for Windows** component (that gives you CMake and Ninja). The scripts call `VsDevCmd.bat` for an x86 toolchain.
+- **Python 3.10+** on `PATH` (the build and staging scripts are Python; no extra packages are needed to build).
+- **Git** (the first configure fetches zlib, libpng, nvapi and lzokay into `external/`, so it needs internet once).
+- Your own **retail Dishonored** (the 2013 Steam/GOG build with the DLC). Nothing from the game ships in this repo.
+- The **UE3 reference tree**: a checkout of
+  [CodeRedModding/UnrealEngine3](https://github.com/CodeRedModding/UnrealEngine3). The build reads engine sources it
+  does not override from there.
+
+Step by step:
+
+1. **Lay the folders out side by side.** The scripts default to the retail install and the reference tree sitting
+   next to this repo:
+
+   ```
+   D:\RecompileDishonored\
+       Recompile\                this repository
+       Dishonored_Latest2026\    your retail install (contains Binaries\Win32\Dishonored.exe, DishonoredGame\, Engine\)
+       UnrealEngine3\            the CodeRedModding/UnrealEngine3 checkout
+   ```
+
+   Any drive works; keep the three names and the layout. If you want other paths, change the two values in
+   `resources\build-play.cmd` (`DISHONORED_REFERENCE_DIR`) and `cmake\Bink.cmake` (`DISHONORED_RETAIL_DIR`), and
+   pass `--retail <path>` to `stage_retail.py`.
+
+2. **Point the retail folder at a copy, not your only install.** Copy the whole game folder (the one that holds
+   `Binaries`, `DishonoredGame`, `Engine`) to `Dishonored_Latest2026`. The build writes its executable, logs and
+   screenshots into that tree.
+
+3. **Open a plain command prompt** (not a Developer prompt, the script loads the toolchain itself) in the repo root
+   and run:
+
+   ```
+   resources\build-play.cmd
+   ```
+
+   That configures a Release x86 build in `build\play` with every module on, builds `DishonoredGame.exe` (around
+   380 compile steps; 10 to 30 minutes depending on the machine), and stages the result into the retail tree as:
+
+   ```
+   Dishonored_Latest2026\Binaries\Win32\DishonoredGame-Win64-Shipping.exe
+   ```
+
+   `resources\build-play.cmd shipping` builds the same with `FINAL_RELEASE` / `SHIPPING_PC_GAME` / `NO_LOGGING` on.
+
+4. **Run it.** Double-click `DishonoredGame-Win64-Shipping.exe` in `Binaries\Win32`, or launch it from a shortcut.
+   No command line is needed: the build appends `-nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie -windowed
+   -ResX=1600 -ResY=900` itself when they are absent, so it does not need Steam running and comes up windowed on
+   the main menu. From there: **Space** past the start screen, NEW GAME, pick a difficulty, the brightness screen,
+   then **YES**.
+
+5. **Rebuild after pulling.** Run `resources\build-play.cmd` again; it is incremental and re-stages the executable
+   over the old one. Close the game first, the copy fails while the exe is running.
+
+Useful switches (anything you pass wins over the defaults):
 
 ```
-resources\build-play.cmd
-```
-
-That configures and builds a Release x86 binary with every module on and stages it into your retail
-install, beside the game's own executable:
-
-```
-<retail install>\Binaries\Win32\DishonoredGame-Win64-Shipping.exe
-```
-
-**Run it with no arguments and it comes up on the main menu.** `appInit` appends the switches a
-playable run needs when they are absent (`Core/Src/UnMisc.cpp`, `DISHONORED_PLAY_DEFAULTS`):
-`-nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie -windowed -ResX=1600 -ResY=900`. The menu is
-opened by the menu map's own Kismet, as in retail; there is no bring-up switch for it any more.
-
-From the menu: **Space** past the start screen, then NEW GAME, the difficulty screen (Up/Down to
-choose) and the brightness screen, then **YES** on the confirmation. That commits the map change and
-puts Corvo on the boat landing at Dunwall Tower.
-
-Keyboard or mouse: **Enter** activates the highlighted row, **Up/Down** move the selection, **Escape**
-goes back (measured in-process through `game_input.py` on `80cc219`; the earlier "Enter does nothing"
-in `STATUS.md` defect 5 was measured against the retired `-gfxuimenu` bring-up movie, which could not
-take input).
-
-Builds go through `resources/tools/build_queued.py` (one at a time, half the cores). To drive a
-running build without touching your own mouse or focus, launch it with
-`python resources/tools/game_input.py launch --exe <exe>` and send `hover`, `click`, `key`, `shot`.
-
-Anything you pass yourself wins over the defaults, so
-
-```
+DishonoredGame-Win64-Shipping.exe -ResX=2560 -ResY=1440
 DishonoredGame-Win64-Shipping.exe -startmap=L_Pub_Day_P
+DishonoredGame-Win64-Shipping.exe -LOG=mine.log -forcelogflush
 ```
 
-opens that map directly instead of the menu, and `-ResX=2560 -ResY=1440` overrides the window size.
+Logs land in `Dishonored_Latest2026\DishonoredGame\Logs\Launch.log`. The in-game console opens on **Tilde** (the key
+left of 1); **Tab** opens the one-line bar.
 
-`resources\build-play.cmd shipping` adds `FINAL_RELEASE` / `SHIPPING_PC_GAME` / `NO_LOGGING`.
-
-**The name is a name, not a description**: the executable is 32-bit, like the retail game. The
-middleware it links against — PhysX 2.8.4, Bink, Wwise 2012, Scaleform 3.3 — ships only as 32-bit
-DLLs in the retail tree, and the layout `static_assert`s that keep this a faithful recompilation are
-written against retail's 32-bit offsets under `/Zp4`.
-
-Logs land in `<retail install>\DishonoredGame\Logs\Launch.log`; pass `-LOG=<name>.log` to separate a
-run, and `-forcelogflush` if you need the tail of a run that is still going.
-
-The build scripts and the tools read the retail install, the 2012 QA build and the reference engine
-tree from paths set in `cmake/` and `resources/tools/`; point those at your own copies. Nothing in
-this repository ships game binaries, PDBs, content or IDA databases.
+**The name is a name, not a description**: the executable is 32-bit like the retail game. PhysX 2.8.4, Bink, Wwise
+2012 and Scaleform 3.3 ship only as 32-bit DLLs in the retail tree, and the layout `static_assert`s are written
+against retail's 32-bit offsets under `/Zp4`. The retail `Dishonored.exe` is left untouched beside ours.
 
 ### Other builds
 
@@ -109,57 +106,48 @@ this repository ships game binaries, PDBs, content or IDA databases.
 | `resources\build-game.cmd [target]` | the development build, every option on, into `build\game` |
 | `resources\build-release.cmd [target]` | the Release build the regression harness uses |
 | `python resources\tools\run_regression.py --build-dir build/<dir>` | the 47-check regression gate |
+| `python resources\tools\game_input.py launch --exe <exe>` | drive a running build (`hover`, `click`, `key`, `shot`) without touching your own mouse or focus |
 
-## State of play
+Builds from the scripts go through `resources/tools/build_queued.py` (one at a time, half the cores).
 
-`resources/docs/STATUS.md` is the thing to read when resuming: what works, what does not, and the
-pitfalls that cost a wave each to learn.
+## How it is built
+
+The retail 2013 binary is the contract: its layouts, serialization and behaviour. The symbolized 2012 QA build only
+supplies names and decompiles; its structs differ from 2013 in places and are never the final word. The base is the
+UE3 build 10897 tree (a very close engine build to Dishonored's 9014/9411, see `resources/docs/engine_reference.md`).
+Game binaries, PDBs, content, IDA databases and the reference tree stay outside the repo.
+
+Where to read: [resources/docs/STATUS.md](resources/docs/STATUS.md) first (what works, what does not, the pitfalls),
+[PLAN.md](PLAN.md) for the strategy, `resources/docs/PHASE1.md`–`PHASE24.md` for the per-wave trackers,
+`resources/docs/agents/` for every package's own report and measurements, `resources/docs/symbols/` and
+`resources/docs/types/` for the symbol exports, `resources/tools/` for the scripts that produce them.
 
 ## References and credits
 
-**The reference engine source**
-
-- [CodeRedModding/UnrealEngine3](https://github.com/CodeRedModding/UnrealEngine3) — the UE3 build
-  10897 tree this is rebuilt from, a very close engine build to Dishonored's 9014/9411. Without it
-  there is no project. See `resources/docs/engine_reference.md`.
-- [CodeRed-Generator](https://github.com/CodeRedModding/CodeRed-Generator) — produced the retail SDK
-  dump (`DishonoredSDK 1.4`) that gives the runtime offset of every reflected member, which is what
-  the 2,314 layout `static_assert`s are written against. See `resources/docs/sdk_dump.md`.
-
-**Tools**
-
-- [IDA Pro and the Hex-Rays decompiler](https://hex-rays.com/) — the disassembly and decompiles both
-  builds are read with.
-- [Diaphora](https://github.com/joxeankoret/diaphora) — binary diffing between the 2012 and 2013
-  builds.
-- [dismod](https://github.com/ectrc/dismod) — hooks the running retail game, which is how several
-  findings here were checked against the real thing rather than against a disassembly. See
-  `resources/docs/dismod_harness.md`.
-
-**Third-party code this build fetches**
-
-- [zlib](https://github.com/madler/zlib) · [libpng](https://github.com/pnggroup/libpng) ·
-  [nvapi](https://github.com/NVIDIA/nvapi) · [lzokay](https://github.com/jackoalan/lzokay)
-
-**Middleware the game links**
-
-PhysX 2.8.4, Scaleform GFx 3.3, Wwise 2012.1, Bink, FaceFX, Steamworks and libcurl. **No vendor SDK is
-downloaded and nothing is redistributed**: the bindings in `source/Development/Src/External/` were
-written from the DLLs that ship with the game and their exported symbols. See
-`resources/docs/middleware.md`.
+- [CodeRedModding/UnrealEngine3](https://github.com/CodeRedModding/UnrealEngine3) — the UE3 build 10897 tree this is
+  rebuilt from. Without it there is no project.
+- [CodeRed-Generator](https://github.com/CodeRedModding/CodeRed-Generator) — produced the retail SDK dump that gives
+  the runtime offset of every reflected member, which the layout `static_assert`s are written against
+  (`resources/docs/sdk_dump.md`).
+- [IDA Pro and the Hex-Rays decompiler](https://hex-rays.com/), [Diaphora](https://github.com/joxeankoret/diaphora)
+  (diffing the 2012 and 2013 builds), [dismod](https://github.com/ectrc/dismod) (hooking the running retail game for
+  ground truth, `resources/docs/dismod_harness.md`).
+- Third-party code the build fetches: [zlib](https://github.com/madler/zlib) ·
+  [libpng](https://github.com/pnggroup/libpng) · [nvapi](https://github.com/NVIDIA/nvapi) ·
+  [lzokay](https://github.com/jackoalan/lzokay).
+- Middleware the game links: PhysX 2.8.4, Scaleform GFx 3.3, Wwise 2012.1, Bink, FaceFX, Steamworks and libcurl.
+  **No vendor SDK is downloaded and nothing is redistributed**: the bindings in `source/Development/Src/External/`
+  were written from the DLLs that ship with the game and their exported symbols; Wwise and FaceFX are reimplemented
+  (`resources/docs/middleware.md`).
 
 ## Licence
 
-**[GNU Affero General Public License v3.0](LICENSE)** — the strongest copyleft there is. If you build
-on this, your work has to be open source too, under the same licence, including over a network: AGPL
-section 13 means that if you let people use a modified version remotely, they are entitled to its
-source. That is deliberate. This exists so the work is shared, not enclosed.
+**[GNU Affero General Public License v3.0](LICENSE)**. If you build on this, your work has to be open source too,
+under the same licence, including over a network (AGPL section 13). Use it, change it, ship it, but ship the source
+with it.
 
-In short: use it, change it, ship it — but ship the source with it.
+The licence covers this repository's code only. Dishonored itself is © Bethesda Softworks / Arkane Studios; this is an
+independent reimplementation for study, it ships no game code, assets, binaries or PDBs, and it needs your own legally
+obtained copy of the game to run.
 
-The licence covers **this repository's code**. It cannot and does not grant you anything over
-Dishonored itself: the game is © Bethesda Softworks / Arkane Studios, this is an independent
-reimplementation for study, it ships no game code, assets, binaries or PDBs, and it needs your own
-legally obtained copy of the game to run.
-
-All generated with claude code.
+All generated with Claude Code.
